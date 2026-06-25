@@ -31,13 +31,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .hh-save{font-size:11px;color:rgba(255,255,255,.45);position:relative;margin-top:6px;min-height:14px;transition:color .2s}
 .hh-save.saving{color:var(--z-ocre)}
 
-/* ACTIONS */
-.hub-actions{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
-.hub-btn{flex:1;min-width:130px;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border:1.5px solid var(--z-teal);background:#fff;color:var(--z-teal);display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
-.hub-btn:hover{background:var(--z-teal-light)}
-.hub-btn.primary{background:var(--z-teal);color:#fff}
-.hub-btn.primary:hover{background:#0A6870}
-.hub-btn.copied{color:#1B6B3A;border-color:#1B6B3A}
+/* TABS */
+.tab-bar{display:grid;grid-template-columns:1fr 1fr;border-radius:10px;overflow:hidden;border:1.5px solid var(--z-teal);margin-bottom:10px}
+.tab-btn{padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;background:#fff;color:var(--z-teal);transition:all .15s;text-align:center}
+.tab-btn.active{background:var(--z-teal);color:#fff}
+.tab-btn:not(.active):hover{background:var(--z-teal-light)}
+.copy-row{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border:1px solid var(--z-border);background:#fff;color:var(--z-text-sec);margin-bottom:1.5rem;transition:all .15s}
+.copy-row:hover{border-color:var(--z-teal);color:var(--z-teal);background:var(--z-teal-light)}
+.copy-row.copied{border-color:#1B6B3A;color:#1B6B3A}
+
+/* SUB-MODO (Base de Dados) */
+.sub-bar{display:flex;gap:6px;margin-bottom:1.25rem}
+.sub-btn{flex:1;padding:8px 12px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;background:#fff;border:1.5px solid var(--z-border);color:var(--z-text-sec);border-radius:8px;transition:all .15s;text-align:center}
+.sub-btn.active{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal);font-weight:600}
 
 /* TIER LABELS */
 .tier-lbl{display:flex;align-items:center;gap:8px;margin:1.5rem 0 .75rem;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
@@ -123,8 +129,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .toast.show{opacity:1}
 
 /* DOC MODE */
-.doc-back{background:#fff;border:1.5px solid var(--z-teal);color:var(--z-teal);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:1.25rem;display:inline-flex;align-items:center;gap:6px}
-.doc-back:hover{background:var(--z-teal-light)}
 .doc-card{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 .doc-card-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--z-teal);display:flex;align-items:center;gap:8px;margin-bottom:1rem}
 .doc-card-title::after{content:'';flex:1;height:1px;background:var(--z-border)}
@@ -149,7 +153,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   <div class="loading" id="loading">Carregando hub...</div>
   <div class="toast" id="toast"></div>
   <div id="view-edit"></div>
-  <div id="view-doc" style="display:none"></div>
 </div>
 
 <script type="module">
@@ -568,8 +571,55 @@ function renderSecM() {
     </div>`).join('') || '<p style="font-size:13px;color:var(--z-text-sec)">Nenhum planejamento adicionado ainda.</p>';
 }
 
-// ── BUILD HUB (edit mode) ─────────────────────────────────────────────────────
+// ── ESTADO DE NAVEGAÇÃO ───────────────────────────────────────────────────────
+let tabAtivo = 'plan';   // 'plan' | 'dados'
+let subMode  = 'vis';    // 'vis'  | 'edit'
+
+// ── BUILD HUB ─────────────────────────────────────────────────────────────────
 function buildHub() {
+  document.getElementById('view-edit').innerHTML = `
+    <div class="hub-header">
+      <div class="hh-lbl">Hub do cliente</div>
+      <div class="hh-title">${esc(CLIENT_NOME)}</div>
+      <div class="hh-sub">Onboarding · Briefing · Materiais · Planejamentos</div>
+      <div class="hh-save" id="save-status"></div>
+    </div>
+    <div class="tab-bar">
+      <button class="tab-btn${tabAtivo==='plan'?' active':''}" onclick="setTab('plan')">Planejamento</button>
+      <button class="tab-btn${tabAtivo==='dados'?' active':''}" onclick="setTab('dados')">Base de Dados</button>
+    </div>
+    <button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Copiar link para o cliente</button>
+    <div id="tab-content"></div>`;
+  renderTabContent();
+}
+
+function renderTabContent() {
+  const cont = document.getElementById('tab-content');
+  if (!cont) return;
+  if (tabAtivo === 'plan') {
+    cont.innerHTML = `<div id="bod-m"></div>`;
+    renderSecM();
+  } else {
+    cont.innerHTML = `
+      <div class="sub-bar">
+        <button class="sub-btn${subMode==='vis'?' active':''}" onclick="setSubMode('vis')">👁 Visualização</button>
+        <button class="sub-btn${subMode==='edit'?' active':''}" onclick="setSubMode('edit')">✏ Edição</button>
+      </div>
+      <div id="sub-content"></div>`;
+    renderSubContent();
+  }
+}
+
+function renderSubContent() {
+  if (subMode === 'vis') {
+    buildDocView();
+  } else {
+    buildEditSections();
+  }
+}
+
+// ── SEÇÕES DE EDIÇÃO (Base de Dados > Edição) ─────────────────────────────────
+function buildEditSections() {
   function sc(id, tier, badge, title, desc) {
     return `<div class="sec-card ${tier}">
       <div class="sec-head">
@@ -579,18 +629,7 @@ function buildHub() {
       <div id="bod-${id}"></div>
     </div>`;
   }
-  document.getElementById('view-edit').innerHTML = `
-    <div class="hub-header">
-      <div class="hh-lbl">Hub do cliente</div>
-      <div class="hh-title">${esc(CLIENT_NOME)}</div>
-      <div class="hh-sub">Onboarding · Briefing · Materiais · Planejamentos</div>
-      <div class="hh-save" id="save-status"></div>
-    </div>
-    <div class="hub-actions">
-      <button class="hub-btn" id="btn-copiar" onclick="copiarLink()">📋 Copiar link para o cliente</button>
-      <button class="hub-btn primary" onclick="abrirDoc()">→ Modo apresentação</button>
-    </div>
-
+  document.getElementById('sub-content').innerHTML = `
     <div class="tier-lbl t1"><span class="tier-badge">Tier 1</span> Cliente preenche sozinho</div>
     ${sc('a','t1','A','Dados da empresa','Informações básicas de cadastro')}
     ${sc('b','t1','B','Dados fiscais para NF-e','Para emissão de nota fiscal eletrônica')}
@@ -607,18 +646,14 @@ function buildHub() {
     ${sc('i','t3','I','Análise estratégica','SWOT e análise de concorrentes')}
     ${sc('j','t3','J','Guia de voz e comunicação','Tom, vocabulário, regras de linguagem')}
     ${sc('k','t3','K','Contrato e condições','Status, link para o PDF, datas e valor')}
-    ${sc('l','t3','L','Materiais de apoio e links','Branding, moodboard, referências internas')}
-
-    <div class="tier-lbl tm"><span class="tier-badge">Planejamentos</span></div>
-    ${sc('m','tm','M','Ciclos de conteúdo','Planejamentos bimestrais integrados ao hub')}`;
+    ${sc('l','t3','L','Materiais de apoio e links','Branding, moodboard, referências internas')}`;
 
   renderSecA(); renderSecB(); renderSecC(); renderSecD();
   renderSecE(); renderSecF(); renderSecG(); renderSecH();
   renderSecI(); renderSecJ(); renderSecK(); renderSecL();
-  renderSecM();
 }
 
-// ── BUILD DOC VIEW (presentation mode) ───────────────────────────────────────
+// ── VISUALIZAÇÃO (Base de Dados > Visualização) ───────────────────────────────
 function buildDocView() {
   function pillsCSV(str, cls) {
     if (!str) return '<span style="color:#bbb;font-size:12px">—</span>';
@@ -626,15 +661,14 @@ function buildDocView() {
       .map(s => `<span class="doc-pill${cls?' '+cls:''}">${esc(s)}</span>`).join('');
   }
   function dv(v) {
-    return v
-      ? `<div class="doc-value">${esc(v)}</div>`
-      : '<span style="color:#bbb;font-size:12px">—</span>';
+    return v ? `<div class="doc-value">${esc(v)}</div>`
+             : '<span style="color:#bbb;font-size:12px">—</span>';
   }
 
-  const id = estado.identidade;
+  const id  = estado.identidade;
   const pub = estado.publicoAlvo;
   const obj = estado.objetivos;
-  const sw = estado.swot;
+  const sw  = estado.swot;
   const voz = estado.guiaVoz;
   const refs = estado.referencias.filter(r => r.nome);
 
@@ -657,24 +691,16 @@ function buildDocView() {
       ${r.oQueGosta ? `<div class="doc-ref-gosta">${esc(r.oQueGosta)}</div>` : ''}
     </div>`).join('');
 
-  document.getElementById('view-doc').innerHTML = `
-    <button class="doc-back" onclick="fecharDoc()">← Editar documento</button>
-
-    <div class="hub-header">
-      <div class="hh-lbl">Apresentação de marca</div>
-      <div class="hh-title">${esc(CLIENT_NOME)}</div>
-      ${id.slogan ? `<div class="hh-sub">"${esc(id.slogan)}"</div>` : ''}
-    </div>
-
+  document.getElementById('sub-content').innerHTML = `
     <div class="doc-card">
       <div class="doc-card-title">Identidade da marca</div>
       <div class="doc-field"><div class="doc-label">Posicionamento</div>${dv(id.posicionamento)}</div>
       <div class="doc-field"><div class="doc-label">O que não somos</div>${dv(id.naoE)}</div>
+      <div class="doc-field"><div class="doc-label">Slogan</div>${dv(id.slogan)}</div>
       <div class="doc-field"><div class="doc-label">Tom da marca</div><div class="doc-pills">${pillsCSV(id.adjetivos)}</div></div>
       <div class="doc-field"><div class="doc-label">Temas centrais</div><div class="doc-pills">${pillsCSV(id.temasOK)}</div></div>
       <div class="doc-field"><div class="doc-label">Temas a evitar</div><div class="doc-pills">${pillsCSV(id.temasEvitar,'terra')}</div></div>
     </div>
-
     <div class="doc-card">
       <div class="doc-card-title">Público-alvo</div>
       <div class="doc-field"><div class="doc-label">Quem é</div>${dv(pub.descricao)}</div>
@@ -682,18 +708,15 @@ function buildDocView() {
       ${pub.oQuePrecisaSaber ? `<div class="doc-field"><div class="doc-label">O que ainda não sabe que precisa saber</div>${dv(pub.oQuePrecisaSaber)}</div>` : ''}
       ${pub.jornada ? `<div class="doc-field"><div class="doc-label">Momento da jornada</div>${dv(pub.jornada)}</div>` : ''}
     </div>
-
     <div class="doc-card">
       <div class="doc-card-title">Objetivos</div>
       <div class="doc-field"><div class="doc-label">Objetivo nos próximos 6 meses</div>${dv(obj.objetivo6m)}</div>
       <div class="doc-field"><div class="doc-label">Como medir o sucesso</div>${dv(obj.metrica)}</div>
     </div>
-
     <div class="doc-card">
       <div class="doc-card-title">Análise SWOT</div>
       <div class="doc-swot-grid">${swotCards}</div>
     </div>
-
     <div class="doc-card">
       <div class="doc-card-title">Guia de voz</div>
       <div class="doc-field"><div class="doc-label">Tom em uma frase</div>${dv(voz.tomFrase)}</div>
@@ -701,13 +724,9 @@ function buildDocView() {
       <div class="doc-field"><div class="doc-label">A evitar</div><div class="doc-pills">${pillsCSV(voz.palavrasEvitar,'terra')}</div></div>
       ${voz.regras ? `<div class="doc-field"><div class="doc-label">Regras de linguagem</div>${dv(voz.regras)}</div>` : ''}
     </div>
-
     ${refs.length ? `<div class="doc-card">
-      <div class="doc-card-title">Referências de marca</div>
-      ${refsHTML}
-    </div>` : ''}
-
-    <button class="doc-back" style="margin-top:8px" onclick="fecharDoc()">← Editar documento</button>`;
+      <div class="doc-card-title">Referências de marca</div>${refsHTML}
+    </div>` : ''}`;
 }
 
 // ── WINDOW EVENT HANDLERS ─────────────────────────────────────────────────────
@@ -787,15 +806,14 @@ window.copiarLink = function() {
     }, 2500);
   });
 };
-window.abrirDoc = function() {
-  document.getElementById('view-edit').style.display = 'none';
-  document.getElementById('view-doc').style.display = '';
-  buildDocView();
+window.setTab = function(t) {
+  tabAtivo = t;
+  buildHub();
   window.scrollTo(0, 0);
 };
-window.fecharDoc = function() {
-  document.getElementById('view-doc').style.display = 'none';
-  document.getElementById('view-edit').style.display = '';
+window.setSubMode = function(m) {
+  subMode = m;
+  renderTabContent();
   window.scrollTo(0, 0);
 };
 
@@ -803,11 +821,10 @@ window.fecharDoc = function() {
 carregarDoFirebase().then(() => {
   document.getElementById('loading').classList.add('hide');
   if (MODE === 'doc') {
-    document.getElementById('view-doc').style.display = '';
-    buildDocView();
-  } else {
-    buildHub();
+    tabAtivo = 'dados';
+    subMode  = 'vis';
   }
+  buildHub();
 });
 </script>
 </body>
