@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hub — Zelo Consultoria</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F2F2F2;min-height:100vh;padding:1.5rem}
+:root{
+  --z-teal:#11808C;--z-teal-light:#E3F1F2;
+  --z-terra:#D9814E;--z-terra-light:#FBEEE4;
+  --z-ocre:#F2DC9B;--z-ocre-dark:#9A7A1F;--z-ocre-light:#FBF6E8;
+  --z-cyan:#05C7F2;
+  --z-text:#1A1A1A;--z-text-sec:#5A5A5A;
+  --z-border:#DDDDDD;--z-bg:#F2F2F2;
+  --t1:#D9814E;--t1-l:#FBEEE4;
+  --t2:#11808C;--t2-l:#E3F1F2;
+  --t3:#5A5A5A;--t3-l:#F0F0F0;
+  --tm:#9A7A1F;--tm-l:#FBF6E8;
+}
+.container{max-width:680px;margin:0 auto}
+
+/* HEADER */
+.hub-header{background:linear-gradient(135deg,var(--z-teal) 0%,#0A5961 100%);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.hub-header::before{content:'';position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:var(--z-cyan);opacity:0.2}
+.hub-header::after{content:'';position:absolute;bottom:-30px;right:50px;width:70px;height:70px;border-radius:50%;background:var(--z-terra);opacity:0.2}
+.hh-lbl{font-size:10px;color:var(--z-ocre);letter-spacing:.1em;text-transform:uppercase;font-weight:600;margin-bottom:4px;position:relative}
+.hh-title{font-size:22px;font-weight:700;color:#fff;position:relative;margin-bottom:2px}
+.hh-sub{font-size:12px;color:rgba(255,255,255,.65);position:relative}
+.hh-save{font-size:11px;color:rgba(255,255,255,.45);position:relative;margin-top:6px;min-height:14px;transition:color .2s}
+.hh-save.saving{color:var(--z-ocre)}
+
+/* ACTIONS */
+.hub-actions{display:flex;gap:8px;margin-bottom:1.5rem;flex-wrap:wrap}
+.hub-btn{flex:1;min-width:130px;padding:9px 14px;border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;font-family:inherit;border:1.5px solid var(--z-teal);background:#fff;color:var(--z-teal);display:flex;align-items:center;justify-content:center;gap:6px;transition:background .15s}
+.hub-btn:hover{background:var(--z-teal-light)}
+.hub-btn.primary{background:var(--z-teal);color:#fff}
+.hub-btn.primary:hover{background:#0A6870}
+.hub-btn.copied{color:#1B6B3A;border-color:#1B6B3A}
+
+/* TIER LABELS */
+.tier-lbl{display:flex;align-items:center;gap:8px;margin:1.5rem 0 .75rem;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.tier-lbl::after{content:'';flex:1;height:1px;background:currentColor;opacity:.25}
+.tier-lbl.t1{color:var(--t1)}.tier-lbl.t2{color:var(--t2)}.tier-lbl.t3{color:var(--t3)}.tier-lbl.tm{color:var(--tm)}
+.tier-badge{padding:2px 8px;border-radius:20px;color:#fff;font-size:10px;font-weight:700}
+.tier-lbl.t1 .tier-badge{background:var(--t1)}.tier-lbl.t2 .tier-badge{background:var(--t2)}
+.tier-lbl.t3 .tier-badge{background:var(--t3)}.tier-lbl.tm .tier-badge{background:var(--tm)}
+
+/* SECTION CARDS */
+.sec-card{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1.25rem;margin-bottom:10px;border-left-width:3px;border-left-style:solid}
+.sec-card.t1{border-left-color:var(--t1)}.sec-card.t2{border-left-color:var(--t2)}
+.sec-card.t3{border-left-color:var(--t3)}.sec-card.tm{border-left-color:var(--tm)}
+.sec-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:1.1rem}
+.sec-badge{width:26px;height:26px;min-width:26px;border-radius:50%;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.sec-card.t1 .sec-badge{background:var(--t1)}.sec-card.t2 .sec-badge{background:var(--t2)}
+.sec-card.t3 .sec-badge{background:var(--t3)}.sec-card.tm .sec-badge{background:var(--tm)}
+.sec-title{font-size:14px;font-weight:600;color:var(--z-text);line-height:1.2}
+.sec-desc{font-size:11px;color:var(--z-text-sec);margin-top:2px;line-height:1.4}
+
+/* FORM FIELDS */
+.fld{margin-bottom:12px}
+.fl{font-size:11px;font-weight:600;color:var(--z-text-sec);display:block;margin-bottom:4px;letter-spacing:.02em}
+.fld input[type=text],.fld textarea{width:100%;font-size:13px;padding:8px 10px;border:0.5px solid var(--z-border);border-radius:8px;background:#fff;color:var(--z-text);font-family:inherit;line-height:1.5}
+.fld input:focus,.fld textarea:focus{outline:none;border-color:var(--z-teal);box-shadow:0 0 0 2px rgba(17,128,140,.08)}
+.fld textarea{resize:none}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:500px){.two-col{grid-template-columns:1fr}}
+
+/* PLATFORMS */
+.plat-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.plat-btn{font-size:12px;padding:5px 12px;border-radius:20px;border:1.5px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer;font-family:inherit;font-weight:500;transition:all .15s}
+.plat-btn.on{background:var(--t1-l);border-color:var(--t1);color:var(--t1);font-weight:600}
+.plat-url-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.plat-url-label{font-size:12px;font-weight:600;color:var(--z-text-sec);min-width:80px;flex-shrink:0}
+.plat-url-inp{flex:1;font-size:12px;padding:6px 10px;border:0.5px solid var(--z-border);border-radius:7px;font-family:inherit;color:var(--z-text)}
+.plat-url-inp:focus{outline:none;border-color:var(--t1)}
+
+/* SWOT */
+.swot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
+.swot-card{border-radius:8px;padding:10px;border-left:3px solid}
+.swot-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.swot-card textarea{width:100%;font-size:12px;padding:3px;border:none;background:transparent;resize:none;line-height:1.6;font-family:inherit;color:var(--z-text)}
+.swot-card textarea:focus{outline:none}
+.swot-f{border-color:#1B6B3A;background:#d7f0e0}.swot-f .swot-lbl{color:#0D4022}
+.swot-w{border-color:#9A7A1F;background:#FBF6E8}.swot-w .swot-lbl{color:#5C4810}
+.swot-o{border-color:#11808C;background:#E3F1F2}.swot-o .swot-lbl{color:#0A5961}
+.swot-a{border-color:#D9814E;background:#FBEEE4}.swot-a .swot-lbl{color:#8A4020}
+
+/* DYNAMIC LISTS */
+.dlist-item{background:var(--z-bg);border-radius:8px;padding:10px 12px;margin-bottom:8px;border:0.5px solid var(--z-border)}
+.dlist-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.dlist-num{font-size:11px;font-weight:600;color:var(--z-teal)}
+.dlist-del{font-size:11px;color:var(--z-terra);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px}
+.dlist-del:hover{background:var(--z-terra-light)}
+.dlist-item label{font-size:11px;color:var(--z-text-sec);font-weight:600;display:block;margin-top:6px;margin-bottom:3px}
+.dlist-item input[type=text]{width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;background:#fff;color:var(--z-text)}
+.dlist-item input:focus{outline:none;border-color:var(--z-teal)}
+.add-btn{width:100%;padding:8px;font-size:12px;border-radius:8px;border:1px dashed var(--z-teal);background:transparent;cursor:pointer;color:var(--z-teal);font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;margin-top:4px;transition:background .15s}
+.add-btn:hover{background:var(--z-teal-light)}
+
+/* CONTRACT */
+.cs-row{display:flex;gap:6px;margin-bottom:12px}
+.cs-btn{font-size:12px;padding:6px 16px;border-radius:20px;cursor:pointer;font-family:inherit;font-weight:600;background:#fff;border:1.5px solid var(--z-border);color:var(--z-text-sec);transition:all .15s}
+.cs-btn.is-pendente{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
+.cs-btn.is-assinado{background:#d7f0e0;border-color:#1B6B3A;color:#1B6B3A}
+
+/* PLAN CARDS */
+.plan-card{background:var(--z-teal-light);border:0.5px solid rgba(17,128,140,.3);border-radius:10px;padding:14px;margin-bottom:8px}
+.plan-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.plan-period{font-size:14px;font-weight:600;color:var(--z-teal)}
+.plan-cycle{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--z-teal);color:#fff;font-weight:600}
+.plan-links{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.plan-link{display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;border-radius:7px;font-size:12px;font-weight:500;text-decoration:none;font-family:inherit;border:none;cursor:pointer;transition:opacity .15s}
+.plan-link:hover{opacity:.85}
+.plan-vitor{background:var(--z-teal);color:#fff}
+.plan-gabi{background:var(--z-terra-light);color:var(--z-terra);border:1px solid var(--z-terra)}
+
+/* LOADING / TOAST */
+.loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:100;font-size:13px;color:var(--z-text-sec)}
+.loading.hide{display:none}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;font-size:13px;padding:10px 20px;border-radius:30px;opacity:0;transition:opacity .3s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* DOC MODE */
+.doc-back{background:#fff;border:1.5px solid var(--z-teal);color:var(--z-teal);border-radius:8px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;margin-bottom:1.25rem;display:inline-flex;align-items:center;gap:6px}
+.doc-back:hover{background:var(--z-teal-light)}
+.doc-card{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1.5rem;margin-bottom:1.25rem;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.doc-card-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--z-teal);display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.doc-card-title::after{content:'';flex:1;height:1px;background:var(--z-border)}
+.doc-field{margin-bottom:12px}
+.doc-label{font-size:10px;font-weight:600;letter-spacing:.05em;color:var(--z-text-sec);margin-bottom:3px;text-transform:uppercase}
+.doc-value{font-size:13px;color:var(--z-text);line-height:1.6;white-space:pre-line}
+.doc-pills{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.doc-pill{font-size:11px;padding:2px 9px;border-radius:20px;font-weight:600;background:var(--z-teal-light);color:var(--z-teal)}
+.doc-pill.terra{background:var(--z-terra-light);color:var(--z-terra)}
+.doc-swot-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.doc-swot-card{border-radius:8px;padding:10px 12px;border-left:3px solid}
+.doc-swot-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.doc-swot-body{font-size:12px;line-height:1.7;color:var(--z-text);white-space:pre-line}
+.doc-ref-item{background:var(--z-bg);border-radius:8px;padding:10px;margin-bottom:6px;border-left:3px solid var(--z-teal)}
+.doc-ref-nome{font-size:13px;font-weight:600;color:var(--z-text)}
+.doc-ref-gosta{font-size:12px;color:var(--z-text-sec);margin-top:2px}
+.doc-ref-link{font-size:11px;color:var(--z-teal);text-decoration:none;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="loading" id="loading">Carregando hub...</div>
+  <div class="toast" id="toast"></div>
+  <div id="view-edit"></div>
+  <div id="view-doc" style="display:none"></div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDCenC4zYJi9X6MEe1z4hOnWQ2KP14FsWQ",
+  authDomain: "zelo-planejamento.firebaseapp.com",
+  projectId: "zelo-planejamento",
+  storageBucket: "zelo-planejamento.firebasestorage.app",
+  messagingSenderId: "9928446037",
+  appId: "1:9928446037:web:790f4c7962e23e3b7084dc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const CLIENT_ID = "ze lo";
+const CLIENT_NOME = "Zelo Consultoria";
+const MODE = new URLSearchParams(window.location.search).get('mode') || '';
+const DOC_REF = doc(db, 'hubs', CLIENT_ID);
+
+// ── ESTADO PADRÃO (dados Zelo pré-populados do briefing) ─────────────────────
+const defaults = {
+  dadosEmpresa: {
+    razaoSocial: "Zelo Consultoria em Educação e Desenvolvimento Infantil Ltda.",
+    nomeFantasia: "Zelo Consultoria em Educação e Desenvolvimento Infantil",
+    cnpj: "",
+    endereco: "Rua Maestro Mendanha, 91/404, Porto Alegre — RS",
+    telefone: "(51) 993019356",
+    email: "consultoria.zelo@gmail.com",
+    site: "",
+    responsavel: "",
+    cargo: "",
+    whatsapp: ""
+  },
+  dadosFiscais: {
+    emailNFe: "", banco: "", agencia: "", conta: "", pix: "",
+    responsavelFin: "", cpfFin: ""
+  },
+  plataformas: [
+    { nome: "Instagram", ativa: true, url: "" },
+    { nome: "Facebook", ativa: true, url: "" },
+    { nome: "LinkedIn", ativa: true, url: "" },
+    { nome: "Blog", ativa: true, url: "" },
+    { nome: "TikTok", ativa: false, url: "" },
+    { nome: "YouTube", ativa: false, url: "" }
+  ],
+  presencaDigital: { gestorAnterior: "", temIdentidadeVisual: "" },
+  relacaoRedes: {
+    motivacao: "",
+    oQueJaTentou: "",
+    disponibilidade: "",
+    fontesInternas: "",
+    materiaisExistentes: ""
+  },
+  identidade: {
+    posicionamento: "Trabalhamos com formação de profissionais e consultoria nas áreas da educação e do desenvolvimento infantil, com foco em práticas que respeitam os direitos das crianças.",
+    naoE: "Escola ou Centro de Educação Infantil. Não somos ONG. Não somos apenas uma escola de cursos online.",
+    slogan: "Zelando quem cuida da infância",
+    adjetivos: "técnico, baseado em evidências, acessível, ético, comprometido com direitos",
+    temasOK: "educação infantil, desenvolvimento infantil, primeira infância, formação de professores, políticas públicas, direitos das crianças, gestão educacional",
+    temasEvitar: "conteúdo motivacional sem embasamento, religião, política partidária, rivalidades entre profissionais"
+  },
+  publicoAlvo: {
+    descricao: "Profissionais da linha de frente: professores, auxiliares, visitadores domiciliares.\nGestores técnicos: diretores, coordenadores, técnicos de secretaria.\nGestores públicos: secretarias de educação, saúde e assistência social.",
+    perguntaChave: "",
+    oQuePrecisaSaber: "",
+    jornada: ""
+  },
+  objetivos: {
+    objetivo6m: "Aumentar o reconhecimento da marca entre profissionais e gestores da área.\nIncidir em tomadores de decisão nas políticas públicas de infância.\nGerar novos leads para serviços de formação e consultoria.",
+    metrica: "Aumentar 30% as métricas de engajamento (curtidas, comentários, compartilhamentos).\nAumentar 20% a busca espontânea pelos serviços.\nGerar ao menos 2 novos contratos oriundos das redes.",
+    eventosProximos: "",
+    fracasso: ""
+  },
+  referencias: [
+    { nome: "Instituto Alana", link: "https://alana.org.br", oQueGosta: "Biblioteca de conteúdos de referência e presença consistente nas redes." },
+    { nome: "Fundação Maria Cecília Souto Vidigal", link: "https://www.fmcsv.org.br", oQueGosta: "Produção e curadoria de material digital de qualidade sobre primeira infância." },
+    { nome: "Criança e Consumo", link: "https://criancaeconsumo.org.br", oQueGosta: "Página no Instagram com abordagem temática específica e clara." },
+    { nome: "Andi Comunicação e Infância", link: "https://andi.org.br", oQueGosta: "Newsletter de referência sobre direitos de crianças e adolescentes." },
+    { nome: "Van Leer Foundation", link: "https://vanleerfoundation.org", oQueGosta: "Trabalha com cidades para crianças, posicionamento internacional sólido." },
+    { nome: "Avante", link: "https://avante.org.br", oQueGosta: "Organização similar à Zelo, com bom posicionamento nas redes." }
+  ],
+  formatoEvitar: "Conteúdo excessivamente motivacional, posts de inspiração sem embasamento técnico, reels com tendências superficiais.",
+  conteudoProprioFav: "",
+  tomEscritoRef: "",
+  swot: {
+    forcas: "Profissionais de alto nível com formação de excelência e experiência prática consolidada\nEntrega do serviço bem feita: prazos, cronograma, acompanhamento e qualidade técnica\nRelação com o cliente baseada no cuidado e na ética\nValores justos e transparentes",
+    fraquezas: "Empresa pequena com pouca organização profissional sistematizada\nPouca capacidade de expansão rápida dos serviços\nAusência de sistemática de divulgação do que se faz",
+    oportunidades: "Avanços nas políticas públicas nas áreas da infância e da educação\nCrescente interesse social pelos temas ligados à infância\nAumento das exigências burocráticas para contratação pelos municípios\nPoucas empresas concorrentes no segmento",
+    ameacas: "Questões políticas: mudança de partido na gestão de um município pode encerrar contratos\nExcesso de oferta de formação por pessoas físicas sem comprovação de qualificação"
+  },
+  concorrentes: [
+    { nome: "Instituto Stella Goulart", link: "https://www.institutostellagoulart.ong.br", diferencial: "Profissionais altamente reconhecidos na área da infância." },
+    { nome: "Vincular", link: "", diferencial: "Possuem plataforma própria para cursos online." }
+  ],
+  guiaVoz: {
+    tomFrase: "Institucional, técnico, baseado em direitos — sem romantismo pedagógico.",
+    palavrasOK: "formação, consultoria, qualidade, direitos, desenvolvimento, evidências, marcos, parâmetros",
+    palavrasEvitar: "vocação, missão, amor pela criança, guerreiro, batalha, frases de impacto vazias, linguagem motivacional",
+    exemplos: "",
+    regras: "Embasar em referências reconhecidas: Heckman, Pikler, Reggio Emilia, Marco Legal da Primeira Infância, BNCC, Parâmetros Nacionais de Qualidade.\nUsar linguagem acessível sem abrir mão do rigor técnico.\nEvitar romantismo pedagógico e apelos emocionais sem substância."
+  },
+  contrato: {
+    status: "pendente", link: "", dataInicio: "", dataFim: "", valor: "", pagamento: "", obs: ""
+  },
+  materiais: [],
+  planejamentos: [
+    {
+      periodo: "Maio — Junho 2027",
+      ciclo: "Ciclo 1 de 4",
+      status: "em andamento",
+      linkVitor: "../maio-junho-2027/",
+      linkGabi: "../maio-junho-2027/?view=validacao"
+    }
+  ]
+};
+
+let estado = JSON.parse(JSON.stringify(defaults));
+
+// ── HELPERS ──────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function getByPath(obj, path) {
+  return path.split('.').reduce((o, k) => (o != null && o[k] !== undefined ? o[k] : ''), obj);
+}
+function setByPath(obj, path, val) {
+  const keys = path.split('.');
+  const last = keys.pop();
+  const target = keys.reduce((o, k) => o[k], obj);
+  if (target != null) target[last] = val;
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+let saveTimer = null;
+function agendarSalvamento() {
+  const el = document.getElementById('save-status');
+  if (el) { el.textContent = '● Salvando...'; el.classList.add('saving'); }
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(salvarNoFirebase, 1200);
+}
+
+// ── FIREBASE ─────────────────────────────────────────────────────────────────
+async function carregarDoFirebase() {
+  try {
+    const snap = await getDoc(DOC_REF);
+    if (snap.exists()) {
+      const data = snap.data();
+      for (const key of Object.keys(data)) {
+        if (key in estado) estado[key] = data[key];
+      }
+    }
+  } catch (e) {
+    console.warn('Firebase load failed, using defaults', e);
+  }
+}
+async function salvarNoFirebase() {
+  try {
+    await setDoc(DOC_REF, { ...estado, updatedAt: new Date().toISOString() });
+    const el = document.getElementById('save-status');
+    if (el) { el.textContent = '✓ Salvo'; el.classList.remove('saving'); }
+    setTimeout(() => {
+      const e2 = document.getElementById('save-status');
+      if (e2) e2.textContent = '';
+    }, 2500);
+  } catch (e) {
+    showToast('Erro ao salvar. Verifique a conexão.');
+    console.error(e);
+  }
+}
+
+// ── FIELD HELPER ─────────────────────────────────────────────────────────────
+function fld(label, path, placeholder, type, rows) {
+  const val = esc(String(getByPath(estado, path) || ''));
+  const ph = esc(placeholder || '');
+  const attrs = `data-path="${path}" oninput="updateField(this)"`;
+  const inp = (type === 'textarea')
+    ? `<textarea rows="${rows || 3}" placeholder="${ph}" ${attrs}>${val}</textarea>`
+    : `<input type="text" value="${val}" placeholder="${ph}" ${attrs}>`;
+  return `<div class="fld"><label class="fl">${label}</label>${inp}</div>`;
+}
+
+// ── RENDER SECTIONS ───────────────────────────────────────────────────────────
+function renderSecA() {
+  document.getElementById('bod-a').innerHTML = `
+    <div class="two-col">
+      ${fld('Razão Social','dadosEmpresa.razaoSocial','Nome jurídico completo...')}
+      ${fld('Nome Fantasia','dadosEmpresa.nomeFantasia','Como a empresa é conhecida...')}
+    </div>
+    ${fld('CNPJ','dadosEmpresa.cnpj','00.000.000/0000-00')}
+    ${fld('Endereço completo','dadosEmpresa.endereco','Rua, número, bairro, cidade — UF')}
+    <div class="two-col">
+      ${fld('Telefone','dadosEmpresa.telefone','(00) 0 0000-0000')}
+      ${fld('E-mail de contato','dadosEmpresa.email','contato@empresa.com')}
+    </div>
+    ${fld('Site','dadosEmpresa.site','https://')}
+    <div class="two-col">
+      ${fld('Responsável pelo projeto','dadosEmpresa.responsavel','Nome completo')}
+      ${fld('Cargo','dadosEmpresa.cargo','Diretor, Sócio, Coordenador...')}
+    </div>
+    ${fld('WhatsApp do responsável','dadosEmpresa.whatsapp','(00) 0 0000-0000')}`;
+}
+
+function renderSecB() {
+  document.getElementById('bod-b').innerHTML = `
+    ${fld('E-mail para envio de NF-e','dadosFiscais.emailNFe','email@empresa.com')}
+    ${fld('Chave PIX','dadosFiscais.pix','CPF, e-mail, telefone ou chave aleatória')}
+    <div class="two-col">
+      ${fld('Banco','dadosFiscais.banco','Nome do banco')}
+      ${fld('Agência','dadosFiscais.agencia','0000-0')}
+    </div>
+    ${fld('Conta corrente','dadosFiscais.conta','00000-0')}
+    <div class="two-col">
+      ${fld('Responsável financeiro','dadosFiscais.responsavelFin','Nome completo')}
+      ${fld('CPF do responsável','dadosFiscais.cpfFin','000.000.000-00')}
+    </div>`;
+}
+
+function renderSecC() {
+  const plats = estado.plataformas;
+  const btns = plats.map((p, i) =>
+    `<button class="plat-btn${p.ativa?' on':''}" onclick="togglePlat(${i})">${esc(p.nome)}</button>`
+  ).join('');
+  let urls = '';
+  plats.forEach((p, i) => {
+    if (p.ativa) {
+      urls += `<div class="plat-url-row">
+        <span class="plat-url-label">${esc(p.nome)}</span>
+        <input class="plat-url-inp" type="text" value="${esc(p.url)}"
+          placeholder="URL do perfil..." oninput="updatePlatUrl(${i},this)">
+      </div>`;
+    }
+  });
+  document.getElementById('bod-c').innerHTML = `
+    <div class="fld"><label class="fl">Plataformas que a empresa usa hoje</label>
+      <div class="plat-grid">${btns}</div>
+    </div>
+    <div id="plat-urls">${urls}</div>
+    ${fld('Já teve um gestor de redes? Por quanto tempo?','presencaDigital.gestorAnterior','Ex.: Sim, 6 meses com agência X; ou: Nunca tivemos')}
+    ${fld('Tem identidade visual definida? Tem manual de marca?','presencaDigital.temIdentidadeVisual','Sim/Não — e onde está o arquivo?')}`;
+}
+
+function renderSecD() {
+  document.getElementById('bod-d').innerHTML = `
+    ${fld('Por que você quer investir em marketing de conteúdo agora?','relacaoRedes.motivacao','O que motivou essa decisão neste momento?','textarea',3)}
+    ${fld('O que já tentou nas redes e não funcionou?','relacaoRedes.oQueJaTentou','Posts esporádicos, contratou freelancer, impulsionou posts...','textarea',3)}
+    ${fld('Tem disponibilidade para participar ativamente? (aparecer em vídeos, aprovar conteúdo em até 48h)','relacaoRedes.disponibilidade','Sim / Não / Parcialmente — explique como prefere participar')}
+    ${fld('Quem dentro da empresa pode fornecer informações, cases e bastidores?','relacaoRedes.fontesInternas','Nomes e cargos das pessoas que podem contribuir com conteúdo')}
+    ${fld('Tem fotos, vídeos ou materiais existentes que possamos usar?','relacaoRedes.materiaisExistentes','Onde estão? Google Drive, WhatsApp, HD externo...')}`;
+}
+
+function renderSecE() {
+  document.getElementById('bod-e').innerHTML = `
+    ${fld('Posicionamento (como você descreve a empresa em 1-2 frases?)','identidade.posicionamento','Ex.: Somos uma consultoria especializada em...','textarea',3)}
+    ${fld('O que a empresa NÃO é / não quer ser associada','identidade.naoE','Ex.: Não somos escola, não somos ONG, não somos curso online...','textarea',2)}
+    ${fld('Slogan','identidade.slogan','Tagline ou frase síntese da marca')}
+    ${fld('Adjetivos que descrevem o tom ideal (separados por vírgula)','identidade.adjetivos','Ex.: técnico, acessível, ético, comprometido...')}
+    ${fld('Temas centrais para a marca (separados por vírgula)','identidade.temasOK','Ex.: educação infantil, formação de professores, políticas públicas...')}
+    ${fld('Temas que devemos EVITAR (separados por vírgula)','identidade.temasEvitar','Ex.: política partidária, religião, conteúdo motivacional vazio...')}`;
+}
+
+function renderSecF() {
+  document.getElementById('bod-f').innerHTML = `
+    ${fld('Quem é o público ideal? (cargo, contexto, dor principal)','publicoAlvo.descricao','Ex.: Professores de CEIs municipais que precisam de formação continuada...','textarea',4)}
+    ${fld('Que pergunta esse público costuma ter que a marca pode responder?','publicoAlvo.perguntaChave','Ex.: "Como trabalhar o desenvolvimento cognitivo de 0-3 anos na prática?"','textarea',2)}
+    ${fld('O que esse público AINDA não sabe que precisa saber?','publicoAlvo.oQuePrecisaSaber','Ex.: Que a qualidade na creche depende mais da formação do adulto do que dos brinquedos...','textarea',2)}
+    ${fld('Em qual momento da jornada essa pessoa encontra a marca?','publicoAlvo.jornada','Ex.: Quando busca formação para a equipe, quando precisa de consultoria para nova unidade...')}`;
+}
+
+function renderSecG() {
+  document.getElementById('bod-g').innerHTML = `
+    ${fld('Qual é o principal objetivo nos próximos 6 meses?','objetivos.objetivo6m','Ex.: Aumentar reconhecimento, gerar leads, incidir em políticas...','textarea',3)}
+    ${fld('Como você vai saber que deu certo? (métrica concreta)','objetivos.metrica','Ex.: +30% de engajamento, 2 novos contratos via redes...','textarea',2)}
+    ${fld('Tem algum evento, lançamento ou data importante nos próximos 3 meses?','objetivos.eventosProximos','Ex.: Lançamento de curso, seminário, aniversário da empresa...')}
+    ${fld('O que seria considerado um "fracasso" para você?','objetivos.fracasso','Ex.: Postar e não ter engajamento, não receber nenhum contato novo...')}`;
+}
+
+function renderRefsList() {
+  document.getElementById('refs-list').innerHTML = estado.referencias.map((r, i) => `
+    <div class="dlist-item">
+      <div class="dlist-head">
+        <span class="dlist-num">Referência ${i+1}</span>
+        <button class="dlist-del" onclick="removeRef(${i})">Remover</button>
+      </div>
+      <label>Nome da marca ou projeto</label>
+      <input type="text" value="${esc(r.nome)}" placeholder="Ex.: Instituto Alana" oninput="updateRef(${i},'nome',this)">
+      <label>Link</label>
+      <input type="text" value="${esc(r.link)}" placeholder="https://..." oninput="updateRef(${i},'link',this)">
+      <label>O que você gosta nessa referência?</label>
+      <input type="text" value="${esc(r.oQueGosta)}" placeholder="Ex.: Como escrevem, uso do Instagram, curadoria de conteúdo..." oninput="updateRef(${i},'oQueGosta',this)">
+    </div>`).join('');
+}
+
+function renderSecH() {
+  document.getElementById('bod-h').innerHTML = `
+    <div id="refs-list"></div>
+    <button class="add-btn" onclick="addRef()">+ Adicionar referência</button>
+    <div style="height:12px"></div>
+    ${fld('Formas de conteúdo que você NUNCA quer ver na sua marca','formatoEvitar','Ex.: Reels com dancinhas, posts de autoajuda, stories diários sem propósito...')}
+    ${fld('Tem algum conteúdo próprio (post, vídeo, texto) que já fez e gostou muito?','conteudoProprioFav','Link ou descrição do conteúdo...')}
+    ${fld('Referência de tom escrito (tem um texto seu que representa bem a voz da marca?)','tomEscritoRef','Link para site, e-mail de apresentação, proposta comercial...')}`;
+  renderRefsList();
+}
+
+function renderConcsList() {
+  document.getElementById('concs-list').innerHTML = estado.concorrentes.map((c, i) => `
+    <div class="dlist-item">
+      <div class="dlist-head">
+        <span class="dlist-num">Concorrente ${i+1}</span>
+        <button class="dlist-del" onclick="removeConc(${i})">Remover</button>
+      </div>
+      <label>Nome da empresa / projeto</label>
+      <input type="text" value="${esc(c.nome)}" placeholder="Nome..." oninput="updateConc(${i},'nome',this)">
+      <label>Link</label>
+      <input type="text" value="${esc(c.link)}" placeholder="https://..." oninput="updateConc(${i},'link',this)">
+      <label>Diferencial deles (por que o cliente escolheria eles?)</label>
+      <input type="text" value="${esc(c.diferencial)}" placeholder="Ex.: Têm plataforma própria, são mais reconhecidos..." oninput="updateConc(${i},'diferencial',this)">
+    </div>`).join('');
+}
+
+function renderSecI() {
+  const q = [
+    { key:'forcas', lbl:'Forças', cls:'swot-f' },
+    { key:'fraquezas', lbl:'Fraquezas', cls:'swot-w' },
+    { key:'oportunidades', lbl:'Oportunidades', cls:'swot-o' },
+    { key:'ameacas', lbl:'Ameaças', cls:'swot-a' }
+  ];
+  const swotHTML = q.map(qd => `
+    <div class="swot-card ${qd.cls}">
+      <div class="swot-lbl">${qd.lbl}</div>
+      <textarea rows="5" oninput="updateSwot('${qd.key}',this.value)"
+        placeholder="Um item por linha...">${esc(estado.swot[qd.key])}</textarea>
+    </div>`).join('');
+  document.getElementById('bod-i').innerHTML = `
+    <div class="fld"><label class="fl">SWOT — um item por linha em cada quadrante</label>
+      <div class="swot-grid">${swotHTML}</div>
+    </div>
+    <div class="fld"><label class="fl">Análise de concorrentes</label>
+      <div id="concs-list"></div>
+      <button class="add-btn" onclick="addConc()">+ Adicionar concorrente</button>
+    </div>`;
+  renderConcsList();
+}
+
+function renderSecJ() {
+  document.getElementById('bod-j').innerHTML = `
+    ${fld('Tom em uma frase','guiaVoz.tomFrase','Ex.: Técnico, baseado em evidências, acessível, sem romantismo...')}
+    ${fld('Palavras e expressões que FUNCIONAM para a marca (separadas por vírgula)','guiaVoz.palavrasOK','Ex.: formação, consultoria, qualidade, direitos, evidências...')}
+    ${fld('Palavras e expressões a EVITAR (separadas por vírgula)','guiaVoz.palavrasEvitar','Ex.: vocação, missão, amor, guerreiro, batalha...')}
+    ${fld('Exemplos de bons textos / referência de conteúdo','guiaVoz.exemplos','Links ou descrição de textos que representam bem o tom...','textarea',2)}
+    ${fld('Regras de linguagem','guiaVoz.regras','Ex.: embasar em..., usar "você", citar dados, evitar...','textarea',3)}`;
+}
+
+function renderSecK() {
+  const c = estado.contrato;
+  document.getElementById('bod-k').innerHTML = `
+    <div class="fld"><label class="fl">Status do contrato</label>
+      <div class="cs-row">
+        <button class="cs-btn${c.status==='pendente'?' is-pendente':''}" onclick="setContrato('pendente')">⏳ Pendente</button>
+        <button class="cs-btn${c.status==='assinado'?' is-assinado':''}" onclick="setContrato('assinado')">✓ Assinado</button>
+      </div>
+    </div>
+    ${fld('Link para o PDF do contrato','contrato.link','Google Drive, Dropbox...')}
+    <div class="two-col">
+      ${fld('Data de início','contrato.dataInicio','DD/MM/AAAA')}
+      ${fld('Data de término','contrato.dataFim','DD/MM/AAAA')}
+    </div>
+    <div class="two-col">
+      ${fld('Valor mensal','contrato.valor','R$ 0.000,00')}
+      ${fld('Forma de pagamento','contrato.pagamento','PIX, boleto, transferência...')}
+    </div>
+    ${fld('Observações contratuais','contrato.obs','Notas internas, condições especiais...','textarea',2)}`;
+}
+
+function renderMatsList() {
+  document.getElementById('mats-list').innerHTML = estado.materiais.map((m, i) => `
+    <div class="dlist-item">
+      <div class="dlist-head">
+        <span class="dlist-num">${esc(m.titulo || ('Material ' + (i+1)))}</span>
+        <button class="dlist-del" onclick="removeMat(${i})">Remover</button>
+      </div>
+      <label>Tipo</label>
+      <input type="text" value="${esc(m.tipo)}" placeholder="Ex.: Branding, Guia de voz, Moodboard, Save..." oninput="updateMat(${i},'tipo',this)">
+      <label>Título</label>
+      <input type="text" value="${esc(m.titulo)}" placeholder="Nome do material..." oninput="updateMat(${i},'titulo',this)">
+      <label>Link</label>
+      <input type="text" value="${esc(m.link)}" placeholder="https://..." oninput="updateMat(${i},'link',this)">
+    </div>`).join('');
+}
+
+function renderSecL() {
+  document.getElementById('bod-l').innerHTML = `
+    <div id="mats-list"></div>
+    <button class="add-btn" onclick="addMat()">+ Adicionar material</button>`;
+  renderMatsList();
+}
+
+function renderSecM() {
+  document.getElementById('bod-m').innerHTML = estado.planejamentos.map(p => `
+    <div class="plan-card">
+      <div class="plan-card-head">
+        <div class="plan-period">${esc(p.periodo)}</div>
+        <div class="plan-cycle">${esc(p.ciclo)}</div>
+      </div>
+      <div class="plan-links">
+        <a class="plan-link plan-vitor" href="${esc(p.linkVitor)}" target="_blank">✏ Editar (Vitor)</a>
+        <a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank">👁 Validação (Gabi)</a>
+      </div>
+    </div>`).join('') || '<p style="font-size:13px;color:var(--z-text-sec)">Nenhum planejamento adicionado ainda.</p>';
+}
+
+// ── BUILD HUB (edit mode) ─────────────────────────────────────────────────────
+function buildHub() {
+  function sc(id, tier, badge, title, desc) {
+    return `<div class="sec-card ${tier}">
+      <div class="sec-head">
+        <div class="sec-badge">${badge}</div>
+        <div><div class="sec-title">${title}</div><div class="sec-desc">${desc}</div></div>
+      </div>
+      <div id="bod-${id}"></div>
+    </div>`;
+  }
+  document.getElementById('view-edit').innerHTML = `
+    <div class="hub-header">
+      <div class="hh-lbl">Hub do cliente</div>
+      <div class="hh-title">${esc(CLIENT_NOME)}</div>
+      <div class="hh-sub">Onboarding · Briefing · Materiais · Planejamentos</div>
+      <div class="hh-save" id="save-status"></div>
+    </div>
+    <div class="hub-actions">
+      <button class="hub-btn" id="btn-copiar" onclick="copiarLink()">📋 Copiar link para o cliente</button>
+      <button class="hub-btn primary" onclick="abrirDoc()">→ Modo apresentação</button>
+    </div>
+
+    <div class="tier-lbl t1"><span class="tier-badge">Tier 1</span> Cliente preenche sozinho</div>
+    ${sc('a','t1','A','Dados da empresa','Informações básicas de cadastro')}
+    ${sc('b','t1','B','Dados fiscais para NF-e','Para emissão de nota fiscal eletrônica')}
+    ${sc('c','t1','C','Presença digital atual','Quais plataformas usa e com que frequência')}
+    ${sc('d','t1','D','Relação com as redes','Histórico, expectativas e disponibilidade')}
+
+    <div class="tier-lbl t2"><span class="tier-badge">Tier 2</span> Vitor + cliente juntos na reunião</div>
+    ${sc('e','t2','E','Identidade de marca','Posicionamento, tom, o que é e o que não é')}
+    ${sc('f','t2','F','Público-alvo aprofundado','Quem a marca quer alcançar e o que esse público precisa')}
+    ${sc('g','t2','G','Objetivos e definição de sucesso','O que queremos conquistar e como medir')}
+    ${sc('h','t2','H','Referências e inspirações','Marcas admiradas, formatos a evitar, referências de voz')}
+
+    <div class="tier-lbl t3"><span class="tier-badge">Tier 3</span> Vitor preenche internamente</div>
+    ${sc('i','t3','I','Análise estratégica','SWOT e análise de concorrentes')}
+    ${sc('j','t3','J','Guia de voz e comunicação','Tom, vocabulário, regras de linguagem')}
+    ${sc('k','t3','K','Contrato e condições','Status, link para o PDF, datas e valor')}
+    ${sc('l','t3','L','Materiais de apoio e links','Branding, moodboard, referências internas')}
+
+    <div class="tier-lbl tm"><span class="tier-badge">Planejamentos</span></div>
+    ${sc('m','tm','M','Ciclos de conteúdo','Planejamentos bimestrais integrados ao hub')}`;
+
+  renderSecA(); renderSecB(); renderSecC(); renderSecD();
+  renderSecE(); renderSecF(); renderSecG(); renderSecH();
+  renderSecI(); renderSecJ(); renderSecK(); renderSecL();
+  renderSecM();
+}
+
+// ── BUILD DOC VIEW (presentation mode) ───────────────────────────────────────
+function buildDocView() {
+  function pillsCSV(str, cls) {
+    if (!str) return '<span style="color:#bbb;font-size:12px">—</span>';
+    return str.split(',').map(s => s.trim()).filter(Boolean)
+      .map(s => `<span class="doc-pill${cls?' '+cls:''}">${esc(s)}</span>`).join('');
+  }
+  function dv(v) {
+    return v
+      ? `<div class="doc-value">${esc(v)}</div>`
+      : '<span style="color:#bbb;font-size:12px">—</span>';
+  }
+
+  const id = estado.identidade;
+  const pub = estado.publicoAlvo;
+  const obj = estado.objetivos;
+  const sw = estado.swot;
+  const voz = estado.guiaVoz;
+  const refs = estado.referencias.filter(r => r.nome);
+
+  const swotCards = [
+    { key:'forcas', lbl:'Forças', cls:'swot-f' },
+    { key:'fraquezas', lbl:'Fraquezas', cls:'swot-w' },
+    { key:'oportunidades', lbl:'Oportunidades', cls:'swot-o' },
+    { key:'ameacas', lbl:'Ameaças', cls:'swot-a' }
+  ].map(q => `
+    <div class="doc-swot-card ${q.cls}">
+      <div class="doc-swot-lbl">${q.lbl}</div>
+      <div class="doc-swot-body">${esc(sw[q.key] || '—')}</div>
+    </div>`).join('');
+
+  const refsHTML = refs.map(r => `
+    <div class="doc-ref-item">
+      <div class="doc-ref-nome">${esc(r.nome)}
+        ${r.link ? `<a class="doc-ref-link" href="${esc(r.link)}" target="_blank">↗ ver</a>` : ''}
+      </div>
+      ${r.oQueGosta ? `<div class="doc-ref-gosta">${esc(r.oQueGosta)}</div>` : ''}
+    </div>`).join('');
+
+  document.getElementById('view-doc').innerHTML = `
+    <button class="doc-back" onclick="fecharDoc()">← Editar documento</button>
+
+    <div class="hub-header">
+      <div class="hh-lbl">Apresentação de marca</div>
+      <div class="hh-title">${esc(CLIENT_NOME)}</div>
+      ${id.slogan ? `<div class="hh-sub">"${esc(id.slogan)}"</div>` : ''}
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-card-title">Identidade da marca</div>
+      <div class="doc-field"><div class="doc-label">Posicionamento</div>${dv(id.posicionamento)}</div>
+      <div class="doc-field"><div class="doc-label">O que não somos</div>${dv(id.naoE)}</div>
+      <div class="doc-field"><div class="doc-label">Tom da marca</div><div class="doc-pills">${pillsCSV(id.adjetivos)}</div></div>
+      <div class="doc-field"><div class="doc-label">Temas centrais</div><div class="doc-pills">${pillsCSV(id.temasOK)}</div></div>
+      <div class="doc-field"><div class="doc-label">Temas a evitar</div><div class="doc-pills">${pillsCSV(id.temasEvitar,'terra')}</div></div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-card-title">Público-alvo</div>
+      <div class="doc-field"><div class="doc-label">Quem é</div>${dv(pub.descricao)}</div>
+      ${pub.perguntaChave ? `<div class="doc-field"><div class="doc-label">Pergunta que a marca responde</div>${dv(pub.perguntaChave)}</div>` : ''}
+      ${pub.oQuePrecisaSaber ? `<div class="doc-field"><div class="doc-label">O que ainda não sabe que precisa saber</div>${dv(pub.oQuePrecisaSaber)}</div>` : ''}
+      ${pub.jornada ? `<div class="doc-field"><div class="doc-label">Momento da jornada</div>${dv(pub.jornada)}</div>` : ''}
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-card-title">Objetivos</div>
+      <div class="doc-field"><div class="doc-label">Objetivo nos próximos 6 meses</div>${dv(obj.objetivo6m)}</div>
+      <div class="doc-field"><div class="doc-label">Como medir o sucesso</div>${dv(obj.metrica)}</div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-card-title">Análise SWOT</div>
+      <div class="doc-swot-grid">${swotCards}</div>
+    </div>
+
+    <div class="doc-card">
+      <div class="doc-card-title">Guia de voz</div>
+      <div class="doc-field"><div class="doc-label">Tom em uma frase</div>${dv(voz.tomFrase)}</div>
+      <div class="doc-field"><div class="doc-label">Vocabulário positivo</div><div class="doc-pills">${pillsCSV(voz.palavrasOK)}</div></div>
+      <div class="doc-field"><div class="doc-label">A evitar</div><div class="doc-pills">${pillsCSV(voz.palavrasEvitar,'terra')}</div></div>
+      ${voz.regras ? `<div class="doc-field"><div class="doc-label">Regras de linguagem</div>${dv(voz.regras)}</div>` : ''}
+    </div>
+
+    ${refs.length ? `<div class="doc-card">
+      <div class="doc-card-title">Referências de marca</div>
+      ${refsHTML}
+    </div>` : ''}
+
+    <button class="doc-back" style="margin-top:8px" onclick="fecharDoc()">← Editar documento</button>`;
+}
+
+// ── WINDOW EVENT HANDLERS ─────────────────────────────────────────────────────
+window.updateField = function(el) {
+  setByPath(estado, el.dataset.path, el.value);
+  agendarSalvamento();
+};
+window.togglePlat = function(i) {
+  estado.plataformas[i].ativa = !estado.plataformas[i].ativa;
+  renderSecC();
+  agendarSalvamento();
+};
+window.updatePlatUrl = function(i, el) {
+  estado.plataformas[i].url = el.value;
+  agendarSalvamento();
+};
+window.updateSwot = function(key, val) {
+  estado.swot[key] = val;
+  agendarSalvamento();
+};
+window.addRef = function() {
+  estado.referencias.push({ nome:'', link:'', oQueGosta:'' });
+  renderRefsList();
+  agendarSalvamento();
+};
+window.removeRef = function(i) {
+  estado.referencias.splice(i, 1);
+  renderRefsList();
+  agendarSalvamento();
+};
+window.updateRef = function(i, field, el) {
+  estado.referencias[i][field] = el.value;
+  agendarSalvamento();
+};
+window.addConc = function() {
+  estado.concorrentes.push({ nome:'', link:'', diferencial:'' });
+  renderConcsList();
+  agendarSalvamento();
+};
+window.removeConc = function(i) {
+  estado.concorrentes.splice(i, 1);
+  renderConcsList();
+  agendarSalvamento();
+};
+window.updateConc = function(i, field, el) {
+  estado.concorrentes[i][field] = el.value;
+  agendarSalvamento();
+};
+window.addMat = function() {
+  estado.materiais.push({ tipo:'', titulo:'', link:'' });
+  renderMatsList();
+  agendarSalvamento();
+};
+window.removeMat = function(i) {
+  estado.materiais.splice(i, 1);
+  renderMatsList();
+  agendarSalvamento();
+};
+window.updateMat = function(i, field, el) {
+  estado.materiais[i][field] = el.value;
+  agendarSalvamento();
+};
+window.setContrato = function(status) {
+  estado.contrato.status = status;
+  renderSecK();
+  agendarSalvamento();
+};
+window.copiarLink = function() {
+  const url = window.location.href.split('?')[0];
+  navigator.clipboard.writeText(url).then(() => {
+    const btn = document.getElementById('btn-copiar');
+    if (btn) { btn.textContent = '✓ Link copiado!'; btn.classList.add('copied'); }
+    showToast('Link copiado! Envie para o cliente preencher.');
+    setTimeout(() => {
+      const b = document.getElementById('btn-copiar');
+      if (b) { b.textContent = '📋 Copiar link para o cliente'; b.classList.remove('copied'); }
+    }, 2500);
+  });
+};
+window.abrirDoc = function() {
+  document.getElementById('view-edit').style.display = 'none';
+  document.getElementById('view-doc').style.display = '';
+  buildDocView();
+  window.scrollTo(0, 0);
+};
+window.fecharDoc = function() {
+  document.getElementById('view-doc').style.display = 'none';
+  document.getElementById('view-edit').style.display = '';
+  window.scrollTo(0, 0);
+};
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+carregarDoFirebase().then(() => {
+  document.getElementById('loading').classList.add('hide');
+  if (MODE === 'doc') {
+    document.getElementById('view-doc').style.display = '';
+    buildDocView();
+  } else {
+    buildHub();
+  }
+});
+</script>
+</body>
+</html>
