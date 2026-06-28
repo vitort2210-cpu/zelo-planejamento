@@ -32,7 +32,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .hh-save.saving{color:var(--z-ocre)}
 
 /* TABS */
-.tab-bar{display:grid;grid-template-columns:1fr 1fr;border-radius:10px;overflow:hidden;border:1.5px solid var(--z-teal);margin-bottom:10px}
+.tab-bar{display:grid;grid-template-columns:1fr 1fr 1fr;border-radius:10px;overflow:hidden;border:1.5px solid var(--z-teal);margin-bottom:10px}
 .tab-btn{padding:11px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;border:none;background:#fff;color:var(--z-teal);transition:all .15s;text-align:center}
 .tab-btn.active{background:var(--z-teal);color:#fff}
 .tab-btn:not(.active):hover{background:var(--z-teal-light)}
@@ -146,6 +146,78 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .doc-ref-nome{font-size:13px;font-weight:600;color:var(--z-text)}
 .doc-ref-gosta{font-size:12px;color:var(--z-text-sec);margin-top:2px}
 .doc-ref-link{font-size:11px;color:var(--z-teal);text-decoration:none;margin-left:6px}
+
+/* ════ ABA COPY ════ */
+.copy-cycle-bar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.copy-cycle-sel{font-size:12px;padding:6px 10px;border:1.5px solid var(--z-border);border-radius:8px;font-family:inherit;color:var(--z-text);background:#fff}
+.copy-gabi-btn{font-size:11px;font-weight:600;padding:6px 11px;border-radius:8px;border:1px solid var(--z-terra);background:var(--z-terra-light);color:var(--z-terra);cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.copy-gabi-btn:hover{background:#f0d5c0}
+.copy-gabi-btn.copied{background:#d7f0e0;border-color:#1B6B3A;color:#1B6B3A}
+.copy-card{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1.1rem 1.15rem;margin-bottom:12px;border-left:3px solid var(--z-teal);box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.cc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:.5rem}
+.cc-meta{min-width:0}
+.cc-date{font-size:11px;font-weight:700;color:var(--z-terra)}
+.cc-title{font-size:14px;font-weight:600;color:var(--z-text);line-height:1.25;margin:2px 0 5px}
+.cc-tags{display:flex;flex-wrap:wrap;gap:5px}
+.cc-tag{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;background:var(--z-teal-light);color:var(--z-teal)}
+.cc-tag.fmt{background:var(--z-ocre-light);color:var(--z-ocre-dark)}
+.vid-toggle{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--z-text-sec);cursor:pointer;user-select:none;padding:5px 11px;border:1.5px solid var(--z-border);border-radius:20px;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.vid-toggle.on{background:var(--z-terra-light);border-color:var(--z-terra);color:var(--z-terra)}
+/* status chips */
+.cc-status{display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;margin:.5rem 0 .9rem}
+.st-group{display:flex;align-items:center;gap:4px}
+.st-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--z-text-sec);margin-right:2px}
+.st-chip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;border:1.5px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer;font-family:inherit;transition:all .12s}
+.st-chip.on.andamento{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
+.st-chip.on.finalizado{background:#d7f0e0;border-color:#1B6B3A;color:#1B6B3A}
+.st-chip.on.bloqueado{background:var(--z-terra-light);border-color:var(--z-terra);color:#8A4020}
+/* decisão da Gabi */
+.gabi-dec{display:flex;flex-wrap:wrap;gap:6px;margin:.3rem 0 1rem}
+.gd-chip{font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;border:1.5px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer;font-family:inherit;transition:all .12s}
+.gd-chip.on.liberada{background:#d7f0e0;border-color:#1B6B3A;color:#1B6B3A}
+.gd-chip.on.alteracoes{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
+.gd-chip.on.aprovada{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal)}
+.gd-chip.on.cancelada{background:var(--z-terra-light);border-color:var(--z-terra);color:#8A4020}
+/* campos de copy */
+.cf{margin-bottom:11px}
+.cf-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--z-teal);margin-bottom:4px;display:block}
+.cf textarea,.cf input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:0.5px solid var(--z-border);border-radius:8px;font-family:inherit;line-height:1.55;color:var(--z-text);background:#fff;resize:vertical}
+.cf textarea:focus,.cf input:focus{outline:none;border-color:var(--z-teal);box-shadow:0 0 0 2px rgba(17,128,140,.08)}
+/* slides */
+.slide-card{background:var(--z-bg);border:0.5px solid var(--z-border);border-left:3px solid var(--z-ocre-dark);border-radius:8px;padding:9px 10px;margin-bottom:8px}
+.slide-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.slide-num{font-size:10px;font-weight:700;color:var(--z-ocre-dark);text-transform:uppercase;letter-spacing:.05em}
+.slide-del{font-size:11px;color:var(--z-terra);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px}
+.slide-del:hover{background:var(--z-terra-light)}
+.slide-card textarea{width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;line-height:1.55;background:#fff;color:var(--z-text);resize:vertical}
+.slide-card textarea:focus{outline:none;border-color:var(--z-ocre-dark)}
+/* bloco read-only (validação) */
+.vslide-num{font-size:10px;font-weight:700;color:var(--z-ocre-dark);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 3px}
+.vblock{font-size:13px;line-height:1.7;color:var(--z-text);white-space:pre-wrap;background:var(--z-bg);border:0.5px solid var(--z-border);border-radius:8px;padding:9px 11px;cursor:text}
+.vblock-empty{color:#bbb;font-size:12px}
+mark.cmt{background:#FBEEE4;border-bottom:2px solid var(--z-terra);color:inherit;cursor:pointer;border-radius:2px;padding:0 1px}
+mark.cmt:hover{background:#f6d9c4}
+/* lista de comentários */
+.cmt-list{margin-top:7px;display:flex;flex-direction:column;gap:6px}
+.cmt-item{background:#fff;border:1px solid var(--z-terra);border-left:3px solid var(--z-terra);border-radius:7px;padding:7px 9px;transition:box-shadow .2s}
+.cmt-item.cmt-flash{box-shadow:0 0 0 2px var(--z-terra)}
+.cmt-quote{font-size:11px;color:var(--z-terra);font-style:italic;border-left:2px solid var(--z-terra);padding-left:6px;margin-bottom:3px}
+.cmt-texto{font-size:12px;color:var(--z-text);line-height:1.45}
+.cmt-foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
+.cmt-meta{font-size:10px;color:var(--z-text-sec)}
+.cmt-resolve{font-size:11px;color:var(--z-teal);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;font-weight:600}
+/* popover */
+.cmt-pop{position:absolute;z-index:500;background:#fff;border:1px solid var(--z-border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.16);padding:10px;width:240px;display:none}
+.cmt-pop textarea{width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;resize:vertical;margin-bottom:6px;color:var(--z-text)}
+.cmt-pop textarea:focus{outline:none;border-color:var(--z-terra)}
+.pop-actions{display:flex;gap:6px;justify-content:flex-end}
+.cmt-pop button{font-size:11px;font-weight:600;padding:5px 11px;border-radius:6px;border:none;cursor:pointer;font-family:inherit}
+.pop-save{background:var(--z-terra);color:#fff}
+.pop-cancel{background:var(--z-bg);color:var(--z-text-sec)}
+/* banner da Gabi */
+.gabi-banner{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:12px;padding:14px 16px;margin-bottom:1.25rem}
+.gabi-banner-title{font-size:14px;font-weight:700;color:var(--z-terra);margin-bottom:3px}
+.gabi-banner-text{font-size:12px;color:var(--z-text);line-height:1.55}
 </style>
 </head>
 <body>
@@ -157,7 +229,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDCenC4zYJi9X6MEe1z4hOnWQ2KP14FsWQ",
@@ -174,7 +246,22 @@ const db = getFirestore(app);
 const CLIENT_ID = "ze lo";
 const CLIENT_NOME = "Zelo Consultoria";
 const MODE = new URLSearchParams(window.location.search).get('mode') || '';
+const isValidacao = new URLSearchParams(window.location.search).get('view') === 'validacao';
 const DOC_REF = doc(db, 'hubs', CLIENT_ID);
+
+// ── ESTADO DA ABA COPY (cross-doc: grade do planejamento + conteúdo de copy) ──
+let gradeItems = [];          // itens da grade vindos de planejamentos/{docId}
+let copyData   = { itens:{} };// conteúdo de copy de copies/{CLIENT_ID}__{docId}
+let copyCiclo  = null;        // docId do ciclo selecionado
+let copyUnsub  = null;        // unsubscribe do onSnapshot
+let copySaveTimer = null;
+let pendingSel = null;        // seleção pendente para comentário da Gabi
+function cicloDocId(p){
+  if(!p) return '';
+  if(p.docId) return p.docId;
+  return (p.linkVitor||'').replace(/[?#].*$/,'').replace(/\/+$/,'').split('/').pop()||'';
+}
+function copyRef(docId){ return doc(db, 'copies', CLIENT_ID + '__' + docId); }
 
 // ── ESTADO PADRÃO (dados Zelo pré-populados do briefing) ─────────────────────
 const defaults = {
@@ -267,6 +354,7 @@ const defaults = {
       periodo: "Maio — Junho 2027",
       ciclo: "Ciclo 1 de 4",
       status: "em andamento",
+      docId: "maio-junho-2027",
       linkVitor: "../maio-junho-2027/",
       linkGabi: "../maio-junho-2027/?view=validacao"
     }
@@ -577,19 +665,28 @@ let subMode  = 'vis';    // 'vis'  | 'edit'
 
 // ── BUILD HUB ─────────────────────────────────────────────────────────────────
 function buildHub() {
-  document.getElementById('view-edit').innerHTML = `
+  const header = `
     <div class="hub-header">
-      <div class="hh-lbl">Hub do cliente</div>
+      <div class="hh-lbl">${isValidacao ? 'Validação de copies' : 'Hub do cliente'}</div>
       <div class="hh-title">${esc(CLIENT_NOME)}</div>
-      <div class="hh-sub">Onboarding · Briefing · Materiais · Planejamentos</div>
+      <div class="hh-sub">${isValidacao ? 'Revisão de conteúdos com a Gabi' : 'Onboarding · Briefing · Materiais · Planejamentos'}</div>
       <div class="hh-save" id="save-status"></div>
-    </div>
-    <div class="tab-bar">
+    </div>`;
+  let nav;
+  if (isValidacao) {
+    nav = `<div class="gabi-banner">
+      <div class="gabi-banner-title">Olá, Gabi! 👋</div>
+      <div class="gabi-banner-text"><strong>Selecione qualquer trecho</strong> dos textos abaixo para comentar exatamente o que deseja ajustar — o trecho fica destacado em laranja. Marque também a <strong>decisão</strong> de cada material. Tudo é salvo automaticamente e o Vitor vê em tempo real.</div>
+    </div>`;
+  } else {
+    nav = `<div class="tab-bar">
       <button class="tab-btn${tabAtivo==='plan'?' active':''}" onclick="setTab('plan')">Planejamento</button>
+      <button class="tab-btn${tabAtivo==='copy'?' active':''}" onclick="setTab('copy')">Copy</button>
       <button class="tab-btn${tabAtivo==='dados'?' active':''}" onclick="setTab('dados')">Base de Dados</button>
     </div>
-    <button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Copiar link para o cliente</button>
-    <div id="tab-content"></div>`;
+    <button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Copiar link para o cliente</button>`;
+  }
+  document.getElementById('view-edit').innerHTML = header + nav + `<div id="tab-content"></div>`;
   renderTabContent();
 }
 
@@ -599,6 +696,14 @@ function renderTabContent() {
   if (tabAtivo === 'plan') {
     cont.innerHTML = `<div id="bod-m"></div>`;
     renderSecM();
+  } else if (tabAtivo === 'copy') {
+    cont.innerHTML = `<div style="font-size:13px;color:var(--z-text-sec);padding:8px 0">Carregando copies...</div>`;
+    const docId = copyCiclo || cicloDocId((estado.planejamentos||[])[0]);
+    if (!docId) {
+      cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">Nenhum ciclo de planejamento disponível. Adicione um planejamento primeiro na aba Planejamento.</p>`;
+      return;
+    }
+    carregarCiclo(docId).then(() => { if (tabAtivo === 'copy') buildCopyTab(); });
   } else {
     cont.innerHTML = `
       <div class="sub-bar">
@@ -817,10 +922,357 @@ window.setSubMode = function(m) {
   window.scrollTo(0, 0);
 };
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ABA COPY — edição (Vitor) + validação (Gabi) com marcação por palavra
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Carregamento cross-doc + tempo real ───────────────────────────────────────
+async function carregarCiclo(docId) {
+  copyCiclo = docId;
+  gradeItems = [];
+  copyData = { itens:{} };
+  try {
+    const gsnap = await getDoc(doc(db, 'planejamentos', docId));
+    if (gsnap.exists() && Array.isArray(gsnap.data().items)) gradeItems = gsnap.data().items;
+  } catch(e){ console.warn('Falha ao carregar grade do planejamento', e); }
+  try {
+    const csnap = await getDoc(copyRef(docId));
+    if (csnap.exists()) copyData = { itens: csnap.data().itens || {} };
+  } catch(e){ console.warn('Falha ao carregar copies', e); }
+  if (copyUnsub) { copyUnsub(); copyUnsub = null; }
+  copyUnsub = onSnapshot(copyRef(docId), (snap) => {
+    if (!snap.exists()) return;
+    copyData = { itens: snap.data().itens || {} };
+    if (tabAtivo === 'copy' && document.getElementById('copy-cards')) {
+      const ae = document.activeElement;
+      if (!ae || !ae.closest || !ae.closest('#copy-cards')) renderCopyCards();
+    }
+  });
+}
+
+// ── Modelo de dados de um item de copy ────────────────────────────────────────
+function defaultCopy(id) {
+  const it = gradeItems.find(x => x.id === id);
+  return {
+    isVideo: !!(it && /reels/i.test(it.formato || '')),
+    direcionamento:'', materiais:'', slides:[{texto:''}], reels:'',
+    legenda:'', blog:'', statusCopy:'', statusArte:'', statusGabi:'', comentarios:[]
+  };
+}
+function normalizeCopy(c) {
+  if (!Array.isArray(c.slides) || !c.slides.length) c.slides = [{texto:''}];
+  if (!Array.isArray(c.comentarios)) c.comentarios = [];
+  return c;
+}
+function getCopy(id) {
+  return normalizeCopy(copyData.itens[id] ? copyData.itens[id] : defaultCopy(id));
+}
+function ensureCopy(id) {
+  if (!copyData.itens[id]) copyData.itens[id] = defaultCopy(id);
+  return normalizeCopy(copyData.itens[id]);
+}
+function blockText(c, block) {
+  if (block === 'reels')   return c.reels || '';
+  if (block === 'legenda') return c.legenda || '';
+  if (block === 'blog')    return c.blog || '';
+  if (block.startsWith('slide:')) { const i = +block.split(':')[1]; return (c.slides[i] && c.slides[i].texto) || ''; }
+  return '';
+}
+function gabiLabel(s) {
+  return { liberada:'Liberada p/ design', alteracoes:'Aguardando alterações', aprovada:'Aprovada', cancelada:'Cancelada' }[s] || s;
+}
+
+// ── Salvamento (doc de copies) ────────────────────────────────────────────────
+function agendarSaveCopy() {
+  const el = document.getElementById('save-status');
+  if (el) { el.textContent = '● Salvando...'; el.classList.add('saving'); }
+  clearTimeout(copySaveTimer);
+  copySaveTimer = setTimeout(salvarCopy, 1200);
+}
+async function salvarCopy() {
+  if (!copyCiclo) return;
+  try {
+    await setDoc(copyRef(copyCiclo), { itens: copyData.itens, updatedAt: new Date().toISOString() });
+    const el = document.getElementById('save-status');
+    if (el) { el.textContent = '✓ Salvo'; el.classList.remove('saving'); }
+    setTimeout(() => { const e2 = document.getElementById('save-status'); if (e2) e2.textContent = ''; }, 2500);
+  } catch(e) { showToast('Erro ao salvar copy. Verifique a conexão.'); console.error(e); }
+}
+
+// ── Render da aba ──────────────────────────────────────────────────────────────
+function buildCopyTab() {
+  const cont = document.getElementById('tab-content');
+  if (!cont) return;
+  const plist = estado.planejamentos || [];
+  const cur = plist.find(p => cicloDocId(p) === copyCiclo) || plist[0] || {};
+  let topBar = '';
+  if (!isValidacao) {
+    const sel = plist.length > 1
+      ? `<select class="copy-cycle-sel" onchange="setCopyCiclo(this.value)">${plist.map(p => `<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
+      : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
+    topBar = `<div class="copy-cycle-bar">${sel}
+      <button class="copy-gabi-btn" id="copy-gabi-link" onclick="copiarLinkGabiCopy()">📋 Copiar link da Gabi (validação)</button></div>`;
+  }
+  cont.innerHTML = `${topBar}<div id="copy-cards"></div>`;
+  renderCopyCards();
+}
+
+function renderCopyCards() {
+  const cont = document.getElementById('copy-cards');
+  if (!cont) return;
+  if (!gradeItems.length) {
+    cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">A grade deste ciclo ainda não tem conteúdos. Adicione conteúdos na ferramenta de Planejamento.</p>`;
+    return;
+  }
+  cont.innerHTML = gradeItems.map(it => `<div class="copy-card" id="copy-card-${it.id}">${cardInnerHTML(it, getCopy(it.id))}</div>`).join('');
+}
+function renderOneCard(id) {
+  const it = gradeItems.find(x => x.id === id);
+  const el = document.getElementById('copy-card-' + id);
+  if (it && el) el.innerHTML = cardInnerHTML(it, getCopy(id));
+}
+function cardInnerHTML(it, c) {
+  return cardHeader(it, c) + (isValidacao ? cardValidacao(it, c) : cardEdit(it, c));
+}
+
+function cardHeader(it, c) {
+  const vt = !isValidacao
+    ? `<div class="vid-toggle${c.isVideo?' on':''}" onclick="toggleVideo(${it.id})">🎬 ${c.isVideo?'Vídeo (Reels)':'Vídeo?'}</div>`
+    : '';
+  return `<div class="cc-head">
+    <div class="cc-meta">
+      <div class="cc-date">📅 ${esc(it.data||'--')}</div>
+      <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
+      <div class="cc-tags">
+        ${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}
+        ${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}
+      </div>
+    </div>
+    ${vt}
+  </div>`;
+}
+
+// ── Modo edição (Vitor) ───────────────────────────────────────────────────────
+function statusRowEdit(it, c) {
+  const chip = (which, val, lbl, cls) => `<button class="st-chip ${cls}${c[which]===val?' on':''}" onclick="setCopyStatus(${it.id},'${which}','${val}')">${lbl}</button>`;
+  const gabi = c.statusGabi
+    ? `<div class="st-group"><span class="st-lbl">Gabi</span><span class="gd-chip on ${c.statusGabi}" style="cursor:default">${gabiLabel(c.statusGabi)}</span></div>`
+    : '';
+  return `<div class="cc-status">
+    <div class="st-group"><span class="st-lbl">Copy</span>
+      ${chip('statusCopy','andamento','Em andamento','andamento')}
+      ${chip('statusCopy','finalizado','Finalizado','finalizado')}
+      ${chip('statusCopy','bloqueado','Bloqueado','bloqueado')}</div>
+    <div class="st-group"><span class="st-lbl">Arte</span>
+      ${chip('statusArte','andamento','Em andamento','andamento')}
+      ${chip('statusArte','finalizado','Finalizado','finalizado')}
+      ${chip('statusArte','bloqueado','Bloqueado','bloqueado')}</div>
+    ${gabi}
+  </div>`;
+}
+function slidesHTML(id, c) {
+  return c.slides.map((s, i) => `
+    <div class="slide-card">
+      <div class="slide-head"><span class="slide-num">Slide ${i+1}</span>
+        ${c.slides.length>1?`<button class="slide-del" onclick="removeSlide(${id},${i})">✕ remover</button>`:''}</div>
+      <textarea rows="3" placeholder="Texto do slide ${i+1}..." oninput="updateSlide(${id},${i},this)">${esc(s.texto)}</textarea>
+      ${commentListHTML(id, c, 'slide:'+i)}
+    </div>`).join('');
+}
+function renderSlides(id) {
+  const el = document.getElementById('slides-' + id);
+  if (el) el.innerHTML = slidesHTML(id, getCopy(id));
+}
+function cardEdit(it, c) {
+  const arte = c.isVideo
+    ? `<div class="cf"><label class="cf-lbl">Texto da arte — Reels</label>
+        <textarea rows="4" placeholder="Roteiro / texto da arte do reels..." oninput="updateCopyField(${it.id},'reels',this)">${esc(c.reels)}</textarea>
+        ${commentListHTML(it.id, c, 'reels')}</div>`
+    : `<div class="cf"><label class="cf-lbl">Texto da arte — Slides do carrossel</label>
+        <div id="slides-${it.id}">${slidesHTML(it.id, c)}</div>
+        <button class="add-btn" onclick="addSlide(${it.id})">+ Adicionar slide</button></div>`;
+  return `
+    ${statusRowEdit(it, c)}
+    <div class="cf"><label class="cf-lbl">Direcionamento / Referência</label>
+      <input type="text" value="${esc(c.direcionamento)}" placeholder="TAG, referência visual, link..." oninput="updateCopyField(${it.id},'direcionamento',this)"></div>
+    <div class="cf"><label class="cf-lbl">Materiais (link do Drive)</label>
+      <input type="text" value="${esc(c.materiais)}" placeholder="https://drive.google.com/..." oninput="updateCopyField(${it.id},'materiais',this)"></div>
+    ${arte}
+    <div class="cf"><label class="cf-lbl">Texto da legenda</label>
+      <textarea rows="4" placeholder="Legenda do post, com hashtags..." oninput="updateCopyField(${it.id},'legenda',this)">${esc(c.legenda)}</textarea>
+      ${commentListHTML(it.id, c, 'legenda')}</div>
+    <div class="cf"><label class="cf-lbl">Texto de blog (opcional)</label>
+      <textarea rows="3" placeholder="Texto do blog, se houver..." oninput="updateCopyField(${it.id},'blog',this)">${esc(c.blog)}</textarea>
+      ${commentListHTML(it.id, c, 'blog')}</div>`;
+}
+
+// ── Modo validação (Gabi) ─────────────────────────────────────────────────────
+function statusSummaryRO(c) {
+  const map = { andamento:['Em andamento','andamento'], finalizado:['Finalizado','finalizado'], bloqueado:['Bloqueado','bloqueado'] };
+  const badge = (v) => v && map[v]
+    ? `<span class="st-chip on ${map[v][1]}" style="cursor:default">${map[v][0]}</span>`
+    : `<span class="st-chip" style="cursor:default;opacity:.55">não iniciado</span>`;
+  return `<div class="cc-status">
+    <div class="st-group"><span class="st-lbl">Copy</span>${badge(c.statusCopy)}</div>
+    <div class="st-group"><span class="st-lbl">Arte</span>${badge(c.statusArte)}</div>
+  </div>`;
+}
+function gabiDecisionRow(it, c) {
+  const chip = (val, lbl) => `<button class="gd-chip ${val}${c.statusGabi===val?' on':''}" onclick="setGabiStatus(${it.id},'${val}')">${lbl}</button>`;
+  return `<div class="gabi-dec">
+    ${chip('liberada','✅ Liberada p/ design')}
+    ${chip('alteracoes','✏ Aguardando alterações')}
+    ${chip('aprovada','👍 Aprovada')}
+    ${chip('cancelada','✕ Cancelada')}
+  </div>`;
+}
+function vblockHTML(id, c, block, label, text) {
+  const comments = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
+  return `<div class="cf">
+    ${label?`<label class="cf-lbl">${label}</label>`:''}
+    <div class="vblock" data-item="${id}" data-block="${block}">${renderComentado(text||'', comments)}</div>
+    ${commentListHTML(id, c, block)}
+  </div>`;
+}
+function cardValidacao(it, c) {
+  const blocks = [];
+  if (c.isVideo) {
+    blocks.push(vblockHTML(it.id, c, 'reels', 'Texto da arte — Reels', c.reels));
+  } else {
+    c.slides.forEach((s, i) => blocks.push(`<div class="vslide-num">Slide ${i+1}</div>` + vblockHTML(it.id, c, 'slide:'+i, null, s.texto)));
+  }
+  blocks.push(vblockHTML(it.id, c, 'legenda', 'Texto da legenda', c.legenda));
+  if (c.blog) blocks.push(vblockHTML(it.id, c, 'blog', 'Texto de blog', c.blog));
+  return `${statusSummaryRO(c)}${gabiDecisionRow(it, c)}
+    ${c.direcionamento?`<div class="cf"><label class="cf-lbl">Direcionamento</label><div style="font-size:12px;color:var(--z-text-sec)">${esc(c.direcionamento)}</div></div>`:''}
+    ${blocks.join('')}`;
+}
+
+// ── Comentários (lista + marcação por palavra) ────────────────────────────────
+function commentListHTML(id, c, block) {
+  const cs = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
+  if (!cs.length) return '';
+  return `<div class="cmt-list">${cs.map(cm => `
+    <div class="cmt-item" id="cmt-${cm.id}">
+      <div class="cmt-quote">“${esc(cm.quote)}”</div>
+      <div class="cmt-texto">${esc(cm.texto)}</div>
+      <div class="cmt-foot"><span class="cmt-meta">— ${esc(cm.autor||'Gabi')}</span>
+        <button class="cmt-resolve" onclick="resolverComentario(${id},'${cm.id}')">✓ Resolver</button></div>
+    </div>`).join('')}</div>`;
+}
+function renderComentado(text, comments) {
+  if (!text) return '<span class="vblock-empty">— sem texto —</span>';
+  const cs = comments.filter(c => c.start < c.end).slice().sort((a,b) => a.start - b.start);
+  let html = '', pos = 0;
+  for (const c of cs) {
+    const s = Math.max(pos, Math.min(c.start, text.length));
+    const e = Math.max(s, Math.min(c.end, text.length));
+    if (s > pos) html += esc(text.slice(pos, s));
+    html += `<mark class="cmt" data-cid="${c.id}" onclick="focarComentario('${c.id}')">${esc(text.slice(s, e))}</mark>`;
+    pos = e;
+  }
+  if (pos < text.length) html += esc(text.slice(pos));
+  return html;
+}
+function offsetInBlock(block, node, nodeOffset) {
+  let offset = 0;
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
+  let n;
+  while ((n = walker.nextNode())) {
+    if (n === node) return offset + nodeOffset;
+    offset += n.textContent.length;
+  }
+  return offset;
+}
+function showCmtPopover(itemId, block, a, b, x, y) {
+  pendingSel = { itemId, block, a, b };
+  let pop = document.getElementById('cmt-pop');
+  if (!pop) { pop = document.createElement('div'); pop.id = 'cmt-pop'; pop.className = 'cmt-pop'; document.body.appendChild(pop); }
+  pop.innerHTML = `<textarea id="cmt-pop-ta" rows="3" placeholder="O que ajustar neste trecho?"></textarea>
+    <div class="pop-actions"><button class="pop-cancel" onclick="cancelCmt()">Cancelar</button><button class="pop-save" onclick="salvarCmt()">Comentar</button></div>`;
+  pop.style.display = 'block';
+  pop.style.left = Math.max(8, Math.min(x, window.innerWidth - 256)) + 'px';
+  pop.style.top  = (y + 8) + 'px';
+  const ta = document.getElementById('cmt-pop-ta'); if (ta) ta.focus();
+}
+function hideCmtPopover() { const p = document.getElementById('cmt-pop'); if (p) p.style.display = 'none'; }
+
+// ── Window handlers da aba Copy ───────────────────────────────────────────────
+window.setCopyCiclo = function(docId) {
+  carregarCiclo(docId).then(() => { if (tabAtivo === 'copy') buildCopyTab(); });
+};
+window.copiarLinkGabiCopy = function() {
+  const base = window.location.href.split('?')[0];
+  const url = base + '?view=validacao&ciclo=' + encodeURIComponent(copyCiclo);
+  navigator.clipboard.writeText(url).then(() => {
+    const b = document.getElementById('copy-gabi-link');
+    if (b) { b.textContent = '✓ Link copiado!'; b.classList.add('copied'); setTimeout(() => { b.textContent = '📋 Copiar link da Gabi (validação)'; b.classList.remove('copied'); }, 2500); }
+    showToast('Link de validação da Gabi copiado!');
+  });
+};
+window.toggleVideo = function(id) { const c = ensureCopy(id); c.isVideo = !c.isVideo; agendarSaveCopy(); renderOneCard(id); };
+window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[field] = el.value; agendarSaveCopy(); };
+window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; agendarSaveCopy(); };
+window.addSlide = function(id) { const c = ensureCopy(id); c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
+window.removeSlide = function(id, i) { const c = ensureCopy(id); c.slides.splice(i, 1); if (!c.slides.length) c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
+window.setCopyStatus = function(id, which, val) { const c = ensureCopy(id); c[which] = (c[which]===val?'':val); agendarSaveCopy(); renderOneCard(id); };
+window.setGabiStatus = function(id, val) { const c = ensureCopy(id); c.statusGabi = (c.statusGabi===val?'':val); agendarSaveCopy(); renderOneCard(id); };
+window.resolverComentario = function(id, cid) { const c = ensureCopy(id); const cm = c.comentarios.find(x => x.id === cid); if (cm) cm.resolvido = true; agendarSaveCopy(); renderOneCard(id); };
+window.focarComentario = function(cid) {
+  const el = document.getElementById('cmt-' + cid);
+  if (el) { el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('cmt-flash'); setTimeout(() => el.classList.remove('cmt-flash'), 1500); }
+};
+window.cancelCmt = function() { hideCmtPopover(); window.getSelection().removeAllRanges(); pendingSel = null; };
+window.salvarCmt = function() {
+  if (!pendingSel) { hideCmtPopover(); return; }
+  const ta = document.getElementById('cmt-pop-ta');
+  const txt = (ta ? ta.value : '').trim();
+  if (!txt) { hideCmtPopover(); return; }
+  const c = ensureCopy(pendingSel.itemId);
+  const canon = blockText(c, pendingSel.block);
+  c.comentarios.push({
+    id: 'c' + Date.now() + Math.floor(Math.random()*1000),
+    block: pendingSel.block, start: pendingSel.a, end: pendingSel.b,
+    quote: canon.slice(pendingSel.a, pendingSel.b),
+    texto: txt, autor: 'Gabi', resolvido: false, ts: Date.now()
+  });
+  const id = pendingSel.itemId;
+  agendarSaveCopy();
+  hideCmtPopover();
+  window.getSelection().removeAllRanges();
+  pendingSel = null;
+  renderOneCard(id);
+};
+
+// Seleção de texto → popover de comentário (apenas modo validação)
+document.addEventListener('mouseup', (e) => {
+  if (!isValidacao) return;
+  if (e.target.closest && e.target.closest('#cmt-pop')) return;
+  const sel = window.getSelection();
+  if (!sel || sel.isCollapsed) return;
+  const block = e.target.closest && e.target.closest('.vblock');
+  if (!block) return;
+  const range = sel.getRangeAt(0);
+  if (!block.contains(range.startContainer) || !block.contains(range.endContainer)) return;
+  const s = offsetInBlock(block, range.startContainer, range.startOffset);
+  const en = offsetInBlock(block, range.endContainer, range.endOffset);
+  const a = Math.min(s, en), b = Math.max(s, en);
+  if (b <= a) return;
+  showCmtPopover(+block.dataset.item, block.dataset.block, a, b, e.pageX, e.pageY);
+});
+document.addEventListener('mousedown', (e) => {
+  const p = document.getElementById('cmt-pop');
+  if (p && p.style.display === 'block' && !e.target.closest('#cmt-pop') && !e.target.closest('.vblock')) hideCmtPopover();
+});
+
 // ── INIT ─────────────────────────────────────────────────────────────────────
 carregarDoFirebase().then(() => {
   document.getElementById('loading').classList.add('hide');
-  if (MODE === 'doc') {
+  if (isValidacao) {
+    tabAtivo = 'copy';
+    copyCiclo = new URLSearchParams(window.location.search).get('ciclo')
+              || cicloDocId((estado.planejamentos||[])[0]);
+  } else if (MODE === 'doc') {
     tabAtivo = 'dados';
     subMode  = 'vis';
   }
