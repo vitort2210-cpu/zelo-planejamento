@@ -325,17 +325,20 @@ const MODE = new URLSearchParams(window.location.search).get('mode') || '';
 const DOC_REF = doc(db, 'hubs', CLIENT_ID);
 
 // ── ACESSO / PAPÉIS ───────────────────────────────────────────────────────────
-const EDITOR_EMAILS  = ["vitort2210@gmail.com"];
-const CLIENTE_EMAILS = ["consultoria.zelo@gmail.com"]; // TODO: adicionar email da Gabi
+const EDITOR_EMAILS       = ["vitort2210@gmail.com"];
+const CLIENTE_EMAILS      = ["consultoria.zelo@gmail.com"]; // TODO: adicionar email da Gabi
+const VISUALIZADOR_EMAILS = ["boninaestudio.contato@gmail.com"]; // equipe de design — somente leitura
 function papelDoEmail(email) {
   const e = (email || '').toLowerCase();
   if (EDITOR_EMAILS.map(x => x.toLowerCase()).includes(e)) return 'editor';
   if (CLIENTE_EMAILS.map(x => x.toLowerCase()).includes(e)) return 'cliente';
+  if (VISUALIZADOR_EMAILS.map(x => x.toLowerCase()).includes(e)) return 'visualizador';
   return null; // sem acesso
 }
 let ROLE = 'editor';
 let USER_EMAIL = '';
-const ehCliente = () => ROLE === 'cliente';
+const ehCliente      = () => ROLE === 'cliente';
+const ehVisualizador = () => ROLE === 'visualizador';
 
 // ── ESTADO DA ABA COPY (cross-doc: grade do planejamento + conteúdo de copy) ──
 let gradeItems = [];          // itens da grade vindos de planejamentos/{docId}
@@ -735,10 +738,10 @@ function renderSecL() {
 
 function renderSecM() {
   document.getElementById('bod-m').innerHTML = estado.planejamentos.map(p => {
-    const links = ehCliente()
-      ? `<a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank" style="grid-column:1/-1">👁 Visualizar</a>`
-      : `<a class="plan-link plan-vitor" href="${esc(p.linkVitor)}" target="_blank">✏ Editar</a>
-         <a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank">👁 Visualizar</a>`;
+    const links = (ROLE === 'editor')
+      ? `<a class="plan-link plan-vitor" href="${esc(p.linkVitor)}" target="_blank">✏ Editar</a>
+         <a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank">👁 Visualizar</a>`
+      : `<a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank" style="grid-column:1/-1">👁 Visualizar</a>`;
     return `
     <div class="plan-card">
       <div class="plan-card-head">
@@ -766,8 +769,8 @@ function brandLogo() { return `<img class="brand-logo" src="logo.png" alt="Zelo 
 function buildHub() {
   const m = TAB_META[tabAtivo] || TAB_META.plan;
   const navItem = (key) => `<button class="nav-item${tabAtivo===key?' active':''}" onclick="setTab('${key}')"><span class="nav-ico">${TAB_META[key].ico}</span> ${TAB_META[key].title}</button>`;
-  const brandSub = ehCliente() ? 'Área do cliente' : 'Hub do cliente';
-  const linkBtn = ehCliente() ? '' : `<button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Link para o cliente</button>`;
+  const brandSub = ehCliente() ? 'Área do cliente' : ehVisualizador() ? 'Equipe de design' : 'Hub do cliente';
+  const linkBtn = (ROLE === 'editor') ? `<button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Link para o cliente</button>` : '';
   document.getElementById('view-edit').innerHTML = `
     <div class="shell">
       <aside class="sidebar">
@@ -811,12 +814,17 @@ function renderTabContent() {
     }
     carregarCiclo(docId).then(() => { if (tabAtivo === 'copy') buildCopyTab(); });
   } else {
-    cont.innerHTML = `
-      <div class="sub-bar">
-        <button class="sub-btn${subMode==='vis'?' active':''}" onclick="setSubMode('vis')">👁 Visualização</button>
-        <button class="sub-btn${subMode==='edit'?' active':''}" onclick="setSubMode('edit')">✏ Edição</button>
-      </div>
-      <div id="sub-content"></div>`;
+    if (ehVisualizador()) {
+      subMode = 'vis'; // equipe de design só visualiza a Base de Dados
+      cont.innerHTML = `<div id="sub-content"></div>`;
+    } else {
+      cont.innerHTML = `
+        <div class="sub-bar">
+          <button class="sub-btn${subMode==='vis'?' active':''}" onclick="setSubMode('vis')">👁 Visualização</button>
+          <button class="sub-btn${subMode==='edit'?' active':''}" onclick="setSubMode('edit')">✏ Edição</button>
+        </div>
+        <div id="sub-content"></div>`;
+    }
     renderSubContent();
   }
 }
@@ -1122,6 +1130,8 @@ function buildCopyTab() {
     : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
   const hint = ehCliente()
     ? `<div class="copy-hint"><strong>Selecione qualquer trecho</strong> de um texto para comentar exatamente o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`
+    : ehVisualizador()
+    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Visualização da equipe de design — somente leitura.</div>`
     : '';
   cont.innerHTML = `<div class="copy-cycle-bar">${sel}</div>${hint}<div id="copy-cards"></div>`;
   renderCopyCards();
@@ -1142,11 +1152,11 @@ function renderOneCard(id) {
   if (it && el) el.innerHTML = cardInnerHTML(it, getCopy(id));
 }
 function cardInnerHTML(it, c) {
-  return cardHeader(it, c) + (ehCliente() ? cardValidacao(it, c) : cardEdit(it, c));
+  return cardHeader(it, c) + (ROLE === 'editor' ? cardEdit(it, c) : cardValidacao(it, c));
 }
 
 function cardHeader(it, c) {
-  const vt = !ehCliente()
+  const vt = (ROLE === 'editor')
     ? `<div class="vid-toggle${c.isVideo?' on':''}" onclick="toggleVideo(${it.id})">🎬 ${c.isVideo?'Vídeo (Reels)':'Vídeo?'}</div>`
     : '';
   return `<div class="cc-head">
@@ -1232,6 +1242,11 @@ function gabiDecisionRow(it, c) {
     ${chip('cancelado','✕ Cancelado')}
   </div>`;
 }
+// Selo de decisão somente leitura (visualizador / equipe de design)
+function decisionBadgeRO(c) {
+  if (!c.statusGabi) return '';
+  return `<div class="gabi-dec"><span class="gd-chip on ${c.statusGabi}" style="cursor:default">${gabiLabel(c.statusGabi)}</span></div>`;
+}
 function vblockHTML(id, c, block, label, text) {
   const comments = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
   return `<div class="cf">
@@ -1249,7 +1264,8 @@ function cardValidacao(it, c) {
   }
   blocks.push(vblockHTML(it.id, c, 'legenda', 'Texto da legenda', c.legenda));
   if (c.blog) blocks.push(vblockHTML(it.id, c, 'blog', 'Texto de blog', c.blog));
-  return `${statusSummaryRO(c)}${gabiDecisionRow(it, c)}
+  const decisao = ehCliente() ? gabiDecisionRow(it, c) : decisionBadgeRO(c);
+  return `${statusSummaryRO(c)}${decisao}
     ${c.direcionamento?`<div class="cf"><label class="cf-lbl">Direcionamento</label><div style="font-size:12px;color:var(--z-text-sec)">${esc(c.direcionamento)}</div></div>`:''}
     ${blocks.join('')}`;
 }
@@ -1263,7 +1279,7 @@ function commentListHTML(id, c, block) {
       <div class="cmt-quote">“${esc(cm.quote)}”</div>
       <div class="cmt-texto">${esc(cm.texto)}</div>
       <div class="cmt-foot"><span class="cmt-meta">— ${esc(cm.autor||'Gabi')}</span>
-        <button class="cmt-resolve" onclick="resolverComentario(${id},'${cm.id}')">✓ Resolver</button></div>
+        ${ehVisualizador() ? '' : `<button class="cmt-resolve" onclick="resolverComentario(${id},'${cm.id}')">✓ Resolver</button>`}</div>
     </div>`).join('')}</div>`;
 }
 function renderComentado(text, comments) {
@@ -1411,8 +1427,9 @@ async function iniciarHub(role, email) {
 
 // Override de teste só em localhost (valida a UI por papel sem o popup do Google)
 const asParam = new URLSearchParams(location.search).get('as');
-if (isLocalhost && (asParam === 'editor' || asParam === 'cliente')) {
-  iniciarHub(asParam, asParam === 'editor' ? 'vitort2210@gmail.com' : 'consultoria.zelo@gmail.com');
+if (isLocalhost && ['editor','cliente','visualizador'].includes(asParam)) {
+  const emailTeste = { editor:'vitort2210@gmail.com', cliente:'consultoria.zelo@gmail.com', visualizador:'boninaestudio.contato@gmail.com' }[asParam];
+  iniciarHub(asParam, emailTeste);
 } else {
   onAuthStateChanged(auth, (user) => {
     if (!user) { mostrarLogin(); return; }
