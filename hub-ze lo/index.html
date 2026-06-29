@@ -37,7 +37,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .nav-item.active{background:var(--z-teal);color:#fff;box-shadow:0 3px 10px rgba(17,128,140,.28)}
 .nav-ico{font-size:15px;width:18px;text-align:center;flex-shrink:0}
 .side-foot{margin-top:auto;padding-top:.85rem;border-top:0.5px solid var(--z-border)}
-.side-foot .copy-row{margin-bottom:0}
+.side-foot .copy-row{margin-bottom:10px}
+.side-user{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.side-email{font-size:10.5px;color:var(--z-text-sec);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.side-sair{flex-shrink:0;background:none;border:none;color:var(--z-terra);font-size:11px;font-weight:600;font-family:inherit;cursor:pointer;padding:2px 4px}
+.side-sair:hover{text-decoration:underline}
 /* main head */
 .main-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:1.4rem;padding-bottom:.95rem;border-bottom:1.5px solid var(--z-border)}
 .main-title{font-size:23px;font-weight:800;color:var(--z-text);letter-spacing:-.015em;line-height:1.1}
@@ -64,6 +68,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   .nav-item .nav-ico{display:none}
   .side-foot{margin-top:0}
 }
+
+/* AUTH / LOGIN */
+.auth-screen{min-height:78vh;display:flex;align-items:center;justify-content:center;padding:2rem}
+.auth-card{background:#fff;border:0.5px solid var(--z-border);border-radius:18px;padding:2.4rem 2rem;box-shadow:0 6px 28px rgba(0,0,0,.07);text-align:center;max-width:340px;width:100%}
+.auth-logo{width:132px;margin:0 auto 1.3rem;display:block}
+.auth-title{font-size:18px;font-weight:800;color:var(--z-text);margin-bottom:6px}
+.auth-sub{font-size:13px;color:var(--z-text-sec);line-height:1.55;margin-bottom:1.5rem}
+.auth-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:11px 16px;border-radius:10px;border:none;background:var(--z-teal);color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s}
+.auth-btn:hover{background:#0A6870}
+.g-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#fff;color:var(--z-teal);font-weight:800;font-size:13px}
+.auth-link{margin-top:14px;background:none;border:none;color:var(--z-text-sec);font-size:12px;font-family:inherit;cursor:pointer;text-decoration:underline}
+.auth-link:hover{color:var(--z-teal)}
 
 /* HEADER */
 .hub-header{background:linear-gradient(135deg,var(--z-teal) 0%,#0A5961 100%);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
@@ -259,6 +275,8 @@ mark.cmt:hover{background:#f6d9c4}
 .cmt-pop button{font-size:11px;font-weight:600;padding:5px 11px;border-radius:6px;border:none;cursor:pointer;font-family:inherit}
 .pop-save{background:var(--z-terra);color:#fff}
 .pop-cancel{background:var(--z-bg);color:var(--z-text-sec)}
+/* hint do modo validação (cliente) */
+.copy-hint{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:10px;padding:10px 13px;margin-bottom:1.1rem;font-size:12px;color:var(--z-text);line-height:1.5}
 /* banner da Gabi */
 .gabi-banner{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:12px;padding:14px 16px;margin-bottom:1.25rem}
 .gabi-banner-title{font-size:14px;font-weight:700;color:var(--z-terra);margin-bottom:3px}
@@ -269,12 +287,24 @@ mark.cmt:hover{background:#f6d9c4}
 <div class="container">
   <div class="loading" id="loading">Carregando hub...</div>
   <div class="toast" id="toast"></div>
+  <div id="auth-screen" class="auth-screen" style="display:none">
+    <div class="auth-card">
+      <img class="brand-logo auth-logo" src="logo.png" alt="Zelo Consultoria" onerror="this.onerror=null;this.src='logo.svg'">
+      <div class="auth-title">Hub do cliente</div>
+      <div class="auth-sub" id="auth-msg">Entre com sua conta Google para acessar o hub.</div>
+      <button class="auth-btn" id="auth-google" onclick="entrarGoogle()">
+        <span class="g-badge">G</span><span>Entrar com Google</span>
+      </button>
+      <button class="auth-link" id="auth-signout" onclick="sairHub()" style="display:none">Sair e tentar outra conta</button>
+    </div>
+  </div>
   <div id="view-edit"></div>
 </div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDCenC4zYJi9X6MEe1z4hOnWQ2KP14FsWQ",
@@ -287,12 +317,25 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 const CLIENT_ID = "ze lo";
 const CLIENT_NOME = "Zelo Consultoria";
 const MODE = new URLSearchParams(window.location.search).get('mode') || '';
-const isValidacao = new URLSearchParams(window.location.search).get('view') === 'validacao';
 const DOC_REF = doc(db, 'hubs', CLIENT_ID);
+
+// ── ACESSO / PAPÉIS ───────────────────────────────────────────────────────────
+const EDITOR_EMAILS  = ["vitort2210@gmail.com"];
+const CLIENTE_EMAILS = ["consultoria.zelo@gmail.com"]; // TODO: adicionar email da Gabi
+function papelDoEmail(email) {
+  const e = (email || '').toLowerCase();
+  if (EDITOR_EMAILS.map(x => x.toLowerCase()).includes(e)) return 'editor';
+  if (CLIENTE_EMAILS.map(x => x.toLowerCase()).includes(e)) return 'cliente';
+  return null; // sem acesso
+}
+let ROLE = 'editor';
+let USER_EMAIL = '';
+const ehCliente = () => ROLE === 'cliente';
 
 // ── ESTADO DA ABA COPY (cross-doc: grade do planejamento + conteúdo de copy) ──
 let gradeItems = [];          // itens da grade vindos de planejamentos/{docId}
@@ -691,17 +734,20 @@ function renderSecL() {
 }
 
 function renderSecM() {
-  document.getElementById('bod-m').innerHTML = estado.planejamentos.map(p => `
+  document.getElementById('bod-m').innerHTML = estado.planejamentos.map(p => {
+    const links = ehCliente()
+      ? `<a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank" style="grid-column:1/-1">👁 Visualizar</a>`
+      : `<a class="plan-link plan-vitor" href="${esc(p.linkVitor)}" target="_blank">✏ Editar</a>
+         <a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank">👁 Visualizar</a>`;
+    return `
     <div class="plan-card">
       <div class="plan-card-head">
         <div class="plan-period">${esc(p.periodo)}</div>
         <div class="plan-cycle">${esc(p.ciclo)}</div>
       </div>
-      <div class="plan-links">
-        <a class="plan-link plan-vitor" href="${esc(p.linkVitor)}" target="_blank">✏ Editar (Vitor)</a>
-        <a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank">👁 Validação (Gabi)</a>
-      </div>
-    </div>`).join('') || '<p style="font-size:13px;color:var(--z-text-sec)">Nenhum planejamento adicionado ainda.</p>';
+      <div class="plan-links">${links}</div>
+    </div>`;
+  }).join('') || '<p style="font-size:13px;color:var(--z-text-sec)">Nenhum planejamento adicionado ainda.</p>';
 }
 
 // ── ESTADO DE NAVEGAÇÃO ───────────────────────────────────────────────────────
@@ -718,35 +764,25 @@ const TAB_META = {
 function brandLogo() { return `<img class="brand-logo" src="logo.png" alt="Zelo Consultoria" onerror="this.onerror=null;this.src='logo.svg'">`; }
 
 function buildHub() {
-  if (isValidacao) {
-    document.getElementById('view-edit').innerHTML = `
-      <div class="focused">
-        <div class="focus-brand">${brandLogo()}
-          <div class="brand-sub">Validação de copies</div>
-          <div class="hh-save" id="save-status"></div>
-        </div>
-        <div class="gabi-banner">
-          <div class="gabi-banner-title">Olá, Gabi! 👋</div>
-          <div class="gabi-banner-text"><strong>Selecione qualquer trecho</strong> dos textos abaixo para comentar exatamente o que deseja ajustar — o trecho fica destacado em laranja. Marque também a <strong>decisão</strong> de cada material. Tudo é salvo automaticamente e o Vitor vê em tempo real.</div>
-        </div>
-        <div id="tab-content" class="tab-content"></div>
-      </div>`;
-    renderTabContent();
-    return;
-  }
   const m = TAB_META[tabAtivo] || TAB_META.plan;
   const navItem = (key) => `<button class="nav-item${tabAtivo===key?' active':''}" onclick="setTab('${key}')"><span class="nav-ico">${TAB_META[key].ico}</span> ${TAB_META[key].title}</button>`;
+  const brandSub = ehCliente() ? 'Área do cliente' : 'Hub do cliente';
+  const linkBtn = ehCliente() ? '' : `<button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Link para o cliente</button>`;
   document.getElementById('view-edit').innerHTML = `
     <div class="shell">
       <aside class="sidebar">
         <div class="brand">${brandLogo()}
-          <div class="brand-sub">Hub do cliente</div>
+          <div class="brand-sub">${brandSub}</div>
         </div>
         <nav class="side-nav">
           ${navItem('plan')}${navItem('copy')}${navItem('dados')}
         </nav>
         <div class="side-foot">
-          <button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Link para o cliente</button>
+          ${linkBtn}
+          <div class="side-user">
+            <span class="side-email" title="${esc(USER_EMAIL)}">${esc(USER_EMAIL || '')}</span>
+            <button class="side-sair" onclick="sairHub()">Sair</button>
+          </div>
         </div>
       </aside>
       <main class="main">
@@ -1081,15 +1117,13 @@ function buildCopyTab() {
   if (!cont) return;
   const plist = estado.planejamentos || [];
   const cur = plist.find(p => cicloDocId(p) === copyCiclo) || plist[0] || {};
-  let topBar = '';
-  if (!isValidacao) {
-    const sel = plist.length > 1
-      ? `<select class="copy-cycle-sel" onchange="setCopyCiclo(this.value)">${plist.map(p => `<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
-      : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
-    topBar = `<div class="copy-cycle-bar">${sel}
-      <button class="copy-gabi-btn" id="copy-gabi-link" onclick="copiarLinkGabiCopy()">📋 Copiar link da Gabi (validação)</button></div>`;
-  }
-  cont.innerHTML = `${topBar}<div id="copy-cards"></div>`;
+  const sel = plist.length > 1
+    ? `<select class="copy-cycle-sel" onchange="setCopyCiclo(this.value)">${plist.map(p => `<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
+    : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
+  const hint = ehCliente()
+    ? `<div class="copy-hint"><strong>Selecione qualquer trecho</strong> de um texto para comentar exatamente o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`
+    : '';
+  cont.innerHTML = `<div class="copy-cycle-bar">${sel}</div>${hint}<div id="copy-cards"></div>`;
   renderCopyCards();
 }
 
@@ -1108,11 +1142,11 @@ function renderOneCard(id) {
   if (it && el) el.innerHTML = cardInnerHTML(it, getCopy(id));
 }
 function cardInnerHTML(it, c) {
-  return cardHeader(it, c) + (isValidacao ? cardValidacao(it, c) : cardEdit(it, c));
+  return cardHeader(it, c) + (ehCliente() ? cardValidacao(it, c) : cardEdit(it, c));
 }
 
 function cardHeader(it, c) {
-  const vt = !isValidacao
+  const vt = !ehCliente()
     ? `<div class="vid-toggle${c.isVideo?' on':''}" onclick="toggleVideo(${it.id})">🎬 ${c.isVideo?'Vídeo (Reels)':'Vídeo?'}</div>`
     : '';
   return `<div class="cc-head">
@@ -1318,7 +1352,7 @@ window.salvarCmt = function() {
 
 // Seleção de texto → popover de comentário (apenas modo validação)
 document.addEventListener('mouseup', (e) => {
-  if (!isValidacao) return;
+  if (!ehCliente()) return;
   if (e.target.closest && e.target.closest('#cmt-pop')) return;
   const sel = window.getSelection();
   if (!sel || sel.isCollapsed) return;
@@ -1337,25 +1371,59 @@ document.addEventListener('mousedown', (e) => {
   if (p && p.style.display === 'block' && !e.target.closest('#cmt-pop') && !e.target.closest('.vblock')) hideCmtPopover();
 });
 
-// ── INIT ─────────────────────────────────────────────────────────────────────
-carregarDoFirebase().then(() => {
-  document.getElementById('loading').classList.add('hide');
-  // Planos são bimestrais → até 6 ciclos/ano. Corrige valores antigos "de 4" salvos no Firebase.
-  let _ciclosCorrigidos = false;
-  (estado.planejamentos || []).forEach(p => {
-    if (p.ciclo && /\bde\s*4\b/.test(p.ciclo)) { p.ciclo = p.ciclo.replace(/\bde\s*4\b/, 'de 6'); _ciclosCorrigidos = true; }
+// ── LOGIN / GATE DE ACESSO ────────────────────────────────────────────────────
+const isLocalhost = ['localhost','127.0.0.1'].includes(location.hostname);
+
+window.entrarGoogle = function() {
+  signInWithPopup(auth, new GoogleAuthProvider()).catch(e => {
+    console.error('Erro de login:', e);
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
+    if (e.code === 'auth/unauthorized-domain') { showToast('Domínio não autorizado no Firebase. Veja as configurações.'); return; }
+    if (e.code === 'auth/operation-not-allowed') { showToast('Login Google ainda não ativado no Firebase Console.'); return; }
+    showToast('Não foi possível entrar. Tente novamente.');
   });
-  if (_ciclosCorrigidos) agendarSalvamento();
-  if (isValidacao) {
-    tabAtivo = 'copy';
-    copyCiclo = new URLSearchParams(window.location.search).get('ciclo')
-              || cicloDocId((estado.planejamentos||[])[0]);
-  } else if (MODE === 'doc') {
-    tabAtivo = 'dados';
-    subMode  = 'vis';
-  }
+};
+window.sairHub = function() { signOut(auth).catch(()=>{}); };
+
+function mostrarLogin(msgHTML, semAcesso) {
+  document.getElementById('loading').classList.add('hide');
+  document.getElementById('view-edit').innerHTML = '';
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('auth-msg').innerHTML = msgHTML || 'Entre com sua conta Google para acessar o hub.';
+  document.getElementById('auth-google').style.display = semAcesso ? 'none' : '';
+  document.getElementById('auth-signout').style.display = semAcesso ? '' : 'none';
+}
+
+async function iniciarHub(role, email) {
+  ROLE = role; USER_EMAIL = email;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('loading').classList.remove('hide');
+  await carregarDoFirebase();
+  // Planos bimestrais → até 6 ciclos/ano. Corrige valores antigos "de 4".
+  let _chg = false;
+  (estado.planejamentos || []).forEach(p => {
+    if (p.ciclo && /\bde\s*4\b/.test(p.ciclo)) { p.ciclo = p.ciclo.replace(/\bde\s*4\b/, 'de 6'); _chg = true; }
+  });
+  if (_chg && role === 'editor') agendarSalvamento();
+  document.getElementById('loading').classList.add('hide');
   buildHub();
-});
+}
+
+// Override de teste só em localhost (valida a UI por papel sem o popup do Google)
+const asParam = new URLSearchParams(location.search).get('as');
+if (isLocalhost && (asParam === 'editor' || asParam === 'cliente')) {
+  iniciarHub(asParam, asParam === 'editor' ? 'vitort2210@gmail.com' : 'consultoria.zelo@gmail.com');
+} else {
+  onAuthStateChanged(auth, (user) => {
+    if (!user) { mostrarLogin(); return; }
+    const papel = papelDoEmail(user.email);
+    if (!papel) {
+      mostrarLogin(`A conta <strong>${esc(user.email)}</strong> não tem acesso a este hub.<br>Entre com uma conta autorizada.`, true);
+      return;
+    }
+    iniciarHub(papel, user.email);
+  });
+}
 </script>
 </body>
 </html>
