@@ -19,7 +19,51 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   --t3:#5A5A5A;--t3-l:#F0F0F0;
   --tm:#9A7A1F;--tm-l:#FBF6E8;
 }
-.container{max-width:680px;margin:0 auto}
+.container{max-width:1060px;margin:0 auto}
+
+/* ════ SHELL (sidebar + main) ════ */
+.shell{display:flex;gap:1.5rem;align-items:flex-start}
+.sidebar{width:232px;flex-shrink:0;position:sticky;top:1.5rem;background:#fff;border:0.5px solid var(--z-border);border-radius:16px;padding:1.1rem;box-shadow:0 1px 4px rgba(0,0,0,.05);display:flex;flex-direction:column;gap:1rem}
+.main{flex:1;min-width:0}
+/* brand */
+.brand{display:flex;flex-direction:column;align-items:flex-start;gap:7px}
+.brand-logo{width:118px;height:auto;display:block}
+.brand-sub{font-size:9.5px;color:var(--z-text-sec);text-transform:uppercase;letter-spacing:.09em;font-weight:700}
+/* nav */
+.side-nav{display:flex;flex-direction:column;gap:4px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:10px;border:none;background:transparent;color:var(--z-text-sec);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-align:left;transition:background .15s,color .15s,box-shadow .15s,transform .1s;width:100%}
+.nav-item:hover{background:var(--z-teal-light);color:var(--z-teal)}
+.nav-item:active{transform:scale(.98)}
+.nav-item.active{background:var(--z-teal);color:#fff;box-shadow:0 3px 10px rgba(17,128,140,.28)}
+.nav-ico{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.side-foot{margin-top:auto;padding-top:.85rem;border-top:0.5px solid var(--z-border)}
+.side-foot .copy-row{margin-bottom:0}
+/* main head */
+.main-head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:1.4rem;padding-bottom:.95rem;border-bottom:1.5px solid var(--z-border)}
+.main-title{font-size:23px;font-weight:800;color:var(--z-text);letter-spacing:-.015em;line-height:1.1}
+.main-sub{font-size:12px;color:var(--z-text-sec);margin-top:4px}
+.main-head .hh-save,.focus-brand .hh-save{color:#9AA0A6}
+.main-head .hh-save.saving,.focus-brand .hh-save.saving{color:var(--z-terra)}
+/* focused (validação Gabi) */
+.focused{max-width:680px;margin:0 auto}
+.focus-brand{display:flex;align-items:center;gap:12px;margin-bottom:1.2rem}
+.focus-brand .brand-logo{width:96px}
+.focus-brand .hh-save{margin-left:auto;min-height:14px;font-size:11px;transition:color .2s}
+/* micro-interações */
+.tab-content{animation:fadeUp .26s ease both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+.copy-card,.plan-card,.sec-card{transition:box-shadow .18s ease,transform .18s ease,border-color .18s ease}
+.copy-card:hover,.sec-card:hover{box-shadow:0 5px 18px rgba(0,0,0,.07);transform:translateY(-2px)}
+.plan-card:hover{box-shadow:0 5px 18px rgba(17,128,140,.12);transform:translateY(-2px)}
+@media(max-width:860px){
+  .container{max-width:680px}
+  .shell{flex-direction:column;gap:1rem}
+  .sidebar{width:100%;position:static;flex-direction:column}
+  .side-nav{flex-direction:row;gap:6px}
+  .nav-item{flex:1;justify-content:center;padding:9px 6px}
+  .nav-item .nav-ico{display:none}
+  .side-foot{margin-top:0}
+}
 
 /* HEADER */
 .hub-header{background:linear-gradient(135deg,var(--z-teal) 0%,#0A5961 100%);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
@@ -174,10 +218,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* decisão da Gabi */
 .gabi-dec{display:flex;flex-wrap:wrap;gap:6px;margin:.3rem 0 1rem}
 .gd-chip{font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;border:1.5px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer;font-family:inherit;transition:all .12s}
-.gd-chip.on.liberada{background:#d7f0e0;border-color:#1B6B3A;color:#1B6B3A}
-.gd-chip.on.alteracoes{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
-.gd-chip.on.aprovada{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal)}
-.gd-chip.on.cancelada{background:var(--z-terra-light);border-color:var(--z-terra);color:#8A4020}
+.gd-chip.on.validacao_necessaria{background:#EFEFEF;border-color:#8A8A8A;color:#4A4A4A}
+.gd-chip.on.em_validacao{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal)}
+.gd-chip.on.revisao_necessaria{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
+.gd-chip.on.aprovado{background:#d7f0e0;border-color:#1B6B3A;color:#1B6B3A}
+.gd-chip.on.cancelado{background:var(--z-terra-light);border-color:var(--z-terra);color:#8A4020}
 /* campos de copy */
 .cf{margin-bottom:11px}
 .cf-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--z-teal);margin-bottom:4px;display:block}
@@ -352,7 +397,7 @@ const defaults = {
   planejamentos: [
     {
       periodo: "Maio — Junho 2027",
-      ciclo: "Ciclo 1 de 4",
+      ciclo: "Ciclo 1 de 6",
       status: "em andamento",
       docId: "maio-junho-2027",
       linkVitor: "../maio-junho-2027/",
@@ -660,33 +705,58 @@ function renderSecM() {
 }
 
 // ── ESTADO DE NAVEGAÇÃO ───────────────────────────────────────────────────────
-let tabAtivo = 'plan';   // 'plan' | 'dados'
+let tabAtivo = 'dados';  // 'plan' | 'copy' | 'dados' — abre em Base de Dados
 let subMode  = 'vis';    // 'vis'  | 'edit'
 
 // ── BUILD HUB ─────────────────────────────────────────────────────────────────
+const TAB_META = {
+  plan:  { ico:'📅', title:'Planejamento',  sub:'Ciclos de conteúdo do cliente' },
+  copy:  { ico:'✍️', title:'Copy',          sub:'Produção e validação de textos' },
+  dados: { ico:'🗂️', title:'Base de Dados', sub:'Onboarding, briefing e materiais' }
+};
+// Logo da Zelo. Usa logo.png (arquivo real do cliente); se ausente, cai no logo.svg recriado.
+function brandLogo() { return `<img class="brand-logo" src="logo.png" alt="Zelo Consultoria" onerror="this.onerror=null;this.src='logo.svg'">`; }
+
 function buildHub() {
-  const header = `
-    <div class="hub-header">
-      <div class="hh-lbl">${isValidacao ? 'Validação de copies' : 'Hub do cliente'}</div>
-      <div class="hh-title">${esc(CLIENT_NOME)}</div>
-      <div class="hh-sub">${isValidacao ? 'Revisão de conteúdos com a Gabi' : 'Onboarding · Briefing · Materiais · Planejamentos'}</div>
-      <div class="hh-save" id="save-status"></div>
-    </div>`;
-  let nav;
   if (isValidacao) {
-    nav = `<div class="gabi-banner">
-      <div class="gabi-banner-title">Olá, Gabi! 👋</div>
-      <div class="gabi-banner-text"><strong>Selecione qualquer trecho</strong> dos textos abaixo para comentar exatamente o que deseja ajustar — o trecho fica destacado em laranja. Marque também a <strong>decisão</strong> de cada material. Tudo é salvo automaticamente e o Vitor vê em tempo real.</div>
-    </div>`;
-  } else {
-    nav = `<div class="tab-bar">
-      <button class="tab-btn${tabAtivo==='plan'?' active':''}" onclick="setTab('plan')">Planejamento</button>
-      <button class="tab-btn${tabAtivo==='copy'?' active':''}" onclick="setTab('copy')">Copy</button>
-      <button class="tab-btn${tabAtivo==='dados'?' active':''}" onclick="setTab('dados')">Base de Dados</button>
-    </div>
-    <button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Copiar link para o cliente</button>`;
+    document.getElementById('view-edit').innerHTML = `
+      <div class="focused">
+        <div class="focus-brand">${brandLogo()}
+          <div class="brand-sub">Validação de copies</div>
+          <div class="hh-save" id="save-status"></div>
+        </div>
+        <div class="gabi-banner">
+          <div class="gabi-banner-title">Olá, Gabi! 👋</div>
+          <div class="gabi-banner-text"><strong>Selecione qualquer trecho</strong> dos textos abaixo para comentar exatamente o que deseja ajustar — o trecho fica destacado em laranja. Marque também a <strong>decisão</strong> de cada material. Tudo é salvo automaticamente e o Vitor vê em tempo real.</div>
+        </div>
+        <div id="tab-content" class="tab-content"></div>
+      </div>`;
+    renderTabContent();
+    return;
   }
-  document.getElementById('view-edit').innerHTML = header + nav + `<div id="tab-content"></div>`;
+  const m = TAB_META[tabAtivo] || TAB_META.plan;
+  const navItem = (key) => `<button class="nav-item${tabAtivo===key?' active':''}" onclick="setTab('${key}')"><span class="nav-ico">${TAB_META[key].ico}</span> ${TAB_META[key].title}</button>`;
+  document.getElementById('view-edit').innerHTML = `
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">${brandLogo()}
+          <div class="brand-sub">Hub do cliente</div>
+        </div>
+        <nav class="side-nav">
+          ${navItem('plan')}${navItem('copy')}${navItem('dados')}
+        </nav>
+        <div class="side-foot">
+          <button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Link para o cliente</button>
+        </div>
+      </aside>
+      <main class="main">
+        <div class="main-head">
+          <div><div class="main-title">${esc(m.title)}</div><div class="main-sub">${esc(m.sub)}</div></div>
+          <div class="hh-save" id="save-status"></div>
+        </div>
+        <div id="tab-content" class="tab-content"></div>
+      </main>
+    </div>`;
   renderTabContent();
 }
 
@@ -979,7 +1049,13 @@ function blockText(c, block) {
   return '';
 }
 function gabiLabel(s) {
-  return { liberada:'Liberada p/ design', alteracoes:'Aguardando alterações', aprovada:'Aprovada', cancelada:'Cancelada' }[s] || s;
+  return {
+    validacao_necessaria:'Validação necessária',
+    em_validacao:'Em validação',
+    revisao_necessaria:'Revisão necessária',
+    aprovado:'Aprovado',
+    cancelado:'Cancelado'
+  }[s] || s;
 }
 
 // ── Salvamento (doc de copies) ────────────────────────────────────────────────
@@ -1063,10 +1139,6 @@ function statusRowEdit(it, c) {
       ${chip('statusCopy','andamento','Em andamento','andamento')}
       ${chip('statusCopy','finalizado','Finalizado','finalizado')}
       ${chip('statusCopy','bloqueado','Bloqueado','bloqueado')}</div>
-    <div class="st-group"><span class="st-lbl">Arte</span>
-      ${chip('statusArte','andamento','Em andamento','andamento')}
-      ${chip('statusArte','finalizado','Finalizado','finalizado')}
-      ${chip('statusArte','bloqueado','Bloqueado','bloqueado')}</div>
     ${gabi}
   </div>`;
 }
@@ -1114,16 +1186,16 @@ function statusSummaryRO(c) {
     : `<span class="st-chip" style="cursor:default;opacity:.55">não iniciado</span>`;
   return `<div class="cc-status">
     <div class="st-group"><span class="st-lbl">Copy</span>${badge(c.statusCopy)}</div>
-    <div class="st-group"><span class="st-lbl">Arte</span>${badge(c.statusArte)}</div>
   </div>`;
 }
 function gabiDecisionRow(it, c) {
   const chip = (val, lbl) => `<button class="gd-chip ${val}${c.statusGabi===val?' on':''}" onclick="setGabiStatus(${it.id},'${val}')">${lbl}</button>`;
   return `<div class="gabi-dec">
-    ${chip('liberada','✅ Liberada p/ design')}
-    ${chip('alteracoes','✏ Aguardando alterações')}
-    ${chip('aprovada','👍 Aprovada')}
-    ${chip('cancelada','✕ Cancelada')}
+    ${chip('validacao_necessaria','⏳ Validação necessária')}
+    ${chip('em_validacao','🔍 Em validação')}
+    ${chip('revisao_necessaria','✏ Revisão necessária')}
+    ${chip('aprovado','👍 Aprovado')}
+    ${chip('cancelado','✕ Cancelado')}
   </div>`;
 }
 function vblockHTML(id, c, block, label, text) {
@@ -1268,6 +1340,12 @@ document.addEventListener('mousedown', (e) => {
 // ── INIT ─────────────────────────────────────────────────────────────────────
 carregarDoFirebase().then(() => {
   document.getElementById('loading').classList.add('hide');
+  // Planos são bimestrais → até 6 ciclos/ano. Corrige valores antigos "de 4" salvos no Firebase.
+  let _ciclosCorrigidos = false;
+  (estado.planejamentos || []).forEach(p => {
+    if (p.ciclo && /\bde\s*4\b/.test(p.ciclo)) { p.ciclo = p.ciclo.replace(/\bde\s*4\b/, 'de 6'); _ciclosCorrigidos = true; }
+  });
+  if (_ciclosCorrigidos) agendarSalvamento();
   if (isValidacao) {
     tabAtivo = 'copy';
     copyCiclo = new URLSearchParams(window.location.search).get('ciclo')
