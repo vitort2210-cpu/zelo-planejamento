@@ -281,6 +281,49 @@ mark.cmt:hover{background:#f6d9c4}
 .gabi-banner{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:12px;padding:14px 16px;margin-bottom:1.25rem}
 .gabi-banner-title{font-size:14px;font-weight:700;color:var(--z-terra);margin-bottom:3px}
 .gabi-banner-text{font-size:12px;color:var(--z-text);line-height:1.55}
+
+/* ════ ABA DESIGN ════ */
+.dz-area{margin:.4rem 0 1rem}
+.dz-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.dz-thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:0.5px solid var(--z-border);background:var(--z-bg)}
+.dz-thumb img,.dz-thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.dz-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.dz-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px dashed var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);cursor:pointer;font-family:inherit}
+.dz-btn:hover{background:#d3ebee}
+.dz-progress{font-size:11px;color:var(--z-text-sec);margin-left:10px}
+.prev-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:.3rem 0 .5rem}
+@media(max-width:620px){.prev-grid{grid-template-columns:1fr}}
+.car-block{min-width:0}
+.car-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--z-text-sec);margin-bottom:5px}
+.car-frame{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.ig-head{display:flex;align-items:center;gap:8px;padding:8px 10px}
+.ig-ava{width:26px;height:26px;border-radius:50%;background:linear-gradient(45deg,var(--z-terra),var(--z-ocre),var(--z-cyan));flex-shrink:0}
+.ig-user{font-size:12px;font-weight:700;color:var(--z-text);flex:1}
+.ig-more{color:var(--z-text-sec);font-size:12px}
+.li-head{display:flex;align-items:center;gap:8px;padding:9px 10px}
+.li-ava{width:30px;height:30px;border-radius:6px;background:#0A66C2;color:#fff;font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-style:italic}
+.li-user{font-size:12px;font-weight:700;color:var(--z-text);line-height:1.1}
+.li-sub{font-size:10px;color:var(--z-text-sec)}
+.car-stage{position:relative;background:#000}
+.car-viewport{position:relative;width:100%;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.frame-ig .car-viewport{aspect-ratio:4/5}
+.frame-li .car-viewport{aspect-ratio:1/1}
+.car-viewport img,.car-viewport video{width:100%;height:100%;object-fit:contain;display:block;background:#111}
+.car-empty{color:#999;font-size:12px;background:var(--z-bg)!important}
+.car-arrow{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.85);color:#222;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2}
+.car-arrow.left{left:6px}.car-arrow.right{right:6px}
+.car-arrow:hover{background:#fff}
+.car-foot{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:#fff}
+.car-dots{display:flex;gap:4px;flex-wrap:wrap}
+.car-dot{width:6px;height:6px;border-radius:50%;background:var(--z-border)}
+.car-dot.on{background:var(--z-teal)}
+.car-counter{font-size:11px;color:var(--z-text-sec);font-weight:600}
+.enviar-row{display:flex;align-items:center;gap:10px;margin-top:.7rem}
+.enviar-btn{font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px;border:none;background:var(--z-teal);color:#fff;cursor:pointer;font-family:inherit;transition:background .15s}
+.enviar-btn:hover{background:#0A6870}
+.enviado-tag{font-size:11px;font-weight:600;color:#1B6B3A}
+.gd-chip.on.em_analise{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal)}
+.gd-chip.on.ajustes_necessarios{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
 </style>
 </head>
 <body>
@@ -301,6 +344,7 @@ mark.cmt:hover{background:#f6d9c4}
   <div id="view-edit"></div>
 </div>
 
+<script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -339,6 +383,18 @@ let ROLE = 'editor';
 let USER_EMAIL = '';
 const ehCliente      = () => ROLE === 'cliente';
 const ehVisualizador = () => ROLE === 'visualizador';
+// Capabilities da aba Design
+const podeSubirDesign   = () => ROLE === 'editor' || ROLE === 'visualizador';
+const podeValidarDesign = () => ROLE === 'editor' || ROLE === 'cliente';
+
+// ── SERVIÇOS EXTERNOS (preencher quando as contas estiverem prontas) ───────────
+const CLOUDINARY_CLOUD  = "";   // ex.: "zelo-hub"
+const CLOUDINARY_PRESET = "";   // upload preset UNSIGNED
+const EMAILJS_SERVICE   = "";
+const EMAILJS_TEMPLATE  = "";
+const EMAILJS_PUBLIC    = "";
+const NOTIFY_EMAILS     = [];   // ex.: ["vitort2210@gmail.com","consultoria.zelo@gmail.com"]
+const WHATSAPP_ALVOS    = [];   // ex.: [{phone:"5551999999999", apikey:"123456"}]
 
 // ── ESTADO DA ABA COPY (cross-doc: grade do planejamento + conteúdo de copy) ──
 let gradeItems = [];          // itens da grade vindos de planejamentos/{docId}
@@ -347,12 +403,18 @@ let copyCiclo  = null;        // docId do ciclo selecionado
 let copyUnsub  = null;        // unsubscribe do onSnapshot
 let copySaveTimer = null;
 let pendingSel = null;        // seleção pendente para comentário da Gabi
+// Estado da aba Design
+let designData = { itens:{} };
+let designUnsub = null;
+let designSaveTimer = null;
+let carouselIdx = {};         // índice do slide por "itemId-plataforma"
 function cicloDocId(p){
   if(!p) return '';
   if(p.docId) return p.docId;
   return (p.linkVitor||'').replace(/[?#].*$/,'').replace(/\/+$/,'').split('/').pop()||'';
 }
 function copyRef(docId){ return doc(db, 'copies', CLIENT_ID + '__' + docId); }
+function designRef(docId){ return doc(db, 'design', CLIENT_ID + '__' + docId); }
 
 // ── ESTADO PADRÃO (dados Zelo pré-populados do briefing) ─────────────────────
 const defaults = {
@@ -759,9 +821,10 @@ let subMode  = 'vis';    // 'vis'  | 'edit'
 
 // ── BUILD HUB ─────────────────────────────────────────────────────────────────
 const TAB_META = {
-  plan:  { ico:'📅', title:'Planejamento',  sub:'Ciclos de conteúdo do cliente' },
-  copy:  { ico:'✍️', title:'Copy',          sub:'Produção e validação de textos' },
-  dados: { ico:'🗂️', title:'Base de Dados', sub:'Onboarding, briefing e materiais' }
+  plan:   { ico:'📅', title:'Planejamento',       sub:'Ciclos de conteúdo do cliente' },
+  copy:   { ico:'✍️', title:'Copy',               sub:'Produção e validação de textos' },
+  design: { ico:'🎨', title:'Validação de design', sub:'Artes e vídeos para aprovação' },
+  dados:  { ico:'🗂️', title:'Base de Dados',      sub:'Onboarding, briefing e materiais' }
 };
 // Logo da Zelo. Usa logo.png (arquivo real do cliente); se ausente, cai no logo.svg recriado.
 function brandLogo() { return `<img class="brand-logo" src="logo.png" alt="Zelo Consultoria" onerror="this.onerror=null;this.src='logo.svg'">`; }
@@ -778,7 +841,7 @@ function buildHub() {
           <div class="brand-sub">${brandSub}</div>
         </div>
         <nav class="side-nav">
-          ${navItem('plan')}${navItem('copy')}${navItem('dados')}
+          ${navItem('plan')}${navItem('copy')}${navItem('design')}${navItem('dados')}
         </nav>
         <div class="side-foot">
           ${linkBtn}
@@ -813,6 +876,14 @@ function renderTabContent() {
       return;
     }
     carregarCiclo(docId).then(() => { if (tabAtivo === 'copy') buildCopyTab(); });
+  } else if (tabAtivo === 'design') {
+    cont.innerHTML = `<div style="font-size:13px;color:var(--z-text-sec);padding:8px 0">Carregando artes...</div>`;
+    const docId = copyCiclo || cicloDocId((estado.planejamentos||[])[0]);
+    if (!docId) {
+      cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">Nenhum ciclo de planejamento disponível. Adicione um planejamento primeiro na aba Planejamento.</p>`;
+      return;
+    }
+    carregarCiclo(docId).then(() => { if (tabAtivo === 'design') buildDesignTab(); });
   } else {
     if (ehVisualizador()) {
       subMode = 'vis'; // equipe de design só visualiza a Base de Dados
@@ -1053,6 +1124,11 @@ async function carregarCiclo(docId) {
     const csnap = await getDoc(copyRef(docId));
     if (csnap.exists()) copyData = { itens: csnap.data().itens || {} };
   } catch(e){ console.warn('Falha ao carregar copies', e); }
+  designData = { itens:{} };
+  try {
+    const dsnap = await getDoc(designRef(docId));
+    if (dsnap.exists()) designData = { itens: dsnap.data().itens || {} };
+  } catch(e){ console.warn('Falha ao carregar design', e); }
   if (copyUnsub) { copyUnsub(); copyUnsub = null; }
   copyUnsub = onSnapshot(copyRef(docId), (snap) => {
     if (!snap.exists()) return;
@@ -1060,6 +1136,15 @@ async function carregarCiclo(docId) {
     if (tabAtivo === 'copy' && document.getElementById('copy-cards')) {
       const ae = document.activeElement;
       if (!ae || !ae.closest || !ae.closest('#copy-cards')) renderCopyCards();
+    }
+  });
+  if (designUnsub) { designUnsub(); designUnsub = null; }
+  designUnsub = onSnapshot(designRef(docId), (snap) => {
+    if (!snap.exists()) return;
+    designData = { itens: snap.data().itens || {} };
+    if (tabAtivo === 'design' && document.getElementById('design-cards')) {
+      const ae = document.activeElement;
+      if (!ae || !ae.closest || !ae.closest('#design-cards')) renderDesignCards();
     }
   });
 }
@@ -1386,6 +1471,198 @@ document.addEventListener('mousedown', (e) => {
   const p = document.getElementById('cmt-pop');
   if (p && p.style.display === 'block' && !e.target.closest('#cmt-pop') && !e.target.closest('.vblock')) hideCmtPopover();
 });
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ABA DESIGN — upload (Cloudinary) + preview IG/LinkedIn + validação + notificação
+// ══════════════════════════════════════════════════════════════════════════════
+function defaultDesign(){ return { imagens:[], video:null, statusDesign:'', comentarioDesign:'', enviadoEm:'', enviadoPor:'' }; }
+function normalizeDesign(d){ if(!Array.isArray(d.imagens)) d.imagens=[]; return d; }
+function getDesign(id){ return normalizeDesign(designData.itens[id] ? designData.itens[id] : defaultDesign()); }
+function ensureDesign(id){ if(!designData.itens[id]) designData.itens[id]=defaultDesign(); return normalizeDesign(designData.itens[id]); }
+function designLabel(s){ return { aprovado:'Aprovado', ajustes_necessarios:'Ajustes necessários', em_analise:'Em análise' }[s] || s; }
+
+function agendarSaveDesign(){
+  const el=document.getElementById('save-status'); if(el){ el.textContent='● Salvando...'; el.classList.add('saving'); }
+  clearTimeout(designSaveTimer); designSaveTimer=setTimeout(salvarDesign,1000);
+}
+async function salvarDesign(){
+  if(!copyCiclo) return;
+  try{
+    await setDoc(designRef(copyCiclo), { itens: designData.itens, updatedAt:new Date().toISOString() });
+    const el=document.getElementById('save-status'); if(el){ el.textContent='✓ Salvo'; el.classList.remove('saving'); }
+    setTimeout(()=>{ const e2=document.getElementById('save-status'); if(e2)e2.textContent=''; },2500);
+  }catch(e){ showToast('Erro ao salvar design.'); console.error(e); }
+}
+
+// Upload sem backend — Cloudinary unsigned
+async function uploadCloudinary(file){
+  const fd=new FormData(); fd.append('file',file); fd.append('upload_preset',CLOUDINARY_PRESET);
+  const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`,{ method:'POST', body:fd });
+  if(!res.ok) throw new Error('upload '+res.status);
+  const d=await res.json();
+  return { url:d.secure_url, publicId:d.public_id, w:d.width, h:d.height, resource_type:d.resource_type };
+}
+
+// ── Render da aba ──────────────────────────────────────────────────────────────
+function buildDesignTab(){
+  const cont=document.getElementById('tab-content'); if(!cont) return;
+  const plist=estado.planejamentos||[];
+  const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
+  const sel = plist.length>1
+    ? `<select class="copy-cycle-sel" onchange="setDesignCiclo(this.value)">${plist.map(p=>`<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
+    : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
+  const hint = podeSubirDesign()
+    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 Suba as artes de cada conteúdo. Ao terminar um material, clique <strong>Enviar para validação</strong> — Vitor e Gabi são avisados.</div>`
+    : `<div class="copy-hint">Acompanhe e valide as artes enviadas pela equipe de design.</div>`;
+  cont.innerHTML=`<div class="copy-cycle-bar">${sel}</div>${hint}<div id="design-cards"></div>`;
+  renderDesignCards();
+}
+function renderDesignCards(){
+  const cont=document.getElementById('design-cards'); if(!cont) return;
+  if(!gradeItems.length){ cont.innerHTML=`<p style="font-size:13px;color:var(--z-text-sec)">A grade deste ciclo ainda não tem conteúdos.</p>`; return; }
+  cont.innerHTML=gradeItems.map(it=>`<div class="copy-card" id="design-card-${it.id}">${designCardInner(it,getDesign(it.id))}</div>`).join('');
+  gradeItems.forEach(it=>{ updateCarousel(it.id,'ig'); updateCarousel(it.id,'li'); });
+}
+function renderDesignCard(id){
+  const it=gradeItems.find(x=>x.id===id); const el=document.getElementById('design-card-'+id);
+  if(it&&el){ el.innerHTML=designCardInner(it,getDesign(id)); updateCarousel(id,'ig'); updateCarousel(id,'li'); }
+}
+function statusDesignBadge(d){
+  if(!d.statusDesign) return '';
+  return `<span class="gd-chip on ${d.statusDesign}" style="cursor:default;align-self:flex-start;white-space:nowrap">${designLabel(d.statusDesign)}</span>`;
+}
+function uploadAreaHTML(id,d){
+  const thumbs=(d.imagens||[]).map((im,i)=>`<div class="dz-thumb"><img src="${esc(im.url)}"><button class="dz-del" onclick="removeDesignImg(${id},${i})" title="Remover">✕</button></div>`).join('');
+  const vid=d.video?`<div class="dz-thumb dz-video"><video src="${esc(d.video.url)}" muted></video><button class="dz-del" onclick="removeDesignVideo(${id})" title="Remover">✕</button></div>`:'';
+  return `<div class="dz-area">
+    <div class="dz-thumbs">${thumbs}${vid}</div>
+    <label class="dz-btn">📎 Subir arte / vídeo<input type="file" accept="image/*,video/*" multiple style="display:none" onchange="onDesignFiles(${id},this)"></label>
+    <span class="dz-progress" id="dz-prog-${id}"></span>
+  </div>`;
+}
+function designStatusRow(id,d){
+  const chip=(val,lbl)=>`<button class="gd-chip ${val}${d.statusDesign===val?' on':''}" onclick="setDesignStatus(${id},'${val}')">${lbl}</button>`;
+  return `<div class="gabi-dec">
+    ${chip('em_analise','🔍 Em análise')}
+    ${chip('ajustes_necessarios','✏ Ajustes necessários')}
+    ${chip('aprovado','👍 Aprovado')}
+  </div>
+  <div class="cf"><textarea rows="2" placeholder="Comentário para o design (opcional)..." oninput="updateDesignComment(${id},this)">${esc(d.comentarioDesign||'')}</textarea></div>`;
+}
+function carouselHTML(id,plat,d){
+  const imgs=d.imagens||[];
+  const head = plat==='ig'
+    ? `<div class="ig-head"><span class="ig-ava"></span><span class="ig-user">zelo_consultoria</span><span class="ig-more">•••</span></div>`
+    : `<div class="li-head"><span class="li-ava">in</span><div class="li-id"><div class="li-user">Zelo Consultoria</div><div class="li-sub">Consultoria em primeira infância</div></div></div>`;
+  let body;
+  if(d.video){
+    body=`<div class="car-viewport"><video src="${esc(d.video.url)}" controls playsinline></video></div>`;
+  } else if(imgs.length){
+    body=`<div class="car-viewport"><img src="${esc(imgs[0].url)}" alt="slide 1"></div>
+      ${imgs.length>1?`<button class="car-arrow left" onclick="carNav(${id},'${plat}',-1)">‹</button><button class="car-arrow right" onclick="carNav(${id},'${plat}',1)">›</button>`:''}`;
+  } else {
+    body=`<div class="car-viewport car-empty">Sem artes ainda</div>`;
+  }
+  const foot=(!d.video&&imgs.length>1)
+    ? `<div class="car-foot"><div class="car-dots">${imgs.map((_,i)=>`<span class="car-dot${i===0?' on':''}"></span>`).join('')}</div><span class="car-counter">1/${imgs.length}</span></div>`
+    : '';
+  const label = plat==='ig' ? '📷 Instagram' : '💼 LinkedIn';
+  return `<div class="car-block">
+    <div class="car-label">${label}</div>
+    <div class="car-frame ${plat==='ig'?'frame-ig':'frame-li'}" id="car-${id}-${plat}">${head}<div class="car-stage">${body}</div>${foot}</div>
+  </div>`;
+}
+function designCardInner(it,d){
+  const header=`<div class="cc-head"><div class="cc-meta">
+      <div class="cc-date">📅 ${esc(it.data||'--')}</div>
+      <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
+      <div class="cc-tags">${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}</div>
+    </div>${statusDesignBadge(d)}</div>`;
+  const upload=podeSubirDesign()?uploadAreaHTML(it.id,d):'';
+  const previews=`<div class="prev-grid">${carouselHTML(it.id,'ig',d)}${carouselHTML(it.id,'li',d)}</div>`;
+  const validacao=podeValidarDesign()
+    ? `<div class="cf-lbl" style="margin-top:.7rem">Validação do design</div>${designStatusRow(it.id,d)}`
+    : (d.comentarioDesign?`<div class="cf"><div class="cf-lbl">Comentário do validador</div><div style="font-size:12px;color:var(--z-text-sec)">${esc(d.comentarioDesign)}</div></div>`:'');
+  const enviar=podeSubirDesign()
+    ? `<div class="enviar-row"><button class="enviar-btn" onclick="enviarDesign(${it.id})">✅ Enviar para validação</button>${d.enviadoEm?`<span class="enviado-tag">✓ enviado</span>`:''}</div>`
+    : '';
+  return header+upload+previews+validacao+enviar;
+}
+
+// ── Carrossel ─────────────────────────────────────────────────────────────────
+function carKey(id,plat){ return id+'-'+plat; }
+function updateCarousel(id,plat){
+  const d=getDesign(id); const imgs=d.imagens||[];
+  const wrap=document.getElementById('car-'+id+'-'+plat);
+  if(!wrap || d.video || !imgs.length) return;
+  let idx=carouselIdx[carKey(id,plat)]||0; if(idx>=imgs.length) idx=0;
+  carouselIdx[carKey(id,plat)]=idx;
+  const vp=wrap.querySelector('.car-viewport'); if(vp) vp.innerHTML=`<img src="${esc(imgs[idx].url)}" alt="slide ${idx+1}">`;
+  const c=wrap.querySelector('.car-counter'); if(c) c.textContent=`${idx+1}/${imgs.length}`;
+  const dots=wrap.querySelector('.car-dots'); if(dots) dots.innerHTML=imgs.map((_,i)=>`<span class="car-dot${i===idx?' on':''}"></span>`).join('');
+}
+window.carNav=function(id,plat,dir){
+  const n=(getDesign(id).imagens||[]).length; if(!n) return;
+  const k=carKey(id,plat); carouselIdx[k]=(((carouselIdx[k]||0)+dir)%n+n)%n; updateCarousel(id,plat);
+};
+// Seeders só de teste (localhost) — nunca definidos em produção
+if (['localhost','127.0.0.1'].includes(location.hostname)) {
+  window.__seedDesign = (id, n=3) => { const d=ensureDesign(id); d.imagens=Array.from({length:n},(_,i)=>({url:`https://picsum.photos/seed/z${id}-${i}/900/1100`,publicId:'seed'+i,w:900,h:1100})); renderDesignCard(id); };
+  window.__seedVideo  = (id) => { const d=ensureDesign(id); d.video={url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'seedvid'}; renderDesignCard(id); };
+}
+
+// ── Upload / validação / envio ────────────────────────────────────────────────
+window.setDesignCiclo=function(docId){ carregarCiclo(docId).then(()=>{ if(tabAtivo==='design') buildDesignTab(); }); };
+window.onDesignFiles=async function(id,input){
+  const files=[...input.files]; input.value='';
+  if(!files.length) return;
+  if(!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET){ showToast('Upload ainda não configurado (Cloudinary).'); return; }
+  const prog=document.getElementById('dz-prog-'+id); const d=ensureDesign(id); let ok=0;
+  for(const f of files){
+    if(prog) prog.textContent=`Enviando ${ok+1}/${files.length}...`;
+    try{
+      const r=await uploadCloudinary(f);
+      if(r.resource_type==='video') d.video={ url:r.url, publicId:r.publicId };
+      else d.imagens.push({ url:r.url, publicId:r.publicId, w:r.w, h:r.h });
+      ok++;
+    }catch(e){ console.error(e); showToast('Falha ao enviar '+f.name); }
+  }
+  agendarSaveDesign(); renderDesignCard(id);
+  if(ok) showToast(`✓ ${ok} arquivo(s) enviado(s)`);
+};
+window.removeDesignImg=function(id,i){ const d=ensureDesign(id); d.imagens.splice(i,1); agendarSaveDesign(); renderDesignCard(id); };
+window.removeDesignVideo=function(id){ const d=ensureDesign(id); d.video=null; agendarSaveDesign(); renderDesignCard(id); };
+window.setDesignStatus=function(id,val){ const d=ensureDesign(id); d.statusDesign=(d.statusDesign===val?'':val); agendarSaveDesign(); renderDesignCard(id); };
+window.updateDesignComment=function(id,el){ const d=ensureDesign(id); d.comentarioDesign=el.value; agendarSaveDesign(); };
+window.enviarDesign=function(id){
+  const d=ensureDesign(id);
+  if(!(d.imagens||[]).length && !d.video){ showToast('Suba ao menos uma arte antes de enviar.'); return; }
+  d.enviadoEm=new Date().toISOString(); d.enviadoPor=USER_EMAIL||ROLE;
+  if(!d.statusDesign) d.statusDesign='em_analise';
+  agendarSaveDesign(); renderDesignCard(id);
+  const it=gradeItems.find(x=>x.id===id)||{};
+  notificarDesign(it);
+  showToast('Enviado para validação! Vitor e Gabi serão avisados.');
+};
+async function notificarDesign(it){
+  const ciclo=(estado.planejamentos||[]).find(p=>cicloDocId(p)===copyCiclo)?.periodo || copyCiclo || '';
+  const quem=USER_EMAIL||'equipe de design';
+  const item=`${it.data||''} — ${it.titulo||'(sem título)'}`;
+  const link=location.href.split('?')[0];
+  try{
+    if(window.emailjs && EMAILJS_SERVICE && EMAILJS_TEMPLATE && EMAILJS_PUBLIC){
+      await window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { item, ciclo, quem, link, destino:NOTIFY_EMAILS.join(', ') }, { publicKey:EMAILJS_PUBLIC });
+    }
+  }catch(e){ console.warn('Falha ao notificar por email', e); }
+  const msg=`Nova arte para validação%0A${item}%0ACiclo: ${ciclo}%0APor: ${quem}%0A${link}`;
+  for(const a of WHATSAPP_ALVOS){
+    try{
+      if(a.phone && a.apikey){
+        await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(a.phone)}&text=${msg}&apikey=${encodeURIComponent(a.apikey)}`, { mode:'no-cors' });
+      }
+    }catch(e){ console.warn('Falha ao notificar por WhatsApp', e); }
+  }
+}
 
 // ── LOGIN / GATE DE ACESSO ────────────────────────────────────────────────────
 const isLocalhost = ['localhost','127.0.0.1'].includes(location.hostname);
