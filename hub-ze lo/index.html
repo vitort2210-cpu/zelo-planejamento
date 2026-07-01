@@ -388,13 +388,13 @@ const podeSubirDesign   = () => ROLE === 'editor' || ROLE === 'visualizador';
 const podeValidarDesign = () => ROLE === 'editor' || ROLE === 'cliente';
 
 // ── SERVIÇOS EXTERNOS (preencher quando as contas estiverem prontas) ───────────
-const CLOUDINARY_CLOUD  = "";   // ex.: "zelo-hub"
-const CLOUDINARY_PRESET = "";   // upload preset UNSIGNED
-const EMAILJS_SERVICE   = "";
-const EMAILJS_TEMPLATE  = "";
-const EMAILJS_PUBLIC    = "";
-const NOTIFY_EMAILS     = [];   // ex.: ["vitort2210@gmail.com","consultoria.zelo@gmail.com"]
-const WHATSAPP_ALVOS    = [];   // ex.: [{phone:"5551999999999", apikey:"123456"}]
+const CLOUDINARY_CLOUD  = "ozg85i01";
+const CLOUDINARY_PRESET = "zelo_consultoria";   // upload preset UNSIGNED
+const EMAILJS_SERVICE   = "service_3uv68w3";
+const EMAILJS_TEMPLATE  = "template_p66vskp";
+const EMAILJS_PUBLIC    = "eBaosKiJh8yqHfEWN";
+const NOTIFY_EMAILS     = ["vitort2210@gmail.com", "consultoria.zelo@gmail.com", "boninaestudio.contato@gmail.com"];
+const WHATSAPP_ALVOS    = [];   // WhatsApp cancelado por enquanto (código fica dormente)
 
 // ── ESTADO DA ABA COPY (cross-doc: grade do planejamento + conteúdo de copy) ──
 let gradeItems = [];          // itens da grade vindos de planejamentos/{docId}
@@ -1651,7 +1651,9 @@ async function notificarDesign(it){
   const link=location.href.split('?')[0];
   try{
     if(window.emailjs && EMAILJS_SERVICE && EMAILJS_TEMPLATE && EMAILJS_PUBLIC){
-      await window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { item, ciclo, quem, link, destino:NOTIFY_EMAILS.join(', ') }, { publicKey:EMAILJS_PUBLIC });
+      for(const to of NOTIFY_EMAILS){
+        await window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { item, ciclo, quem, link, destino:to }, { publicKey:EMAILJS_PUBLIC });
+      }
     }
   }catch(e){ console.warn('Falha ao notificar por email', e); }
   const msg=`Nova arte para validação%0A${item}%0ACiclo: ${ciclo}%0APor: ${quem}%0A${link}`;
