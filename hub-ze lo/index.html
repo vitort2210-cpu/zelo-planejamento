@@ -324,6 +324,39 @@ mark.cmt:hover{background:#f6d9c4}
 .enviado-tag{font-size:11px;font-weight:600;color:#1B6B3A}
 .gd-chip.on.em_analise{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal)}
 .gd-chip.on.ajustes_necessarios{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
+
+/* ════ ABA MÉTRICAS ════ */
+.mx-viewtoggle{display:flex;gap:6px;margin-bottom:1rem}
+.mx-vbtn{font-size:12px;font-weight:600;padding:7px 14px;border-radius:8px;border:1.5px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer;font-family:inherit}
+.mx-vbtn.on{background:var(--z-teal);border-color:var(--z-teal);color:#fff}
+.mx-updated{font-size:12px;color:var(--z-text-sec);margin-bottom:.9rem}
+.mx-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
+@media(max-width:640px){.mx-cards{grid-template-columns:repeat(2,1fr)}}
+.mx-card{background:#fff;border:0.5px solid var(--z-border);border-top:3px solid var(--z-teal);border-radius:12px;padding:.9rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.mx-card-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--z-text-sec)}
+.mx-card-val{font-size:24px;font-weight:800;color:var(--z-text);line-height:1.1;margin:6px 0 4px;letter-spacing:-.02em}
+.mx-card-foot{display:flex;align-items:center;gap:6px;min-height:16px}
+.mx-delta{font-size:11px;font-weight:700}
+.mx-delta.up{color:#1B6B3A}.mx-delta.down{color:#B03A2E}
+.mx-card-vs{font-size:10px;color:#9AA0A6}
+.mx-chartwrap{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1rem 1.1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.mx-chart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:.6rem}
+.mx-chart-title{font-size:12px;font-weight:700;color:var(--z-text)}
+.mx-mchips{display:flex;flex-wrap:wrap;gap:5px}
+.mx-mchip{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;border:1.5px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer;font-family:inherit}
+.mx-mchip.on{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal)}
+.mx-chart{width:100%;height:auto;display:block}
+.mx-bar{transition:opacity .12s}.mx-bar:hover{opacity:.75}
+.mx-empty{font-size:12px;color:var(--z-text-sec);padding:1.5rem;text-align:center}
+.mx-hint{font-size:12px;color:var(--z-text-sec);margin-bottom:.8rem;background:var(--z-teal-light);border:1px solid rgba(17,128,140,.25);border-radius:8px;padding:8px 12px;line-height:1.5}
+.mx-table-wrap{overflow-x:auto;margin-bottom:10px}
+.mx-table{border-collapse:collapse;width:100%;font-size:12px}
+.mx-table th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--z-text-sec);text-align:left;padding:6px 8px;border-bottom:1.5px solid var(--z-border);white-space:nowrap}
+.mx-table td{padding:4px 6px;border-bottom:0.5px solid var(--z-border)}
+.mx-table input{width:100%;min-width:78px;font-size:12px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;color:var(--z-text);background:#fff}
+.mx-table input:focus{outline:none;border-color:var(--z-teal)}
+.mx-del{font-size:12px;color:var(--z-terra);background:none;border:none;cursor:pointer;font-family:inherit;padding:4px 6px;border-radius:4px}
+.mx-del:hover{background:var(--z-terra-light)}
 </style>
 </head>
 <body>
@@ -408,6 +441,33 @@ let designData = { itens:{} };
 let designUnsub = null;
 let designSaveTimer = null;
 let carouselIdx = {};         // índice do slide por "itemId-plataforma"
+// Estado da aba Métricas
+let metricasData = { snapshots:[] };
+let metricasUnsub = null;
+let metricasSaveTimer = null;
+let metricaPlat = 'instagram';   // plataforma selecionada
+let metricaView = 'dash';        // 'dash' | 'dados'
+let metricaChart = {};           // métrica escolhida p/ o gráfico, por plataforma
+const podeEditarMetricas = () => ROLE === 'editor';
+const metricasRef = doc(db, 'metricas', CLIENT_ID);
+const METRICAS_CONFIG = {
+  instagram: { nome:'Instagram', cor:'#D9814E', campos:[
+    {k:'seguidores',  lbl:'Seguidores',  fmt:'int'},
+    {k:'alcance',     lbl:'Alcance',     fmt:'int'},
+    {k:'engajamento', lbl:'Engajamento', fmt:'pct'},
+    {k:'interacoes',  lbl:'Interações',  fmt:'int'} ]},
+  linkedin: { nome:'LinkedIn', cor:'#0A66C2', campos:[
+    {k:'seguidores',  lbl:'Seguidores',  fmt:'int'},
+    {k:'impressoes',  lbl:'Impressões',  fmt:'int'},
+    {k:'engajamento', lbl:'Engajamento', fmt:'pct'},
+    {k:'reacoes',     lbl:'Reações',     fmt:'int'} ]},
+  site: { nome:'Site', cor:'#11808C', campos:[
+    {k:'visitantes',   lbl:'Visitantes',     fmt:'int'},
+    {k:'sessoes',      lbl:'Sessões',        fmt:'int'},
+    {k:'paginasSessao',lbl:'Páginas/sessão', fmt:'dec'},
+    {k:'duracaoMedia', lbl:'Duração média',  fmt:'text'} ]},
+};
+const MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 function cicloDocId(p){
   if(!p) return '';
   if(p.docId) return p.docId;
@@ -824,6 +884,7 @@ const TAB_META = {
   plan:   { ico:'📅', title:'Planejamento',       sub:'Ciclos de conteúdo do cliente' },
   copy:   { ico:'✍️', title:'Copy',               sub:'Produção e validação de textos' },
   design: { ico:'🎨', title:'Validação de design', sub:'Artes e vídeos para aprovação' },
+  metricas:{ ico:'📊', title:'Métricas',          sub:'Desempenho nas redes e no site' },
   dados:  { ico:'🗂️', title:'Base de Dados',      sub:'Onboarding, briefing e materiais' }
 };
 // Logo da Zelo. Usa logo.png (arquivo real do cliente); se ausente, cai no logo.svg recriado.
@@ -841,7 +902,7 @@ function buildHub() {
           <div class="brand-sub">${brandSub}</div>
         </div>
         <nav class="side-nav">
-          ${navItem('plan')}${navItem('copy')}${navItem('design')}${navItem('dados')}
+          ${navItem('plan')}${navItem('copy')}${navItem('design')}${navItem('metricas')}${navItem('dados')}
         </nav>
         <div class="side-foot">
           ${linkBtn}
@@ -884,6 +945,9 @@ function renderTabContent() {
       return;
     }
     carregarCiclo(docId).then(() => { if (tabAtivo === 'design') buildDesignTab(); });
+  } else if (tabAtivo === 'metricas') {
+    cont.innerHTML = `<div style="font-size:13px;color:var(--z-text-sec);padding:8px 0">Carregando métricas...</div>`;
+    carregarMetricas().then(() => { if (tabAtivo === 'metricas') buildMetricasTab(); });
   } else {
     if (ehVisualizador()) {
       subMode = 'vis'; // equipe de design só visualiza a Base de Dados
@@ -1137,7 +1201,7 @@ async function carregarCiclo(docId) {
       const ae = document.activeElement;
       if (!ae || !ae.closest || !ae.closest('#copy-cards')) renderCopyCards();
     }
-  });
+  }, (err)=>console.warn('Copy listener:', err.code));
   if (designUnsub) { designUnsub(); designUnsub = null; }
   designUnsub = onSnapshot(designRef(docId), (snap) => {
     if (!snap.exists()) return;
@@ -1146,7 +1210,7 @@ async function carregarCiclo(docId) {
       const ae = document.activeElement;
       if (!ae || !ae.closest || !ae.closest('#design-cards')) renderDesignCards();
     }
-  });
+  }, (err)=>console.warn('Design listener:', err.code));
 }
 
 // ── Modelo de dados de um item de copy ────────────────────────────────────────
@@ -1664,6 +1728,137 @@ async function notificarDesign(it){
       }
     }catch(e){ console.warn('Falha ao notificar por WhatsApp', e); }
   }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ABA MÉTRICAS — dashboard manual (números-destaque + evolução por plataforma)
+// ══════════════════════════════════════════════════════════════════════════════
+async function carregarMetricas(){
+  try{
+    const s = await getDoc(metricasRef);
+    if (s.exists() && Array.isArray(s.data().snapshots)) metricasData = { snapshots: s.data().snapshots };
+  }catch(e){ console.warn('Falha ao carregar métricas', e); }
+  if (metricasUnsub){ metricasUnsub(); metricasUnsub=null; }
+  metricasUnsub = onSnapshot(metricasRef, (snap)=>{
+    if(!snap.exists()) return;
+    metricasData = { snapshots: snap.data().snapshots || [] };
+    if (tabAtivo==='metricas' && document.getElementById('metricas-body')){
+      const ae=document.activeElement;
+      if(!ae||!ae.closest||!ae.closest('#metricas-body')) buildMetricasTab();
+    }
+  }, (err)=>console.warn('Métricas: sem acesso (verifique a regra do Firestore para /metricas):', err.code));
+}
+function agendarSaveMetricas(){
+  const el=document.getElementById('save-status'); if(el){ el.textContent='● Salvando...'; el.classList.add('saving'); }
+  clearTimeout(metricasSaveTimer); metricasSaveTimer=setTimeout(salvarMetricas,1000);
+}
+async function salvarMetricas(){
+  try{
+    await setDoc(metricasRef, { snapshots: metricasData.snapshots, updatedAt:new Date().toISOString() });
+    const el=document.getElementById('save-status'); if(el){ el.textContent='✓ Salvo'; el.classList.remove('saving'); }
+    setTimeout(()=>{ const e2=document.getElementById('save-status'); if(e2)e2.textContent=''; },2500);
+  }catch(e){ showToast('Erro ao salvar métricas.'); console.error(e); }
+}
+// helpers
+function snapsSorted(){ return (metricasData.snapshots||[]).slice().sort((a,b)=>(a.mesRef||'').localeCompare(b.mesRef||'')); }
+function mesLabel(ref){ if(!ref) return ''; const [y,m]=ref.split('-'); return (MESES_ABR[(+m)-1]||'')+'/'+(y||'').slice(2); }
+function shortNum(v){ v=Number(v)||0; if(Math.abs(v)>=1000) return (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'k'; return String(v); }
+function fmtMetric(v, fmt){
+  if(fmt==='text') return (v==null||v==='')?'—':v;
+  if(v==null||v===''||isNaN(v)) return '—';
+  if(fmt==='pct') return Number(v).toLocaleString('pt-BR',{maximumFractionDigits:2})+'%';
+  if(fmt==='dec') return Number(v).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1});
+  return Number(v).toLocaleString('pt-BR');
+}
+function deltaHTML(cur, prev, fmt){
+  if(fmt==='text'||prev==null||prev===''||cur==null||cur==='') return '';
+  const c=Number(cur), p=Number(prev); if(isNaN(c)||isNaN(p)||p===0) return '';
+  const pct=(c-p)/p*100; const up=c>=p;
+  return `<span class="mx-delta ${up?'up':'down'}">${up?'▲':'▼'} ${Math.abs(pct).toLocaleString('pt-BR',{maximumFractionDigits:1})}%</span>`;
+}
+function metricaChartKey(plat){ return metricaChart[plat] || METRICAS_CONFIG[plat].campos[0].k; }
+
+function heroCards(plat){
+  const cfg=METRICAS_CONFIG[plat]; const snaps=snapsSorted();
+  const cur=snaps[snaps.length-1]||null; const prev=snaps[snaps.length-2]||null;
+  return cfg.campos.map(f=>{
+    const cv=cur&&cur[plat]?cur[plat][f.k]:''; const pv=prev&&prev[plat]?prev[plat][f.k]:'';
+    return `<div class="mx-card" style="border-top-color:${cfg.cor}">
+      <div class="mx-card-lbl">${f.lbl}</div>
+      <div class="mx-card-val">${cur?fmtMetric(cv,f.fmt):'—'}</div>
+      <div class="mx-card-foot">${deltaHTML(cv,pv,f.fmt)}${prev?'<span class="mx-card-vs">vs. mês ant.</span>':''}</div>
+    </div>`;
+  }).join('');
+}
+function chartSVG(plat){
+  const cfg=METRICAS_CONFIG[plat]; const key=metricaChartKey(plat); const field=cfg.campos.find(f=>f.k===key);
+  const snaps=snapsSorted(); const data=snaps.map(s=>({ label:mesLabel(s.mesRef), value:Number(s[plat]&&s[plat][key])||0 }));
+  if(!data.length) return '<div class="mx-empty">Sem dados para exibir. Adicione um mês em "Dados".</div>';
+  const W=360,H=180,padX=14,top=16,bottom=24; const max=Math.max(1,...data.map(d=>d.value));
+  const n=data.length, gap=n>1?8:0; const bw=Math.max(6,(W-padX*2-gap*(n-1))/n);
+  let out='';
+  data.forEach((d,i)=>{
+    const bh=Math.max(1,(d.value/max)*(H-top-bottom)); const x=padX+i*(bw+gap); const y=H-bottom-bh;
+    out+=`<rect class="mx-bar" x="${x}" y="${y}" width="${bw}" height="${bh}" rx="3" fill="${cfg.cor}"><title>${esc(d.label)}: ${fmtMetric(d.value,field.fmt)}</title></rect>`;
+    out+=`<text x="${x+bw/2}" y="${H-bottom+13}" text-anchor="middle" font-size="9" fill="#5A5A5A">${esc(d.label)}</text>`;
+    if(n<=8) out+=`<text x="${x+bw/2}" y="${y-4}" text-anchor="middle" font-size="9" fill="#1A1A1A" font-weight="700">${shortNum(d.value)}</text>`;
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" class="mx-chart" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Evolução de ${esc(field.lbl)}">${out}</svg>`;
+}
+function tabelaDados(plat){
+  const cfg=METRICAS_CONFIG[plat]; const snaps=snapsSorted();
+  const header=`<tr><th>Mês</th>${cfg.campos.map(f=>`<th>${f.lbl}</th>`).join('')}<th></th></tr>`;
+  const rows=snaps.map(s=>`<tr>
+      <td><input type="month" value="${esc(s.mesRef||'')}" onchange="updateMesRef('${s.id}',this.value)"></td>
+      ${cfg.campos.map(f=>`<td><input type="${f.fmt==='text'?'text':'number'}" step="any" value="${esc((s[plat]&&s[plat][f.k])??'')}" oninput="updateMetrica('${s.id}','${plat}','${f.k}',this.value)"></td>`).join('')}
+      <td><button class="mx-del" onclick="removeSnapshot('${s.id}')" title="Remover mês">✕</button></td>
+    </tr>`).join('');
+  return `<div class="mx-hint">Preencha os números de cada mês para <strong>${cfg.nome}</strong>. Os campos das outras plataformas ficam nas respectivas abas.</div>
+    <div class="mx-table-wrap"><table class="mx-table">${header}${rows}</table></div>
+    <button class="add-btn" onclick="addSnapshot()">+ Adicionar mês</button>`;
+}
+function buildMetricasTab(){
+  const cont=document.getElementById('tab-content'); if(!cont) return;
+  const platBar=Object.keys(METRICAS_CONFIG).map(p=>`<button class="sub-btn${metricaPlat===p?' active':''}" onclick="setMetricaPlat('${p}')">${METRICAS_CONFIG[p].nome}</button>`).join('');
+  const viewToggle=podeEditarMetricas()
+    ? `<div class="mx-viewtoggle"><button class="mx-vbtn${metricaView==='dash'?' on':''}" onclick="setMetricaView('dash')">📊 Dashboard</button><button class="mx-vbtn${metricaView==='dados'?' on':''}" onclick="setMetricaView('dados')">✏ Dados</button></div>`
+    : '';
+  let body;
+  if(metricaView==='dados' && podeEditarMetricas()){
+    body=tabelaDados(metricaPlat);
+  } else {
+    const snaps=snapsSorted(); const cur=snaps[snaps.length-1];
+    const cfg=METRICAS_CONFIG[metricaPlat];
+    const ultima=cur?`Última atualização: <strong>${mesLabel(cur.mesRef)}</strong>`:'Nenhum dado ainda'+(podeEditarMetricas()?' — clique em "Dados" para adicionar.':'.');
+    const chips=cfg.campos.map(f=>`<button class="mx-mchip${metricaChartKey(metricaPlat)===f.k?' on':''}" onclick="setMetricaChart('${metricaPlat}','${f.k}')">${f.lbl}</button>`).join('');
+    body=`<div class="mx-updated">${ultima}</div>
+      <div class="mx-cards">${heroCards(metricaPlat)}</div>
+      <div class="mx-chartwrap">
+        <div class="mx-chart-head"><span class="mx-chart-title">Evolução mensal</span><div class="mx-mchips">${chips}</div></div>
+        ${chartSVG(metricaPlat)}
+      </div>`;
+  }
+  cont.innerHTML=`<div class="sub-bar mx-platbar">${platBar}</div>${viewToggle}<div id="metricas-body">${body}</div>`;
+}
+// handlers
+function newSnapId(){ return 's'+Date.now()+Math.floor(Math.random()*1000); }
+function defaultSnapshot(){ const s={ id:newSnapId(), mesRef:new Date().toISOString().slice(0,7) }; for(const p of Object.keys(METRICAS_CONFIG)) s[p]={}; return s; }
+window.addSnapshot=function(){ metricasData.snapshots.push(defaultSnapshot()); agendarSaveMetricas(); buildMetricasTab(); };
+window.removeSnapshot=function(id){ metricasData.snapshots=(metricasData.snapshots||[]).filter(s=>s.id!==id); agendarSaveMetricas(); buildMetricasTab(); };
+window.updateMesRef=function(id,val){ const s=(metricasData.snapshots||[]).find(x=>x.id===id); if(s)s.mesRef=val; agendarSaveMetricas(); };
+window.updateMetrica=function(id,plat,k,val){ const s=(metricasData.snapshots||[]).find(x=>x.id===id); if(s){ if(!s[plat])s[plat]={}; s[plat][k]=(val===''?'':(isNaN(val)?val:Number(val))); } agendarSaveMetricas(); };
+window.setMetricaPlat=function(p){ metricaPlat=p; buildMetricasTab(); };
+window.setMetricaView=function(v){ metricaView=v; buildMetricasTab(); };
+window.setMetricaChart=function(plat,k){ metricaChart[plat]=k; buildMetricasTab(); };
+if (['localhost','127.0.0.1'].includes(location.hostname)) {
+  window.__seedMetricas = () => {
+    metricasData = { snapshots:[
+      { id:'m1', mesRef:'2027-03', instagram:{seguidores:1820,alcance:9500,engajamento:3.8,interacoes:640}, linkedin:{seguidores:410,impressoes:5200,engajamento:4.1,reacoes:180}, site:{visitantes:1200,sessoes:1650,paginasSessao:2.3,duracaoMedia:'1m52s'} },
+      { id:'m2', mesRef:'2027-04', instagram:{seguidores:1990,alcance:11200,engajamento:4.2,interacoes:780}, linkedin:{seguidores:470,impressoes:6100,engajamento:4.5,reacoes:220}, site:{visitantes:1450,sessoes:1980,paginasSessao:2.5,duracaoMedia:'2m05s'} },
+      { id:'m3', mesRef:'2027-05', instagram:{seguidores:2240,alcance:13800,engajamento:4.9,interacoes:960}, linkedin:{seguidores:520,impressoes:7300,engajamento:4.8,reacoes:270}, site:{visitantes:1720,sessoes:2350,paginasSessao:2.7,duracaoMedia:'2m18s'} },
+    ]};
+    buildMetricasTab();
+  };
 }
 
 // ── LOGIN / GATE DE ACESSO ────────────────────────────────────────────────────
