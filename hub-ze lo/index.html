@@ -181,6 +181,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .plan-link:hover{opacity:.85}
 .plan-vitor{background:var(--z-teal);color:#fff}
 .plan-gabi{background:var(--z-terra-light);color:var(--z-terra);border:1px solid var(--z-terra)}
+/* Barra de ciclo aberto (Copy/Design/Planejamento inline) */
+.cycle-open-bar{display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.back-ciclos{display:inline-flex;align-items:center;gap:5px;padding:7px 12px;border-radius:7px;border:1px solid var(--z-border);background:#fff;color:var(--z-teal);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;transition:background .15s,border-color .15s}
+.back-ciclos:hover{background:var(--z-teal-light);border-color:var(--z-teal)}
+.cycle-open-info{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cycle-open-nome{font-size:14px;font-weight:600;color:var(--z-teal)}
+.cycle-open-modo{font-size:11px;padding:2px 9px;border-radius:20px;background:var(--z-ocre-light);color:var(--z-ocre-dark);font-weight:600;white-space:nowrap}
+.plan-newtab{margin-left:auto;text-decoration:none;font-size:15px;color:var(--z-text-sec);padding:4px 8px;border-radius:6px}
+.plan-newtab:hover{background:var(--z-teal-light);color:var(--z-teal)}
+.plan-iframe-wrap{border:1px solid var(--z-border);border-radius:10px;overflow:hidden;background:#fff}
+.plan-iframe{display:block;width:100%;height:calc(100vh - 190px);min-height:520px;border:0}
 
 /* LOADING / TOAST */
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:100;font-size:13px;color:var(--z-text-sec)}
@@ -450,12 +461,14 @@ const WHATSAPP_ALVOS    = [];   // WhatsApp cancelado por enquanto (código fica
 // ── ESTADO DA ABA COPY (cross-doc: grade do planejamento + conteúdo de copy) ──
 let gradeItems = [];          // itens da grade vindos de planejamentos/{docId}
 let copyData   = { itens:{} };// conteúdo de copy de copies/{CLIENT_ID}__{docId}
-let copyCiclo  = null;        // docId do ciclo selecionado
+let copyCiclo  = null;        // docId do ciclo selecionado (compartilhado copy/design)
+let copyMode   = null;        // null = lista de ciclos | 'edit' | 'valida'
 let copyUnsub  = null;        // unsubscribe do onSnapshot
 let copySaveTimer = null;
 let pendingSel = null;        // seleção pendente para comentário da Gabi
 // Estado da aba Design
 let designData = { itens:{} };
+let designMode = null;        // null = lista de ciclos | 'edit' | 'valida'
 let designUnsub = null;
 let designSaveTimer = null;
 let carouselIdx = {};         // índice do slide por "itemId-plataforma"
@@ -885,11 +898,11 @@ function renderSecL() {
 }
 
 function renderSecM() {
-  document.getElementById('bod-m').innerHTML = estado.planejamentos.map(p => {
+  document.getElementById('bod-m').innerHTML = estado.planejamentos.map((p, i) => {
     const links = (ROLE === 'editor')
-      ? `<a class="plan-link plan-vitor" href="${esc(p.linkVitor)}" target="_blank">✏ Editar</a>
-         <a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank">👁 Visualizar</a>`
-      : `<a class="plan-link plan-gabi" href="${esc(p.linkGabi)}" target="_blank" style="grid-column:1/-1">👁 Visualizar</a>`;
+      ? `<button class="plan-link plan-vitor" onclick="abrirPlan(${i},'edit')">✏ Editar</button>
+         <button class="plan-link plan-gabi" onclick="abrirPlan(${i},'valida')">👁 Visualizar</button>`
+      : `<button class="plan-link plan-gabi" onclick="abrirPlan(${i},'valida')" style="grid-column:1/-1">👁 Visualizar</button>`;
     return `
     <div class="plan-card">
       <div class="plan-card-head">
@@ -901,9 +914,31 @@ function renderSecM() {
   }).join('') || '<p style="font-size:13px;color:var(--z-text-sec)">Nenhum planejamento adicionado ainda.</p>';
 }
 
+// Abre a página do bimestre num iframe dentro do hub (mantém tudo no hub)
+function renderPlanIframe() {
+  const cont = document.getElementById('tab-content');
+  if (!cont) return;
+  const p = (estado.planejamentos || [])[planOpen.idx] || {};
+  const src = planOpen.mode === 'edit' ? (p.linkVitor || '') : (p.linkGabi || '');
+  const modoLbl = planOpen.mode === 'edit' ? '✏ Edição' : '👁 Visualização / Validação';
+  cont.innerHTML = `
+    <div class="cycle-open-bar">
+      <button class="back-ciclos" onclick="voltarPlan()">← Voltar aos ciclos</button>
+      <div class="cycle-open-info">
+        <span class="cycle-open-nome">${esc(p.periodo || '')}</span>
+        <span class="cycle-open-modo">${modoLbl}</span>
+      </div>
+      <a class="plan-newtab" href="${esc(src)}" target="_blank" title="Abrir em nova aba">↗</a>
+    </div>
+    <div class="plan-iframe-wrap"><iframe class="plan-iframe" src="${esc(src)}" title="Planejamento — ${esc(p.periodo || '')}"></iframe></div>`;
+}
+window.abrirPlan = function(idx, mode) { planOpen = { idx, mode }; renderTabContent(); window.scrollTo(0, 0); };
+window.voltarPlan = function() { planOpen = null; renderTabContent(); window.scrollTo(0, 0); };
+
 // ── ESTADO DE NAVEGAÇÃO ───────────────────────────────────────────────────────
 let tabAtivo = 'dados';  // 'plan' | 'copy' | 'dados' — abre em Base de Dados
 let subMode  = 'vis';    // 'vis'  | 'edit'
+let planOpen = null;     // null = lista de ciclos | { idx, mode } — ciclo aberto no iframe
 
 // ── BUILD HUB ─────────────────────────────────────────────────────────────────
 const TAB_META = {
@@ -953,24 +988,27 @@ function renderTabContent() {
   const cont = document.getElementById('tab-content');
   if (!cont) return;
   if (tabAtivo === 'plan') {
+    if (planOpen) { renderPlanIframe(); return; }
     cont.innerHTML = `<div id="bod-m"></div>`;
     renderSecM();
   } else if (tabAtivo === 'copy') {
+    if (copyMode === null) { buildCopyCiclos(); return; }
     cont.innerHTML = `<div style="font-size:13px;color:var(--z-text-sec);padding:8px 0">Carregando copies...</div>`;
     const docId = copyCiclo || cicloDocId((estado.planejamentos||[])[0]);
     if (!docId) {
       cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">Nenhum ciclo de planejamento disponível. Adicione um planejamento primeiro na aba Planejamento.</p>`;
       return;
     }
-    carregarCiclo(docId).then(() => { if (tabAtivo === 'copy') buildCopyTab(); });
+    carregarCiclo(docId).then(() => { if (tabAtivo === 'copy' && copyMode !== null) buildCopyTab(); });
   } else if (tabAtivo === 'design') {
+    if (designMode === null) { buildDesignCiclos(); return; }
     cont.innerHTML = `<div style="font-size:13px;color:var(--z-text-sec);padding:8px 0">Carregando artes...</div>`;
     const docId = copyCiclo || cicloDocId((estado.planejamentos||[])[0]);
     if (!docId) {
       cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">Nenhum ciclo de planejamento disponível. Adicione um planejamento primeiro na aba Planejamento.</p>`;
       return;
     }
-    carregarCiclo(docId).then(() => { if (tabAtivo === 'design') buildDesignTab(); });
+    carregarCiclo(docId).then(() => { if (tabAtivo === 'design' && designMode !== null) buildDesignTab(); });
   } else if (tabAtivo === 'metricas') {
     cont.innerHTML = `<div style="font-size:13px;color:var(--z-text-sec);padding:8px 0">Carregando métricas...</div>`;
     carregarMetricas().then(() => { if (tabAtivo === 'metricas') buildMetricasTab(); });
@@ -1188,6 +1226,8 @@ window.copiarLink = function() {
 };
 window.setTab = function(t) {
   tabAtivo = t;
+  // toda aba abre na lista de ciclos
+  planOpen = null; copyMode = null; designMode = null;
   buildHub();
   window.scrollTo(0, 0);
 };
@@ -1308,21 +1348,54 @@ async function salvarCopy() {
   } catch(e) { showToast('Erro ao salvar copy. Verifique a conexão.'); console.error(e); }
 }
 
-// ── Render da aba ──────────────────────────────────────────────────────────────
+// ── Lista de ciclos (boxes) ────────────────────────────────────────────────────
+function buildCopyCiclos() {
+  const cont = document.getElementById('tab-content');
+  if (!cont) return;
+  const plist = estado.planejamentos || [];
+  if (!plist.length) {
+    cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">Nenhum ciclo de planejamento disponível. Adicione um planejamento primeiro na aba Planejamento.</p>`;
+    return;
+  }
+  cont.innerHTML = plist.map(p => {
+    const docId = cicloDocId(p);
+    const btns = (ROLE === 'editor')
+      ? `<button class="plan-link plan-vitor" onclick="abrirCicloCopy('${esc(docId)}','edit')">✏ Editar</button>
+         <button class="plan-link plan-gabi" onclick="abrirCicloCopy('${esc(docId)}','valida')">👁 ${ehCliente()?'Validar':'Visualizar'}</button>`
+      : `<button class="plan-link plan-gabi" onclick="abrirCicloCopy('${esc(docId)}','valida')" style="grid-column:1/-1">👁 ${ehCliente()?'Visualizar / Validar':'Visualizar'}</button>`;
+    return `
+    <div class="plan-card">
+      <div class="plan-card-head">
+        <div class="plan-period">${esc(p.periodo)}</div>
+        <div class="plan-cycle">${esc(p.ciclo||'')}</div>
+      </div>
+      <div class="plan-links">${btns}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render da aba (ciclo aberto) ───────────────────────────────────────────────
 function buildCopyTab() {
   const cont = document.getElementById('tab-content');
   if (!cont) return;
   const plist = estado.planejamentos || [];
   const cur = plist.find(p => cicloDocId(p) === copyCiclo) || plist[0] || {};
-  const sel = plist.length > 1
-    ? `<select class="copy-cycle-sel" onchange="setCopyCiclo(this.value)">${plist.map(p => `<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
-    : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
-  const hint = ehCliente()
+  const modoLbl = copyMode === 'edit' ? '✏ Edição' : (ehCliente() ? '👁 Validação' : '👁 Visualização');
+  const bar = `<div class="cycle-open-bar">
+      <button class="back-ciclos" onclick="voltarCiclosCopy()">← Voltar aos ciclos</button>
+      <div class="cycle-open-info">
+        <span class="cycle-open-nome">${esc(cur.periodo||'')}</span>
+        <span class="cycle-open-modo">${modoLbl}</span>
+      </div>
+    </div>`;
+  const hint = (copyMode === 'valida' && ehCliente())
     ? `<div class="copy-hint"><strong>Selecione qualquer trecho</strong> de um texto para comentar exatamente o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`
-    : ehVisualizador()
+    : (copyMode === 'valida' && ehVisualizador())
     ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Visualização da equipe de design — somente leitura.</div>`
+    : (copyMode === 'valida')
+    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Pré-visualização da validação do cliente — somente leitura.</div>`
     : '';
-  cont.innerHTML = `<div class="copy-cycle-bar">${sel}</div>${hint}<div id="copy-cards"></div>`;
+  cont.innerHTML = `${bar}${hint}<div id="copy-cards"></div>`;
   renderCopyCards();
 }
 
@@ -1341,11 +1414,11 @@ function renderOneCard(id) {
   if (it && el) el.innerHTML = cardInnerHTML(it, getCopy(id));
 }
 function cardInnerHTML(it, c) {
-  return cardHeader(it, c) + (ROLE === 'editor' ? cardEdit(it, c) : cardValidacao(it, c));
+  return cardHeader(it, c) + (copyMode === 'edit' ? cardEdit(it, c) : cardValidacao(it, c));
 }
 
 function cardHeader(it, c) {
-  const vt = (ROLE === 'editor')
+  const vt = (copyMode === 'edit')
     ? `<div class="vid-toggle${c.isVideo?' on':''}" onclick="toggleVideo(${it.id})">🎬 ${c.isVideo?'Vídeo (Reels)':'Vídeo?'}</div>`
     : '';
   return `<div class="cc-head">
@@ -1509,8 +1582,16 @@ function showCmtPopover(itemId, block, a, b, x, y) {
 function hideCmtPopover() { const p = document.getElementById('cmt-pop'); if (p) p.style.display = 'none'; }
 
 // ── Window handlers da aba Copy ───────────────────────────────────────────────
-window.setCopyCiclo = function(docId) {
-  carregarCiclo(docId).then(() => { if (tabAtivo === 'copy') buildCopyTab(); });
+window.abrirCicloCopy = function(docId, mode) {
+  copyCiclo = docId; copyMode = mode;
+  renderTabContent();
+  window.scrollTo(0, 0);
+};
+window.voltarCiclosCopy = function() {
+  copyMode = null;
+  if (copyUnsub) { copyUnsub(); copyUnsub = null; }
+  renderTabContent();
+  window.scrollTo(0, 0);
 };
 window.copiarLinkGabiCopy = function() {
   const base = window.location.href.split('?')[0];
@@ -1607,18 +1688,48 @@ async function uploadCloudinary(file){
   return { url:d.secure_url, publicId:d.public_id, w:d.width, h:d.height, resource_type:d.resource_type };
 }
 
-// ── Render da aba ──────────────────────────────────────────────────────────────
+// ── Lista de ciclos (boxes) ────────────────────────────────────────────────────
+function buildDesignCiclos(){
+  const cont=document.getElementById('tab-content'); if(!cont) return;
+  const plist=estado.planejamentos||[];
+  if(!plist.length){
+    cont.innerHTML=`<p style="font-size:13px;color:var(--z-text-sec)">Nenhum ciclo de planejamento disponível. Adicione um planejamento primeiro na aba Planejamento.</p>`;
+    return;
+  }
+  cont.innerHTML=plist.map(p=>{
+    const docId=cicloDocId(p);
+    const btns=[];
+    if(podeSubirDesign())   btns.push(`<button class="plan-link plan-vitor" onclick="abrirCicloDesign('${esc(docId)}','edit')">✏ Subir / Editar</button>`);
+    if(podeValidarDesign()) btns.push(`<button class="plan-link plan-gabi" onclick="abrirCicloDesign('${esc(docId)}','valida')">👁 ${ehCliente()?'Visualizar / Validar':'Visualizar'}</button>`);
+    const links = btns.length===1 ? btns[0].replace('class="plan-link','style="grid-column:1/-1" class="plan-link') : btns.join('');
+    return `
+    <div class="plan-card">
+      <div class="plan-card-head">
+        <div class="plan-period">${esc(p.periodo)}</div>
+        <div class="plan-cycle">${esc(p.ciclo||'')}</div>
+      </div>
+      <div class="plan-links">${links}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Render da aba (ciclo aberto) ───────────────────────────────────────────────
 function buildDesignTab(){
   const cont=document.getElementById('tab-content'); if(!cont) return;
   const plist=estado.planejamentos||[];
   const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
-  const sel = plist.length>1
-    ? `<select class="copy-cycle-sel" onchange="setDesignCiclo(this.value)">${plist.map(p=>`<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
-    : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
-  const hint = podeSubirDesign()
+  const modoLbl = designMode==='edit' ? '✏ Subir / Editar' : (ehCliente()?'👁 Validação':'👁 Visualização');
+  const bar = `<div class="cycle-open-bar">
+      <button class="back-ciclos" onclick="voltarCiclosDesign()">← Voltar aos ciclos</button>
+      <div class="cycle-open-info">
+        <span class="cycle-open-nome">${esc(cur.periodo||'')}</span>
+        <span class="cycle-open-modo">${modoLbl}</span>
+      </div>
+    </div>`;
+  const hint = designMode==='edit'
     ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 Suba as artes de cada conteúdo. Ao terminar um material, clique <strong>Enviar para validação</strong> — Vitor e Gabi são avisados.</div>`
     : `<div class="copy-hint">Acompanhe e valide as artes enviadas pela equipe de design.</div>`;
-  cont.innerHTML=`<div class="copy-cycle-bar">${sel}</div>${hint}<div id="design-cards"></div>`;
+  cont.innerHTML=`${bar}${hint}<div id="design-cards"></div>`;
   renderDesignCards();
 }
 function renderDesignCards(){
@@ -1682,15 +1793,16 @@ function designCardInner(it,d){
       <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
       <div class="cc-tags">${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}</div>
     </div>${statusDesignBadge(d)}</div>`;
-  const upload=podeSubirDesign()?uploadAreaHTML(it.id,d):'';
   const previews=`<div class="prev-grid">${carouselHTML(it.id,'ig',d)}${carouselHTML(it.id,'li',d)}</div>`;
+  if(designMode==='edit'){
+    const upload=uploadAreaHTML(it.id,d);
+    const enviar=`<div class="enviar-row"><button class="enviar-btn" onclick="enviarDesign(${it.id})">✅ Enviar para validação</button>${d.enviadoEm?`<span class="enviado-tag">✓ enviado</span>`:''}</div>`;
+    return header+upload+previews+enviar;
+  }
   const validacao=podeValidarDesign()
     ? `<div class="cf-lbl" style="margin-top:.7rem">Validação do design</div>${designStatusRow(it.id,d)}`
     : (d.comentarioDesign?`<div class="cf"><div class="cf-lbl">Comentário do validador</div><div style="font-size:12px;color:var(--z-text-sec)">${esc(d.comentarioDesign)}</div></div>`:'');
-  const enviar=podeSubirDesign()
-    ? `<div class="enviar-row"><button class="enviar-btn" onclick="enviarDesign(${it.id})">✅ Enviar para validação</button>${d.enviadoEm?`<span class="enviado-tag">✓ enviado</span>`:''}</div>`
-    : '';
-  return header+upload+previews+validacao+enviar;
+  return header+previews+validacao;
 }
 
 // ── Carrossel ─────────────────────────────────────────────────────────────────
@@ -1716,7 +1828,8 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
 }
 
 // ── Upload / validação / envio ────────────────────────────────────────────────
-window.setDesignCiclo=function(docId){ carregarCiclo(docId).then(()=>{ if(tabAtivo==='design') buildDesignTab(); }); };
+window.abrirCicloDesign=function(docId,mode){ copyCiclo=docId; designMode=mode; renderTabContent(); window.scrollTo(0,0); };
+window.voltarCiclosDesign=function(){ designMode=null; if(designUnsub){designUnsub();designUnsub=null;} renderTabContent(); window.scrollTo(0,0); };
 window.onDesignFiles=async function(id,input){
   const files=[...input.files]; input.value='';
   if(!files.length) return;
