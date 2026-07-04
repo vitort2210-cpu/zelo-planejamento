@@ -316,9 +316,8 @@ mark.cmt:hover{background:#f6d9c4}
 .li-user{font-size:12px;font-weight:700;color:var(--z-text);line-height:1.1}
 .li-sub{font-size:10px;color:var(--z-text-sec)}
 .car-stage{position:relative;background:#000}
-.car-viewport{position:relative;width:100%;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden}
-.frame-ig .car-viewport{aspect-ratio:4/5}
-.frame-li .car-viewport{aspect-ratio:1/1}
+.car-viewport{position:relative;width:100%;background:#111;display:flex;align-items:center;justify-content:center;overflow:hidden;aspect-ratio:4/5}
+.car-viewport.is-reels{aspect-ratio:9/16}
 .car-viewport img,.car-viewport video{width:100%;height:100%;object-fit:contain;display:block;background:#111}
 .car-empty{color:#999;font-size:12px;background:var(--z-bg)!important}
 .car-arrow{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:none;background:rgba(255,255,255,.85);color:#222;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;z-index:2}
@@ -1771,7 +1770,7 @@ function carouselHTML(id,plat,d){
     : `<div class="li-head"><span class="li-ava">in</span><div class="li-id"><div class="li-user">Zelo Consultoria</div><div class="li-sub">Consultoria em primeira infância</div></div></div>`;
   let body;
   if(d.video){
-    body=`<div class="car-viewport"><video src="${esc(d.video.url)}" controls playsinline></video></div>`;
+    body=`<div class="car-viewport is-reels"><video src="${esc(d.video.url)}" controls playsinline></video></div>`;
   } else if(imgs.length){
     body=`<div class="car-viewport"><img src="${esc(imgs[0].url)}" alt="slide 1"></div>
       ${imgs.length>1?`<button class="car-arrow left" onclick="carNav(${id},'${plat}',-1)">‹</button><button class="car-arrow right" onclick="carNav(${id},'${plat}',1)">›</button>`:''}`;
