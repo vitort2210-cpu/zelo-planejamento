@@ -106,6 +106,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .cc.bloqueado{border-left-color:var(--z-cyan)}
 .cc.redirecionado{border-left-color:var(--z-terra)}
 .cc-title{font-size:14px;font-weight:600;color:var(--z-text);line-height:1.4;margin-bottom:8px}
+.cc-desc{background:var(--z-ocre-light);border:1px solid var(--z-ocre);border-radius:8px;padding:8px 11px;margin-bottom:10px;font-size:13px;color:var(--z-text);line-height:1.5;white-space:pre-wrap}
+.cc-desc-lbl{display:block;font-size:10.5px;font-weight:700;color:var(--z-ocre-dark);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:3px}
 .pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
 .pill{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
 .p-pilar{background:var(--z-teal-light);color:var(--z-teal)}
@@ -499,6 +501,10 @@ window.renderEditItems = function() {
           <select onchange="updateItem(${it.id},'camada',this.value)">${camadas.map(c=>`<option value="${c}"${c===it.camada?' selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}</select>
         </div>
       </div>
+      <div class="edit-field" style="margin-top:6px;margin-bottom:0">
+        <label class="edit-label">Descrição / ideia do conteúdo</label>
+        <textarea rows="2" onchange="updateItem(${it.id},'descricao',this.value)" placeholder="Explique a ideia deste conteúdo para a cliente — ângulo, referências, o que precisa transmitir...">${esc(it.descricao||'')}</textarea>
+      </div>
     </div>`;
   });
   document.getElementById('items-list').innerHTML = html;
@@ -512,7 +518,7 @@ window.updateItem = function(id, field, val) {
 }
 
 window.addItem = function() {
-  items.push({id: nextId++, data:"", titulo:"", pilar:"#FormaçãoZelo", formato:"Carrossel", camada:"autoridade"});
+  items.push({id: nextId++, data:"", titulo:"", pilar:"#FormaçãoZelo", formato:"Carrossel", camada:"autoridade", descricao:""});
   renderEditItems();
   document.getElementById('e-total').value = items.length;
 }
@@ -691,6 +697,9 @@ function renderCards() {
           <span class="pill p-camada">${it.camada}</span>
         </div>`;
       }
+
+      // Descrição / ideia do conteúdo (Vitor escreve na edição; leitura nos dois modos)
+      if (it.descricao) hc += `<div class="cc-desc"><span class="cc-desc-lbl">💡 Ideia do conteúdo</span>${esc(it.descricao)}</div>`;
 
       // Botões de status (iguais nos dois modos)
       hc += `<div class="srow">
