@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planejamento Zelo — Maio/Junho 2027</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#F2F2F2;min-height:100vh;padding:1rem}
+:root{
+  --z-teal:#11808C;
+  --z-teal-light:#E3F1F2;
+  --z-cyan:#05C7F2;
+  --z-cyan-light:#cdf2fc;
+  --z-terra:#D9814E;
+  --z-terra-light:#FBEEE4;
+  --z-ocre:#F2DC9B;
+  --z-ocre-dark:#9A7A1F;
+  --z-ocre-light:#FBF6E8;
+  --z-text:#1A1A1A;
+  --z-text-sec:#5A5A5A;
+  --z-border:#DDDDDD;
+  --z-bg:#F2F2F2;
+}
+.container{max-width:640px;margin:0 auto}
+.screen{display:none}
+.screen.active{display:block}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1A1A1A;color:#fff;font-size:13px;padding:10px 20px;border-radius:30px;opacity:0;transition:opacity 0.3s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+
+/* LOADING */
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:998;gap:12px}
+.loading-overlay.hidden{display:none}
+.spinner{width:32px;height:32px;border:3px solid var(--z-teal-light);border-top-color:var(--z-teal);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-text{font-size:13px;color:var(--z-text-sec)}
+
+/* DOC HEADER */
+.doc-header{background:linear-gradient(135deg,var(--z-teal) 0%,#0A5961 100%);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+.doc-header::before{content:'';position:absolute;top:-20px;right:-20px;width:90px;height:90px;border-radius:50%;background:var(--z-cyan);opacity:0.25}
+.doc-header::after{content:'';position:absolute;bottom:-30px;right:40px;width:60px;height:60px;border-radius:50%;background:var(--z-terra);opacity:0.25}
+.doc-eyebrow{font-size:10px;color:var(--z-ocre);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;font-weight:600;position:relative}
+.doc-title{font-size:20px;font-weight:600;color:#fff;margin-bottom:8px;line-height:1.2;position:relative}
+.doc-pills{display:flex;gap:6px;flex-wrap:wrap;position:relative}
+.doc-pill{font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,0.18);color:#fff;font-weight:500}
+.doc-pill.accent{background:var(--z-terra)}
+
+/* SECTIONS */
+.section{margin-bottom:1.75rem}
+.section-label{font-size:11px;font-weight:600;color:var(--z-teal);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:0.75rem;display:flex;align-items:center;gap:8px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--z-border)}
+
+/* MACRO */
+.macro-block{background:#fff;border:0.5px solid var(--z-border);border-left:4px solid var(--z-teal);border-radius:0 12px 12px 0;padding:1.25rem;box-shadow:0 1px 3px rgba(17,128,140,0.08)}
+.macro-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:20px;background:var(--z-teal);color:#fff;font-weight:600;margin-bottom:8px}
+.macro-title{font-size:15px;font-weight:600;color:var(--z-teal);line-height:1.4;margin-bottom:6px}
+.macro-desc{font-size:13px;color:var(--z-text-sec);line-height:1.6;margin-bottom:10px}
+.macro-pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.macro-pill{font-size:11px;padding:3px 8px;border-radius:20px;background:var(--z-teal-light);color:var(--z-teal);font-weight:500}
+.intencao{background:var(--z-terra-light);border-radius:8px;padding:10px 12px;font-size:13px;color:#7A3A10;line-height:1.6;border-left:3px solid var(--z-terra)}
+.intencao strong{color:var(--z-terra)}
+
+/* CALENDAR */
+.cal-card{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1rem;box-shadow:0 1px 3px rgba(17,128,140,0.08)}
+.month-title{font-size:13px;font-weight:600;color:var(--z-teal);margin-bottom:8px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.cal-hdr{font-size:10px;color:var(--z-teal);text-align:center;padding:4px 0;font-weight:600}
+.cal-day{min-height:32px;border-radius:6px;background:var(--z-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.cal-day.empty{background:transparent}
+.cal-day.has-post{cursor:pointer}
+.cal-day .dnum{font-size:11px;color:var(--z-text-sec)}
+.cal-day .ddot{width:6px;height:6px;border-radius:50%;margin-top:2px}
+.cal-day.has-post:hover .cal-tip{display:block}
+.cal-tip{display:none;position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%);background:var(--z-teal);border-radius:8px;padding:6px 10px;font-size:11px;color:#fff;white-space:normal;z-index:10;min-width:160px;max-width:220px;line-height:1.4;pointer-events:none}
+.cal-legend{margin-top:12px;display:flex;gap:12px;flex-wrap:wrap}
+.cal-legend span{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--z-text-sec)}
+.ldot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+/* CHECKLIST */
+.check-card{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1rem 1.25rem;box-shadow:0 1px 3px rgba(17,128,140,0.08)}
+.bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.bar-lbl{font-size:12px;color:var(--z-text-sec);width:100px;flex-shrink:0}
+.bar-track{flex:1;background:var(--z-bg);border-radius:20px;height:6px;overflow:hidden}
+.bar-fill{height:100%;border-radius:20px}
+.bar-ct{font-size:12px;color:var(--z-text-sec);min-width:16px;text-align:right}
+.sub-title{font-size:13px;font-weight:600;color:var(--z-teal);margin:16px 0 10px}
+.sub-title:first-child{margin-top:0}
+.chk-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:0.5px solid var(--z-border)}
+.chk-row:last-child{border-bottom:none}
+.chk-lbl{font-size:13px;color:var(--z-text)}
+.chk-ok{font-size:12px;color:#1B6B3A;display:flex;align-items:center;gap:4px;font-weight:500}
+.chk-warn{font-size:12px;color:var(--z-terra);display:flex;align-items:center;gap:4px;font-weight:500}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:1rem}
+.stat{background:var(--z-teal-light);border-radius:8px;padding:12px;border-left:3px solid var(--z-teal)}
+.stat-lbl{font-size:12px;color:var(--z-teal);margin-bottom:4px;font-weight:500}
+.stat-val{font-size:20px;font-weight:700;color:var(--z-teal)}
+
+/* CONTENT CARDS */
+.cc{background:#fff;border:0.5px solid var(--z-border);border-left:4px solid var(--z-border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px;transition:border-color 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.cc.aprovado{border-left-color:#1B6B3A}
+.cc.ajuste{border-left-color:var(--z-ocre-dark)}
+.cc.bloqueado{border-left-color:var(--z-cyan)}
+.cc.redirecionado{border-left-color:var(--z-terra)}
+.cc-title{font-size:14px;font-weight:600;color:var(--z-text);line-height:1.4;margin-bottom:8px}
+.pills{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.pill{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:600}
+.p-pilar{background:var(--z-teal-light);color:var(--z-teal)}
+.p-fmt{background:var(--z-ocre-light);color:var(--z-ocre-dark)}
+.p-data{background:var(--z-bg);color:var(--z-text-sec);border:0.5px solid var(--z-border)}
+.p-camada{background:var(--z-bg);color:var(--z-text-sec);border:0.5px solid var(--z-border);font-style:italic}
+.srow{display:flex;gap:6px;flex-wrap:wrap}
+button.sbtn{font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;font-family:inherit;font-weight:600;background-color:#ffffff;border-width:1.5px;border-style:solid;border-color:#999}
+button.sbtn span{color:#111111 !important}
+button.sbtn.is-aprovado{background-color:#d7f0e0;border-color:#1B6B3A}
+button.sbtn.is-aprovado span{color:#0D4022 !important}
+button.sbtn.is-ajuste{background-color:#f7ecc9;border-color:#9A7A1F}
+button.sbtn.is-ajuste span{color:#5C4810 !important}
+button.sbtn.is-bloqueado{background-color:#cdf2fc;border-color:#05A8CC}
+button.sbtn.is-bloqueado span{color:#03485A !important}
+button.sbtn.is-redirecionado{background-color:#f5dac6;border-color:#B5602C}
+button.sbtn.is-redirecionado span{color:#5C2A0D !important}
+.saving-indicator{font-size:11px;color:var(--z-teal);margin-top:6px;display:none;align-items:center;gap:4px}
+.saving-indicator.show{display:flex}
+.obs-area{margin-top:10px;display:none}
+.obs-area textarea{width:100%;font-size:12px;padding:8px;border:0.5px solid var(--z-border);border-radius:8px;background:var(--z-bg);color:var(--z-text);font-family:inherit;resize:none;line-height:1.5}
+.obs-area textarea::placeholder{color:var(--z-text-sec);opacity:0.6}
+.msep{font-size:12px;font-weight:700;color:var(--z-teal);margin:1.25rem 0 0.5rem;display:flex;align-items:center;gap:8px;text-transform:uppercase;letter-spacing:0.05em}
+.msep::after{content:'';flex:1;height:1px;background:var(--z-border)}
+
+/* BUTTONS */
+.action-btn{width:100%;margin-top:1rem;padding:10px;font-size:13px;border-radius:8px;border:1px solid var(--z-teal);background:transparent;cursor:pointer;color:var(--z-teal);font-family:inherit;font-weight:500;display:flex;align-items:center;justify-content:center;gap:6px;transition:background 0.15s;text-decoration:none}
+.action-btn:hover{background:var(--z-teal-light)}
+.action-btn.primary{background:var(--z-terra);color:#fff;border-color:var(--z-terra)}
+.action-btn.primary:hover{background:#C16E3A}
+
+/* EDIT SCREEN */
+.edit-field{margin-bottom:12px}
+.edit-label{font-size:12px;color:var(--z-teal);margin-bottom:4px;display:block;font-weight:500}
+.edit-field input,.edit-field textarea,.edit-field select{width:100%;font-size:13px;padding:8px 10px;border:0.5px solid var(--z-border);border-radius:8px;background:#fff;color:var(--z-text);font-family:inherit}
+.edit-field input:focus,.edit-field textarea:focus,.edit-field select:focus{outline:none;border-color:var(--z-teal)}
+.edit-field textarea{resize:none;line-height:1.5}
+.edit-field select{cursor:pointer}
+.item-edit-row{background:#fff;border-radius:8px;padding:10px;margin-bottom:8px;border:0.5px solid var(--z-border)}
+.item-edit-row input,.item-edit-row select{font-size:12px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;background:#fff;color:var(--z-text);font-family:inherit;width:100%;margin-top:4px}
+.item-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.item-row-title{font-size:12px;font-weight:600;color:var(--z-teal)}
+.del-btn{font-size:11px;color:var(--z-terra);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px}
+.add-item-btn{width:100%;padding:8px;font-size:12px;border-radius:8px;border:1px dashed var(--z-teal);background:transparent;cursor:pointer;color:var(--z-teal);font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;font-weight:500}
+.add-item-btn:hover{background:var(--z-teal-light)}
+.two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.page-title{font-size:18px;font-weight:600;color:var(--z-teal);margin-bottom:4px}
+.page-sub{font-size:13px;color:var(--z-text-sec);margin-bottom:1.5rem}
+
+/* GABI EDIT MODE */
+.gabi-banner{background:var(--z-teal-light);border-left:4px solid var(--z-teal);border-radius:0 12px 12px 0;padding:1rem 1.25rem;margin-bottom:1.5rem;display:none}
+.gabi-banner-title{font-size:14px;font-weight:700;color:var(--z-teal);margin-bottom:4px}
+.gabi-banner-text{font-size:13px;color:var(--z-text-sec);line-height:1.5}
+.field-wrap{position:relative;display:inline-block}
+.field-wrap.fw-block{display:block;margin-bottom:8px}
+.field-wrap.gabi-modified::after{content:'!';position:absolute;top:-6px;right:-6px;background:var(--z-terra);color:#fff;width:16px;height:16px;border-radius:50%;font-size:10px;font-weight:700;line-height:16px;text-align:center;pointer-events:none;z-index:1}
+input.gabi-title{font-size:14px;font-weight:600;color:var(--z-text);width:100%;padding:5px 8px;border:0.5px solid var(--z-border);border-radius:6px;background:var(--z-bg);line-height:1.4;font-family:inherit}
+input.gabi-title:focus{outline:none;border-color:var(--z-teal);background:#fff}
+input.gabi-date{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--z-bg);color:var(--z-text-sec);border:0.5px solid var(--z-border);width:72px;text-align:center;font-family:inherit;font-weight:600}
+input.gabi-date:focus{outline:none;border-color:var(--z-teal)}
+select.gabi-select-pilar{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--z-teal-light);color:var(--z-teal);border:0.5px solid var(--z-border);font-weight:600;cursor:pointer;font-family:inherit}
+select.gabi-select-pilar:focus{outline:none;border-color:var(--z-teal)}
+select.gabi-select-fmt{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--z-ocre-light);color:var(--z-ocre-dark);border:0.5px solid var(--z-border);font-weight:600;cursor:pointer;font-family:inherit}
+select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
+.gabi-badge{display:inline-block;font-size:10px;padding:2px 6px;border-radius:20px;background:var(--z-terra-light);color:var(--z-terra);font-weight:600;margin-left:6px;vertical-align:middle}
+.pill-modified{border:1.5px solid var(--z-terra)!important}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Loading overlay -->
+<div class="loading-overlay" id="loading">
+  <div class="spinner"></div>
+  <div class="loading-text">Carregando planejamento...</div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- TELA DE EDIÇÃO -->
+<div id="screen-edit" class="screen active">
+  <div class="page-title">Novo planejamento</div>
+  <div class="page-sub">Preencha as informações e monte a grade de conteúdos</div>
+
+  <div class="section">
+    <div class="section-label">Cabeçalho</div>
+    <div class="edit-field">
+      <label class="edit-label">Período</label>
+      <input type="text" id="e-periodo" value="Maio — Junho 2027" placeholder="Ex: Maio — Junho 2027">
+    </div>
+    <div class="two-col">
+      <div class="edit-field">
+        <label class="edit-label">Ciclo</label>
+        <input type="text" id="e-ciclo" value="Ciclo 1 de 4">
+      </div>
+      <div class="edit-field">
+        <label class="edit-label">Total</label>
+        <input type="text" id="e-total" readonly style="background:var(--z-bg);color:var(--z-text-sec)">
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Contexto estratégico</div>
+    <div class="edit-field">
+      <label class="edit-label">Nome do ciclo macro</label>
+      <input type="text" id="e-ciclo-nome" value="Ciclo 1 — 2027">
+    </div>
+    <div class="edit-field">
+      <label class="edit-label">Título do ciclo</label>
+      <input type="text" id="e-ciclo-titulo" value="Qualidade como direito: o que significa cuidar bem na primeira infância">
+    </div>
+    <div class="edit-field">
+      <label class="edit-label">Descrição estratégica</label>
+      <textarea id="e-ciclo-desc" rows="3">Este trimestre abre o ano posicionando a Zelo na interseção entre técnica e direito. Consolida autoridade junto a gestores públicos e educadores, enquanto amplia reconhecimento no nicho de políticas públicas para a PI.</textarea>
+    </div>
+    <div class="edit-field">
+      <label class="edit-label">Públicos-alvo (separados por vírgula)</label>
+      <input type="text" id="e-publicos" value="Gestores públicos, Educadoras, Pesquisadores PI">
+    </div>
+    <div class="edit-field">
+      <label class="edit-label">Intenção do bimestre</label>
+      <textarea id="e-intencao" rows="2">Apresentar evidências de qualidade (Heckman, Pikler, Parâmetros Nacionais) como base de autoridade e abrir caminho para as collabs do trimestre.</textarea>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Grade de conteúdos</div>
+    <div id="items-list"></div>
+    <button class="add-item-btn" onclick="addItem()">+ Adicionar conteúdo</button>
+  </div>
+
+  <button class="action-btn primary" onclick="salvarEVisualizar()">
+    → Salvar e visualizar documento
+  </button>
+</div>
+
+<!-- TELA DO DOCUMENTO -->
+<div id="screen-doc" class="screen">
+  <button id="btn-voltar" class="action-btn" onclick="goToEdit()" style="margin-bottom:1.5rem">
+    ← Voltar e editar
+  </button>
+
+  <!-- Banner da Gabi (visível apenas no modo ?view=validacao) -->
+  <div id="gabi-banner" class="gabi-banner">
+    <div class="gabi-banner-title">Olá, Gabi!</div>
+    <div class="gabi-banner-text">Confira o planejamento abaixo e valide cada conteúdo com os botões de status. Você também pode editar título, data, pilar e formato diretamente aqui — os campos alterados ficam marcados com <strong style="color:var(--z-terra)">!</strong> para o Vitor revisar.</div>
+  </div>
+
+  <div class="doc-header" id="d-header"></div>
+
+  <div class="section">
+    <div class="section-label">Contexto estratégico</div>
+    <div class="macro-block" id="d-macro"></div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Calendário visual</div>
+    <div class="cal-card">
+      <div class="month-title" id="cal-m1-title"></div>
+      <div class="cal-grid" id="cal-m1"></div>
+      <div style="margin-top:14px" class="month-title" id="cal-m2-title"></div>
+      <div class="cal-grid" id="cal-m2"></div>
+      <div class="cal-legend">
+        <span><span class="ldot" style="background:#11808C"></span>Autoridade</span>
+        <span><span class="ldot" style="background:#7F77DD"></span>Comunidade</span>
+        <span><span class="ldot" style="background:#D9814E"></span>Causa</span>
+        <span><span class="ldot" style="background:#9A7A1F"></span>Institucional</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Checklist de equilíbrio</div>
+    <div class="check-card">
+      <div class="sub-title">Por camada</div>
+      <div id="d-bars-camada"></div>
+      <div class="sub-title">Por formato</div>
+      <div id="d-bars-fmt"></div>
+      <div class="sub-title">Quadros fixos</div>
+      <div id="d-quadros"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">Grade de conteúdos</div>
+    <div class="stats-grid" id="d-stats"></div>
+    <div id="d-cards"></div>
+    <button class="action-btn" onclick="exportarWhatsApp()" style="margin-top:1rem">
+      ↓ Exportar resumo para WhatsApp
+    </button>
+  </div>
+</div>
+
+</div><!-- /container -->
+
+<!-- Firebase SDKs -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDCenC4zYJi9X6MEe1z4hOnWQ2KP14FsWQ",
+  authDomain: "zelo-planejamento.firebaseapp.com",
+  projectId: "zelo-planejamento",
+  storageBucket: "zelo-planejamento.firebasestorage.app",
+  messagingSenderId: "9928446037",
+  appId: "1:9928446037:web:790f4c7962e23e3b7084dc"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// ─── MODO DE ACESSO ───────────────────────────────────────────────────────────
+const isValidacao = new URLSearchParams(window.location.search).get('view') === 'validacao';
+
+// ─── CONSTANTES ───────────────────────────────────────────────────────────────
+const _params = new URLSearchParams(window.location.search);
+const DOC_ID = _params.get('doc') || "maio-junho-2027";
+const ANO = parseInt(_params.get('ano'), 10) || 2027;
+const CTX_FIELDS = { periodo:'e-periodo', ciclo:'e-ciclo', cicloNome:'e-ciclo-nome', cicloTitulo:'e-ciclo-titulo', cicloDesc:'e-ciclo-desc', publicos:'e-publicos', intencao:'e-intencao' };
+const camadaCor = {autoridade:"#11808C",comunidade:"#7F77DD",causa:"#D9814E",institucional:"#9A7A1F"};
+const pilares = ["#FormaçãoZelo","#DireitodasCrianças","#ConsultoriaZelo","Collab","Blog Post","Data Comemorativa","Quadro Mensal","Criativo"];
+const formatos = ["Carrossel","Post estático","Blog Post","Reels","Story"];
+const camadas = ["autoridade","comunidade","causa","institucional"];
+const nomeMes = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"};
+
+// ─── ESTADO ───────────────────────────────────────────────────────────────────
+let items = [
+  {id:1,data:"01/05",titulo:"O que bebês aprendem quando brincam com água?",pilar:"#FormaçãoZelo",formato:"Carrossel",camada:"autoridade"},
+  {id:2,data:"06/05",titulo:"Collab — Escuta ativa na creche",pilar:"Collab",formato:"Carrossel",camada:"comunidade"},
+  {id:3,data:"08/05",titulo:"Dia das Mães — Mães que transformam infâncias",pilar:"Data Comemorativa",formato:"Post estático",camada:"causa"},
+  {id:4,data:"13/05",titulo:"O que a Zelo pensa sobre: brincar como direito",pilar:"Quadro Mensal",formato:"Blog Post",camada:"autoridade"},
+  {id:5,data:"15/05",titulo:"Espaços que falam — organização pedagógica",pilar:"#FormaçãoZelo",formato:"Carrossel",camada:"autoridade"},
+  {id:6,data:"20/05",titulo:"TBT da Zelo — Formação em Florianópolis",pilar:"Quadro Mensal",formato:"Story",camada:"comunidade"},
+  {id:7,data:"22/05",titulo:"Mentes da PI — Loris Malaguzzi",pilar:"Quadro Mensal",formato:"Carrossel",camada:"autoridade"},
+  {id:8,data:"27/05",titulo:"Blog Post — Territórios da infância e qualidade",pilar:"Blog Post",formato:"Blog Post",camada:"autoridade"},
+  {id:9,data:"03/06",titulo:"#DireitodasCrianças — Marco Legal da PI",pilar:"#DireitodasCrianças",formato:"Carrossel",camada:"causa"},
+  {id:10,data:"05/06",titulo:"Dia Mundial do Meio Ambiente — Infância e cidade",pilar:"Data Comemorativa",formato:"Post estático",camada:"causa"},
+  {id:11,data:"10/06",titulo:"Collab — Práticas inclusivas com Angélica",pilar:"Collab",formato:"Carrossel",camada:"comunidade"},
+  {id:12,data:"12/06",titulo:"Aprendendo com o brincar — Caixas sensoriais",pilar:"Quadro Mensal",formato:"Reels",camada:"comunidade"},
+  {id:13,data:"17/06",titulo:"#ConsultoriaZelo — Números de impacto 2025",pilar:"#ConsultoriaZelo",formato:"Post estático",camada:"institucional"},
+  {id:14,data:"24/06",titulo:"60 segundos de Zelo — Heckman",pilar:"Criativo",formato:"Reels",camada:"autoridade"}
+];
+let nextId = 15;
+// Planejador genérico: ignora os itens de exemplo — carregarDoFirebase preenche do
+// Firestore por DOC_ID; ciclo novo (sem doc) começa com a grade vazia.
+items = [];
+nextId = 1;
+let estados = {};
+let observacoes = {};
+let gabiEdits = {};
+let saveTimeout = null;
+
+// ─── FIREBASE ─────────────────────────────────────────────────────────────────
+const DOC_REF = doc(db, "planejamentos", DOC_ID);
+
+async function carregarDoFirebase() {
+  let _ctx = {};
+  try {
+    const snap = await getDoc(DOC_REF);
+    if (snap.exists()) {
+      const data = snap.data();
+      if (data.items) items = data.items;
+      if (data.estados) estados = data.estados;
+      if (data.observacoes) observacoes = data.observacoes;
+      if (data.gabiEdits) gabiEdits = data.gabiEdits;
+      if (data.nextId) nextId = data.nextId;
+      if (data.contexto) _ctx = data.contexto;
+    }
+  } catch(e) {
+    console.warn("Erro ao carregar Firebase:", e);
+  }
+  // Contexto do ciclo: usa o salvo; para ciclo novo, cai nos parâmetros da URL.
+  if (!_ctx.periodo && _params.get('periodo')) _ctx.periodo = _params.get('periodo');
+  if (!_ctx.ciclo && _params.get('ciclo'))   _ctx.ciclo   = _params.get('ciclo');
+  for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); if (el) el.value = _ctx[k] || ''; }
+  if (!isValidacao) {
+    for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); if (el) el.addEventListener('input', agendarSalvamento); }
+  }
+  document.getElementById("loading").classList.add("hidden");
+
+  if (isValidacao) {
+    document.getElementById('gabi-banner').style.display = 'block';
+    document.getElementById('btn-voltar').style.display = 'none';
+    buildDoc();
+    document.getElementById('screen-edit').classList.remove('active');
+    document.getElementById('screen-doc').classList.add('active');
+  } else {
+    renderEditItems();
+  }
+}
+
+function agendarSalvamento() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(salvarNoFirebase, 1200);
+}
+
+async function salvarNoFirebase() {
+  try {
+    const contexto = {};
+    for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); contexto[k] = el ? el.value : ''; }
+    await setDoc(DOC_REF, { items, estados, observacoes, gabiEdits, nextId, contexto, updatedAt: new Date().toISOString() });
+    showToast("✓ Salvo automaticamente");
+  } catch(e) {
+    showToast("⚠ Erro ao salvar — verifique a conexão");
+  }
+}
+
+// Listener em tempo real
+onSnapshot(DOC_REF, (snap) => {
+  if (!snap.exists()) return;
+  const data = snap.data();
+  if (data.estados) estados = data.estados;
+  if (data.observacoes) observacoes = data.observacoes || {};
+  // No modo da Gabi, não sobrescreve items/gabiEdits locais para preservar o foco dos campos
+  if (!isValidacao) {
+    if (data.items) items = data.items;
+    if (data.gabiEdits) gabiEdits = data.gabiEdits || {};
+  }
+  const docScreen = document.getElementById("screen-doc");
+  if (docScreen.classList.contains("active")) {
+    if (isValidacao) {
+      atualizarCardsValidacao();
+      atualizarStats();
+    } else {
+      renderCards();
+      atualizarStats();
+    }
+  }
+});
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2500);
+}
+
+function esc(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function parseDate(str) {
+  const p = str.split('/');
+  if (p.length < 2) return null;
+  return {dia: parseInt(p[0]), mes: parseInt(p[1])};
+}
+
+function getMeses() {
+  const s = new Set();
+  items.forEach(it => { const d = parseDate(it.data); if (d) s.add(d.mes); });
+  return [...s].sort((a,b) => a-b);
+}
+
+function diasNoMes(mes, ano) { return new Date(ano, mes, 0).getDate(); }
+function primeiroDia(mes, ano) { return new Date(ano, mes-1, 1).getDay(); }
+
+// ─── TELA DE EDIÇÃO ───────────────────────────────────────────────────────────
+window.renderEditItems = function() {
+  let html = '';
+  items.forEach((it, i) => {
+    html += `<div class="item-edit-row" id="er-${it.id}">
+      <div class="item-row-top">
+        <div class="item-row-title">Conteúdo ${i+1}</div>
+        <button class="del-btn" onclick="delItem(${it.id})">✕ remover</button>
+      </div>
+      <div class="edit-field" style="margin-bottom:6px">
+        <label class="edit-label">Título</label>
+        <input type="text" value="${esc(it.titulo)}" onchange="updateItem(${it.id},'titulo',this.value)" placeholder="Título do conteúdo">
+      </div>
+      <div class="two-col">
+        <div class="edit-field" style="margin-bottom:6px">
+          <label class="edit-label">Data</label>
+          <input type="text" value="${it.data}" onchange="updateItem(${it.id},'data',this.value)" placeholder="DD/MM">
+        </div>
+        <div class="edit-field" style="margin-bottom:6px">
+          <label class="edit-label">Formato</label>
+          <select onchange="updateItem(${it.id},'formato',this.value)">${formatos.map(f=>`<option value="${f}"${f===it.formato?' selected':''}>${f}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div class="edit-field" style="margin-bottom:0">
+          <label class="edit-label">Pilar</label>
+          <select onchange="updateItem(${it.id},'pilar',this.value)">${pilares.map(p=>`<option value="${p}"${p===it.pilar?' selected':''}>${p}</option>`).join('')}</select>
+        </div>
+        <div class="edit-field" style="margin-bottom:0">
+          <label class="edit-label">Camada</label>
+          <select onchange="updateItem(${it.id},'camada',this.value)">${camadas.map(c=>`<option value="${c}"${c===it.camada?' selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}</select>
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('items-list').innerHTML = html;
+  document.getElementById('e-total').value = items.length;
+}
+
+window.updateItem = function(id, field, val) {
+  const it = items.find(x => x.id === id);
+  if (it) it[field] = val;
+  document.getElementById('e-total').value = items.length;
+}
+
+window.addItem = function() {
+  items.push({id: nextId++, data:"", titulo:"", pilar:"#FormaçãoZelo", formato:"Carrossel", camada:"autoridade"});
+  renderEditItems();
+  document.getElementById('e-total').value = items.length;
+}
+
+window.delItem = function(id) {
+  if (!confirm("Remover este conteúdo?")) return;
+  items = items.filter(x => x.id !== id);
+  renderEditItems();
+  document.getElementById('e-total').value = items.length;
+}
+
+window.salvarEVisualizar = async function() {
+  await salvarNoFirebase();
+  buildDoc();
+  document.getElementById('screen-edit').classList.remove('active');
+  document.getElementById('screen-doc').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+window.goToEdit = function() {
+  document.getElementById('screen-doc').classList.remove('active');
+  document.getElementById('screen-edit').classList.add('active');
+  renderEditItems();
+  window.scrollTo(0,0);
+}
+
+// ─── DOCUMENTO ────────────────────────────────────────────────────────────────
+function buildDoc() {
+  const periodo = document.getElementById('e-periodo').value;
+  const ciclo = document.getElementById('e-ciclo').value;
+
+  document.getElementById('d-header').innerHTML = `
+    <div class="doc-eyebrow">Planejamento de conteúdo</div>
+    <div class="doc-title">${periodo}</div>
+    <div class="doc-pills">
+      <span class="doc-pill">📅 ${items.length} conteúdos</span>
+      <span class="doc-pill">Bimestral</span>
+      <span class="doc-pill accent">${ciclo}</span>
+    </div>`;
+
+  const publicos = document.getElementById('e-publicos').value.split(',').map(s=>s.trim()).filter(Boolean);
+  document.getElementById('d-macro').innerHTML = `
+    <div class="macro-badge">${document.getElementById('e-ciclo-nome').value}</div>
+    <div class="macro-title">${document.getElementById('e-ciclo-titulo').value}</div>
+    <div class="macro-desc">${document.getElementById('e-ciclo-desc').value}</div>
+    <div class="macro-pills">${publicos.map(p=>`<span class="macro-pill">${p}</span>`).join('')}</div>
+    <div class="intencao"><strong>Intenção do bimestre:</strong> ${document.getElementById('e-intencao').value}</div>`;
+
+  const meses = getMeses();
+  if (meses.length >= 1) {
+    document.getElementById('cal-m1-title').textContent = `${nomeMes[meses[0]]} ${ANO}`;
+    buildCal(meses[0], 'cal-m1');
+  }
+  if (meses.length >= 2) {
+    document.getElementById('cal-m2-title').textContent = `${nomeMes[meses[1]]} ${ANO}`;
+    buildCal(meses[1], 'cal-m2');
+    document.getElementById('cal-m2-title').style.display = 'block';
+    document.getElementById('cal-m2').style.display = 'grid';
+  } else {
+    document.getElementById('cal-m2-title').style.display = 'none';
+    document.getElementById('cal-m2').style.display = 'none';
+  }
+
+  buildChecklist();
+  atualizarStats();
+  renderCards();
+}
+
+function buildCal(mesNum, containerId) {
+  const total = diasNoMes(mesNum, ANO);
+  const primeiro = primeiroDia(mesNum, ANO);
+  const dias = ['D','S','T','Q','Q','S','S'];
+  let html = dias.map(d=>`<div class="cal-hdr">${d}</div>`).join('');
+  for (let i=0; i<primeiro; i++) html += `<div class="cal-day empty"></div>`;
+  for (let d=1; d<=total; d++) {
+    const post = items.find(it => { const p=parseDate(it.data); return p&&p.dia===d&&p.mes===mesNum; });
+    if (post) {
+      const cor = camadaCor[post.camada]||'#888';
+      html += `<div class="cal-day has-post"><span class="dnum">${d}</span><span class="ddot" style="background:${cor}"></span><div class="cal-tip">${esc(post.data)}/${ANO} — ${esc(post.titulo)}</div></div>`;
+    } else {
+      html += `<div class="cal-day"><span class="dnum">${d}</span></div>`;
+    }
+  }
+  document.getElementById(containerId).innerHTML = html;
+}
+
+function buildChecklist() {
+  const camadaCount = {autoridade:0,comunidade:0,causa:0,institucional:0};
+  const fmtCount = {};
+  items.forEach(it => {
+    camadaCount[it.camada] = (camadaCount[it.camada]||0)+1;
+    fmtCount[it.formato] = (fmtCount[it.formato]||0)+1;
+  });
+  const tot = items.length||1;
+  const camadaLabels = {autoridade:"Autoridade",comunidade:"Comunidade",causa:"Causa",institucional:"Institucional"};
+  let hb = '';
+  Object.entries(camadaCount).forEach(([k,v]) => {
+    const pct = Math.round((v/tot)*100);
+    hb += `<div class="bar-row"><div class="bar-lbl">${camadaLabels[k]}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${camadaCor[k]}"></div></div><div class="bar-ct">${v}</div></div>`;
+  });
+  document.getElementById('d-bars-camada').innerHTML = hb;
+  let hf = '';
+  Object.entries(fmtCount).sort((a,b)=>b[1]-a[1]).forEach(([k,v]) => {
+    const pct = Math.round((v/tot)*100);
+    hf += `<div class="bar-row"><div class="bar-lbl">${k}</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:var(--z-terra)"></div></div><div class="bar-ct">${v}</div></div>`;
+  });
+  document.getElementById('d-bars-fmt').innerHTML = hf;
+  const quadros = [
+    {label:"O que a Zelo pensa sobre", ok:items.some(c=>c.pilar==="Quadro Mensal"&&c.formato==="Blog Post")},
+    {label:"Aprendendo com o brincar", ok:items.some(c=>c.titulo.toLowerCase().includes("brincar")&&c.formato==="Reels")},
+    {label:"TBT da Zelo", ok:items.some(c=>c.pilar==="Quadro Mensal"&&c.formato==="Story")},
+    {label:"Mentes da PI", ok:items.some(c=>c.titulo.toLowerCase().includes("mentes"))},
+    {label:"Collab (mín. 1)", ok:items.filter(c=>c.pilar==="Collab").length>=1},
+    {label:"Blog Post (mín. 1)", ok:items.filter(c=>c.formato==="Blog Post").length>=1}
+  ];
+  let hq = '';
+  quadros.forEach(q => { hq += `<div class="chk-row"><div class="chk-lbl">${q.label}</div>${q.ok?'<div class="chk-ok">✓ Ok</div>':'<div class="chk-warn">⚠ Faltando</div>'}</div>`; });
+  document.getElementById('d-quadros').innerHTML = hq;
+}
+
+function atualizarStats() {
+  const ap = Object.values(estados).filter(e=>e==='aprovado').length;
+  const bl = Object.values(estados).filter(e=>e==='bloqueado').length;
+  const pe = items.length - Object.values(estados).filter(Boolean).length;
+  document.getElementById('d-stats').innerHTML = `
+    <div class="stat"><div class="stat-lbl">Total</div><div class="stat-val">${items.length}</div></div>
+    <div class="stat"><div class="stat-lbl">Aprovados</div><div class="stat-val" style="color:#1B6B3A">${ap}</div></div>
+    <div class="stat"><div class="stat-lbl">Pendentes</div><div class="stat-val" style="color:#5A5A5A">${pe}</div></div>
+    <div class="stat"><div class="stat-lbl">Bloqueados</div><div class="stat-val" style="color:#05A8CC">${bl}</div></div>`;
+}
+
+function renderCards() {
+  const meses = getMeses();
+  const mesesItems = meses.length > 0 ? meses : [5,6];
+  let hc = '';
+  mesesItems.forEach(m => {
+    hc += `<div class="msep">${nomeMes[m]||''}</div>`;
+    const its = items.filter(it => { const p=parseDate(it.data); return p&&p.mes===m; });
+    its.forEach(it => {
+      const s = estados[it.id] || '';
+      const gf = gabiEdits[it.id] || {};
+      const gabiEditedAny = Object.values(gf).some(Boolean);
+
+      hc += `<div class="cc ${s}" id="cc-${it.id}">`;
+
+      if (isValidacao) {
+        // Modo Gabi: campos editáveis
+        hc += `<div class="field-wrap fw-block${gf.titulo?' gabi-modified':''}" id="gf-${it.id}-titulo">
+          <input class="gabi-title" type="text" value="${esc(it.titulo)}"
+            oninput="saveGabiField(${it.id},'titulo',this.value)" placeholder="Título do conteúdo">
+        </div>`;
+        hc += `<div class="pills">`;
+        hc += `<div class="field-wrap${gf.data?' gabi-modified':''}" id="gf-${it.id}-data">
+          <input class="gabi-date" type="text" value="${esc(it.data)}"
+            oninput="saveGabiField(${it.id},'data',this.value)" placeholder="DD/MM">
+        </div>`;
+        hc += `<div class="field-wrap${gf.pilar?' gabi-modified':''}" id="gf-${it.id}-pilar">
+          <select class="gabi-select-pilar" onchange="saveGabiField(${it.id},'pilar',this.value)">
+            ${pilares.map(p=>`<option value="${p}"${p===it.pilar?' selected':''}>${p}</option>`).join('')}
+          </select>
+        </div>`;
+        hc += `<div class="field-wrap${gf.formato?' gabi-modified':''}" id="gf-${it.id}-formato">
+          <select class="gabi-select-fmt" onchange="saveGabiField(${it.id},'formato',this.value)">
+            ${formatos.map(f=>`<option value="${f}"${f===it.formato?' selected':''}>${f}</option>`).join('')}
+          </select>
+        </div>`;
+        hc += `<span class="pill p-camada">${it.camada}</span>`;
+        hc += `</div>`; // /pills
+      } else {
+        // Modo Vitor: leitura com indicadores de edição da Gabi
+        hc += `<div class="cc-title">${esc(it.titulo)||'(sem título)'}${gabiEditedAny?'<span class="gabi-badge">↩ Gabi editou</span>':''}</div>`;
+        hc += `<div class="pills">
+          <span class="pill p-data${gf.data?' pill-modified':''}">📅 ${esc(it.data)||'--'}</span>
+          <span class="pill p-pilar${gf.pilar?' pill-modified':''}">${esc(it.pilar)}</span>
+          <span class="pill p-fmt${gf.formato?' pill-modified':''}">${esc(it.formato)}</span>
+          <span class="pill p-camada">${it.camada}</span>
+        </div>`;
+      }
+
+      // Botões de status (iguais nos dois modos)
+      hc += `<div class="srow">
+        <button class="sbtn${s==='aprovado'?' is-aprovado':''}" data-s="aprovado" onclick="setStatus(${it.id},'aprovado')"><span>Aprovado</span></button>
+        <button class="sbtn${s==='ajuste'?' is-ajuste':''}" data-s="ajuste" onclick="setStatus(${it.id},'ajuste')"><span>Ajuste</span></button>
+        <button class="sbtn${s==='bloqueado'?' is-bloqueado':''}" data-s="bloqueado" onclick="setStatus(${it.id},'bloqueado')"><span>Bloqueado</span></button>
+        <button class="sbtn${s==='redirecionado'?' is-redirecionado':''}" data-s="redirecionado" onclick="setStatus(${it.id},'redirecionado')"><span>Redirecionado</span></button>
+      </div>`;
+      hc += `<div class="saving-indicator" id="si-${it.id}">⟳ Salvando...</div>`;
+      hc += `<div class="obs-area" id="ob-${it.id}" style="${(s==='ajuste'||s==='bloqueado'||s==='redirecionado')?'display:block':''}">
+        <textarea id="ta-${it.id}" rows="2" placeholder="Observação ou referência..." oninput="saveObs(${it.id})">${observacoes[it.id]||''}</textarea>
+      </div>`;
+      hc += `</div>`; // /cc
+    });
+  });
+  document.getElementById('d-cards').innerHTML = hc;
+}
+
+function atualizarCardsValidacao() {
+  items.forEach(it => {
+    const card = document.getElementById('cc-'+it.id);
+    if (!card) return;
+    const s = estados[it.id]||'';
+    card.className = 'cc'+(s?' '+s:'');
+    card.querySelectorAll('.sbtn').forEach(b => {
+      b.className = 'sbtn';
+      if (b.dataset.s === s) b.className = 'sbtn is-'+s;
+    });
+    const obs = document.getElementById('ob-'+it.id);
+    if (obs) obs.style.display = (s==='ajuste'||s==='bloqueado'||s==='redirecionado')?'block':'none';
+    const ta = document.getElementById('ta-'+it.id);
+    if (ta && observacoes[it.id] !== undefined) ta.value = observacoes[it.id];
+  });
+  atualizarStats();
+}
+
+window.setStatus = function(id, status) {
+  const prev = estados[id];
+  if (prev === status) { estados[id] = ''; } else { estados[id] = status; }
+  const s = estados[id]||'';
+  const card = document.getElementById('cc-'+id);
+  if (!card) return;
+  card.className = 'cc'+(s?' '+s:'');
+  card.querySelectorAll('.sbtn').forEach(b => {
+    b.className = 'sbtn';
+    if (b.dataset.s === s) b.className = 'sbtn is-'+s;
+  });
+  const obs = document.getElementById('ob-'+id);
+  if (obs) obs.style.display = (s==='ajuste'||s==='bloqueado'||s==='redirecionado')?'block':'none';
+  atualizarStats();
+  const si = document.getElementById('si-'+id);
+  if (si) { si.classList.add('show'); setTimeout(()=>si.classList.remove('show'),2000); }
+  agendarSalvamento();
+}
+
+window.saveObs = function(id) {
+  observacoes[id] = document.getElementById('ta-'+id).value;
+  agendarSalvamento();
+}
+
+// Gabi edita um campo de conteúdo
+window.saveGabiField = function(id, field, value) {
+  const it = items.find(x => x.id === id);
+  if (it) it[field] = value;
+  if (!gabiEdits[id]) gabiEdits[id] = {};
+  gabiEdits[id][field] = true;
+  const wrap = document.getElementById('gf-'+id+'-'+field);
+  if (wrap) wrap.classList.add('gabi-modified');
+  const si = document.getElementById('si-'+id);
+  if (si) { si.classList.add('show'); setTimeout(()=>si.classList.remove('show'),2000); }
+  agendarSalvamento();
+}
+
+window.exportarWhatsApp = function() {
+  const periodo = document.getElementById('e-periodo').value;
+  const cicloNome = document.getElementById('e-ciclo-nome').value;
+  let txt = `*Planejamento Zelo — ${periodo}*\n*${cicloNome}*\n\n`;
+  const meses = getMeses();
+  (meses.length>0?meses:[5,6]).forEach(m => {
+    txt += `*${nomeMes[m]||''}*\n`;
+    items.filter(it => { const p=parseDate(it.data); return p&&p.mes===m; }).forEach(it => {
+      const s = estados[it.id]||'pendente';
+      const em = {aprovado:'✅',ajuste:'🔶',bloqueado:'🔒',redirecionado:'↩️',pendente:'⏳'}[s];
+      const gabiEditedAny = Object.values(gabiEdits[it.id]||{}).some(Boolean);
+      txt += `${em} ${it.data} — ${it.titulo}${gabiEditedAny?' [✏ Gabi editou]':''}`;
+      if (observacoes[it.id]) txt += `\n   ↳ ${observacoes[it.id]}`;
+      txt += '\n';
+    });
+    txt += '\n';
+  });
+  const ap = Object.values(estados).filter(e=>e==='aprovado').length;
+  txt += `_${ap}/${items.length} aprovados_`;
+  navigator.clipboard.writeText(txt).then(() => showToast("Copiado para a área de transferência!"));
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+carregarDoFirebase();
+
+</script>
+</body>
+</html>

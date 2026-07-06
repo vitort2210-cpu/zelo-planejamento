@@ -249,6 +249,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .mac-feat-d{font-size:12px;color:var(--z-text-sec);line-height:1.5}
 .mac-band{border-radius:12px;padding:16px 18px;background:var(--z-ocre-light);border:1px solid var(--z-ocre)}
 .mac-quote{border-radius:12px;padding:18px 20px;background:var(--z-teal-light);border-left:5px solid var(--z-teal);font-size:13.5px;color:var(--z-text);line-height:1.6}
+/* adicionar ciclo (editor) */
+.add-ciclo-btn{width:100%;margin-top:4px;padding:11px;border:1.5px dashed var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);border-radius:10px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.add-ciclo-btn:hover{background:#d5eaec}
+.add-ciclo-form{margin-top:4px;border:1px solid var(--z-teal);border-radius:10px;padding:14px;background:#fff}
+.acf-title{font-size:13px;font-weight:700;color:var(--z-teal);margin-bottom:10px}
+.acf-inp{width:100%;box-sizing:border-box;margin-bottom:8px;padding:9px 11px;border:1.5px solid var(--z-border);border-radius:8px;font-family:inherit;font-size:13px;color:var(--z-text)}
+.acf-inp:focus{outline:none;border-color:var(--z-teal)}
+.acf-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
+.acf-cancel{padding:8px 14px;border:1px solid var(--z-border);background:#fff;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;color:var(--z-text-sec);cursor:pointer}
+.acf-save{padding:8px 14px;border:none;background:var(--z-terra);color:#fff;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
 
 /* LOADING / TOAST */
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:100;font-size:13px;color:var(--z-text-sec)}
@@ -573,6 +583,7 @@ function designRef(docId){ return doc(db, 'design', CLIENT_ID + '__' + docId); }
 
 // ── ESTADO PADRÃO (dados Zelo pré-populados do briefing) ─────────────────────
 const defaults = {
+  planVersion: "",   // marca de migração dos ciclos (ver migrarCiclos2027)
   dadosEmpresa: {
     razaoSocial: "Zelo Consultoria em Educação e Desenvolvimento Infantil Ltda.",
     nomeFantasia: "Zelo Consultoria em Educação e Desenvolvimento Infantil",
@@ -977,7 +988,18 @@ function renderSecM() {
       <div class="plan-links">${links}</div>
     </div>`;
   }).join('') || '<p style="font-size:13px;color:var(--z-text-sec)">Nenhum planejamento adicionado ainda.</p>';
-  document.getElementById('bod-m').innerHTML = destaque + cards;
+  const addBlock = (ROLE !== 'editor') ? '' : (addCicloOpen
+    ? `<div class="add-ciclo-form">
+        <div class="acf-title">Novo ciclo</div>
+        <input id="acf-periodo" class="acf-inp" type="text" placeholder="Período — ex: Julho — Agosto 2027">
+        <input id="acf-ciclo" class="acf-inp" type="text" placeholder="Rótulo — ex: Ciclo 4 · Quem cuida de quem cuida">
+        <div class="acf-actions">
+          <button class="acf-cancel" onclick="cancelarAddCiclo()">Cancelar</button>
+          <button class="acf-save" onclick="salvarNovoCiclo()">Adicionar ciclo</button>
+        </div>
+      </div>`
+    : `<button class="add-ciclo-btn" onclick="abrirAddCiclo()">+ Adicionar ciclo</button>`);
+  document.getElementById('bod-m').innerHTML = destaque + cards + addBlock;
 }
 
 // Abre a página do bimestre num iframe dentro do hub (mantém tudo no hub)
@@ -985,7 +1007,11 @@ function renderPlanIframe() {
   const cont = document.getElementById('tab-content');
   if (!cont) return;
   const p = (estado.planejamentos || [])[planOpen.idx] || {};
-  const src = planOpen.mode === 'edit' ? (p.linkVitor || '') : (p.linkGabi || '');
+  const docId = cicloDocId(p);
+  const base = '../planejador/?doc=' + encodeURIComponent(docId)
+    + '&periodo=' + encodeURIComponent(p.periodo || '')
+    + '&ciclo=' + encodeURIComponent(p.ciclo || '');
+  const src = planOpen.mode === 'edit' ? base : (base + '&view=validacao');
   const modoLbl = planOpen.mode === 'edit' ? '✏ Edição' : '👁 Visualização / Validação';
   cont.innerHTML = `
     <div class="cycle-open-bar">
@@ -1134,11 +1160,55 @@ window.abrirMacro = function() { planView = 'macro'; renderTabContent(); window.
 window.fecharMacro = function() { planView = null; renderTabContent(); window.scrollTo(0, 0); };
 window.toggleCicloMacro = function(i) { const el = document.getElementById('mac-cyc-' + i); if (el) el.classList.toggle('open'); };
 
+// ── ADICIONAR / MIGRAR CICLOS ─────────────────────────────────────────────────
+function slugCiclo(s) {
+  return (s || '').toLowerCase().normalize('NFD').replace(/[^\x00-\x7f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || ('ciclo-' + Date.now());
+}
+window.abrirAddCiclo = function() { addCicloOpen = true; renderSecM(); const el = document.getElementById('acf-periodo'); if (el) el.focus(); };
+window.cancelarAddCiclo = function() { addCicloOpen = false; renderSecM(); };
+window.salvarNovoCiclo = function() {
+  const per = (document.getElementById('acf-periodo')?.value || '').trim();
+  const cic = (document.getElementById('acf-ciclo')?.value || '').trim();
+  if (!per) { showToast('Informe o período do ciclo.'); return; }
+  const usados = (estado.planejamentos || []).map(cicloDocId);
+  let base = slugCiclo(per), docId = base, n = 2;
+  while (usados.includes(docId)) { docId = base + '-' + n; n++; }
+  estado.planejamentos = estado.planejamentos || [];
+  estado.planejamentos.push({ periodo: per, ciclo: cic, docId, status: 'em andamento' });
+  agendarSalvamento();
+  addCicloOpen = false;
+  renderSecM();
+  showToast('Ciclo adicionado ✓');
+};
+
+// Os 6 ciclos temáticos de 2027 (base do cadastro; grade de cada um vive em Firestore)
+const CICLOS_2027 = [
+  { periodo:'Janeiro — Fevereiro 2027', ciclo:'Ciclo 1 · Recomeçar com intenção',      docId:'janeiro-fevereiro-2027' },
+  { periodo:'Março — Abril 2027',        ciclo:'Ciclo 2 · A arte de escutar a infância', docId:'marco-abril-2027' },
+  { periodo:'Maio — Junho 2027',         ciclo:'Ciclo 3 · Brincar é coisa séria',        docId:'maio-junho-2027' },
+  { periodo:'Julho — Agosto 2027',       ciclo:'Ciclo 4 · Quem cuida de quem cuida',     docId:'julho-agosto-2027' },
+  { periodo:'Setembro — Outubro 2027',   ciclo:'Ciclo 5 · Criança é presente',           docId:'setembro-outubro-2027' },
+  { periodo:'Novembro — Dezembro 2027',  ciclo:'Ciclo 6 · Infâncias no plural',          docId:'novembro-dezembro-2027' },
+];
+// Cadastra os 6 ciclos uma única vez, preservando status e a grade do Mai–Jun (docId inalterado).
+function migrarCiclos2027() {
+  if (estado.planVersion === '2027-6c') return false;
+  const antigos = estado.planejamentos || [];
+  estado.planejamentos = CICLOS_2027.map(c => {
+    const old = antigos.find(p => cicloDocId(p) === c.docId);
+    return { periodo: c.periodo, ciclo: c.ciclo, docId: c.docId, status: (old && old.status) || 'em andamento' };
+  });
+  estado.planVersion = '2027-6c';
+  return true;
+}
+
 // ── ESTADO DE NAVEGAÇÃO ───────────────────────────────────────────────────────
 let tabAtivo = 'dados';  // 'plan' | 'copy' | 'dados' — abre em Base de Dados
 let subMode  = 'vis';    // 'vis'  | 'edit'
 let planOpen = null;     // null = lista de ciclos | { idx, mode } — ciclo aberto no iframe
 let planView = null;     // null = lista | 'macro' — visão macro 2027 aberta
+let addCicloOpen = false; // form de "adicionar ciclo" aberto (editor)
 
 // ── BUILD HUB ─────────────────────────────────────────────────────────────────
 const TAB_META = {
@@ -2325,12 +2395,8 @@ async function iniciarHub(role, email) {
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('loading').classList.remove('hide');
   await carregarDoFirebase();
-  // Planos bimestrais → até 6 ciclos/ano. Corrige valores antigos "de 4".
-  let _chg = false;
-  (estado.planejamentos || []).forEach(p => {
-    if (p.ciclo && /\bde\s*4\b/.test(p.ciclo)) { p.ciclo = p.ciclo.replace(/\bde\s*4\b/, 'de 6'); _chg = true; }
-  });
-  if (_chg && role === 'editor') agendarSalvamento();
+  // Cadastra/normaliza os 6 ciclos temáticos de 2027 (uma vez, salvo pelo editor).
+  if (role === 'editor' && migrarCiclos2027()) agendarSalvamento();
   document.getElementById('loading').classList.add('hide');
   buildHub();
 }
