@@ -192,6 +192,63 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .plan-newtab:hover{background:var(--z-teal-light);color:var(--z-teal)}
 .plan-iframe-wrap{border:1px solid var(--z-border);border-radius:10px;overflow:hidden;background:#fff}
 .plan-iframe{display:block;width:100%;height:calc(100vh - 190px);min-height:520px;border:0}
+/* ── VISÃO MACRO 2027 ─────────────────────────────────────────────── */
+.mac-destaque{display:flex;align-items:center;gap:14px;padding:16px 18px;margin-bottom:14px;border-radius:12px;cursor:pointer;color:#fff;
+  background:linear-gradient(120deg,var(--z-teal) 0%,#0c5f68 60%,#0a4f57 100%);box-shadow:0 4px 14px rgba(17,128,140,.25);transition:transform .18s ease,box-shadow .18s ease}
+.mac-destaque:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(17,128,140,.32)}
+.mac-destaque-ico{font-size:26px;line-height:1}
+.mac-destaque-txt{flex:1;min-width:0}
+.mac-destaque-t{font-size:15px;font-weight:700}
+.mac-destaque-s{font-size:12px;opacity:.9;margin-top:2px}
+.mac-destaque-cta{font-size:13px;font-weight:600;white-space:nowrap;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:20px}
+.mac-wrap{max-width:840px;margin:0 auto;padding-bottom:20px}
+.mac-hero{background:linear-gradient(135deg,var(--z-teal),#0c5f68);color:#fff;border-radius:14px;padding:24px 22px;margin-bottom:20px}
+.mac-hero-k{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.mac-hero h2{font-size:22px;font-weight:800;margin:6px 0 4px}
+.mac-hero-sub{font-size:13px;opacity:.92}
+.mac-thread{display:inline-flex;align-items:center;gap:7px;margin-top:14px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);padding:7px 13px;border-radius:22px;font-size:12.5px;font-weight:600}
+.mac-sec{margin:26px 0}
+.mac-sec-t{font-size:15px;font-weight:700;color:var(--z-teal);margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.mac-sec-d{font-size:12.5px;color:var(--z-text-sec);line-height:1.55;margin:0 0 14px}
+/* funil */
+.mac-funnel{display:flex;flex-direction:column;align-items:center;gap:8px}
+.mac-layer{border-radius:10px;padding:13px 16px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+.mac-layer.l-topo{width:100%;background:var(--z-cyan)}
+.mac-layer.l-meio{width:84%;background:#7F77DD}
+.mac-layer.l-fundo{width:68%;background:var(--z-teal)}
+.mac-layer-h{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.mac-layer-h b{font-size:13.5px}
+.mac-layer-h span{font-size:11px;opacity:.9}
+.mac-layer-f{font-size:12px;opacity:.96;margin-top:3px}
+/* ciclos timeline */
+.mac-cycles{display:flex;flex-direction:column;gap:10px}
+.mac-cyc{border:1px solid var(--z-border);border-left:5px solid var(--cc,#11808C);border-radius:10px;background:#fff;overflow:hidden;transition:box-shadow .18s ease}
+.mac-cyc:hover{box-shadow:0 3px 12px rgba(0,0,0,.07)}
+.mac-cyc-head{display:flex;align-items:center;gap:13px;padding:13px 15px;cursor:pointer}
+.mac-cyc-num{flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--cc,#11808C);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center}
+.mac-cyc-info{flex:1;min-width:0}
+.mac-cyc-per{font-size:11px;color:var(--z-text-sec);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.mac-cyc-tema{font-size:14.5px;font-weight:700;color:var(--z-text)}
+.mac-cyc-tag{flex-shrink:0;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:var(--z-teal-light);color:var(--z-teal);white-space:nowrap}
+.mac-cyc-chev{flex-shrink:0;color:var(--z-text-sec);transition:transform .2s ease;font-size:13px}
+.mac-cyc.open .mac-cyc-chev{transform:rotate(90deg)}
+.mac-cyc-body{padding:0 15px 15px 58px;display:none}
+.mac-cyc.open .mac-cyc-body{display:block}
+.mac-cyc-desc{font-size:12.5px;color:var(--z-text);line-height:1.55;margin-bottom:10px}
+.mac-datas{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.mac-data{font-size:11px;background:var(--z-ocre-light);color:var(--z-ocre-dark);border:1px solid var(--z-ocre);padding:3px 9px;border-radius:6px;font-weight:600}
+.mac-mini-t{font-size:11px;font-weight:700;color:var(--z-text-sec);text-transform:uppercase;letter-spacing:.04em;margin:8px 0 4px}
+.mac-gera{font-size:12.5px;color:var(--z-text-sec);line-height:1.5}
+.mac-ind{display:inline-flex;align-items:center;gap:6px;margin-top:10px;background:var(--z-teal-light);color:var(--z-teal);font-size:12px;font-weight:600;padding:6px 11px;border-radius:8px}
+.mac-live{display:inline-block;margin-top:10px;margin-left:6px;font-size:11px;font-weight:700;background:var(--z-terra-light);color:var(--z-terra);border:1px solid var(--z-terra);padding:5px 10px;border-radius:8px}
+/* grid de features */
+.mac-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:620px){.mac-grid{grid-template-columns:1fr}}
+.mac-feat{border:1px solid var(--z-border);border-radius:10px;padding:14px 15px;background:#fff}
+.mac-feat-t{font-size:13.5px;font-weight:700;color:var(--z-text);display:flex;align-items:center;gap:7px;margin-bottom:5px}
+.mac-feat-d{font-size:12px;color:var(--z-text-sec);line-height:1.5}
+.mac-band{border-radius:12px;padding:16px 18px;background:var(--z-ocre-light);border:1px solid var(--z-ocre)}
+.mac-quote{border-radius:12px;padding:18px 20px;background:var(--z-teal-light);border-left:5px solid var(--z-teal);font-size:13.5px;color:var(--z-text);line-height:1.6}
 
 /* LOADING / TOAST */
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:100;font-size:13px;color:var(--z-text-sec)}
@@ -897,7 +954,16 @@ function renderSecL() {
 }
 
 function renderSecM() {
-  document.getElementById('bod-m').innerHTML = estado.planejamentos.map((p, i) => {
+  const destaque = `
+    <div class="mac-destaque" onclick="abrirMacro()" role="button" tabindex="0">
+      <div class="mac-destaque-ico">🗺️</div>
+      <div class="mac-destaque-txt">
+        <div class="mac-destaque-t">Visão Macro 2027</div>
+        <div class="mac-destaque-s">O plano do ano que guia todos os ciclos — funil, temas e indicadores</div>
+      </div>
+      <div class="mac-destaque-cta">Explorar →</div>
+    </div>`;
+  const cards = estado.planejamentos.map((p, i) => {
     const links = (ROLE === 'editor')
       ? `<button class="plan-link plan-vitor" onclick="abrirPlan(${i},'edit')">✏ Editar</button>
          <button class="plan-link plan-gabi" onclick="abrirPlan(${i},'valida')">👁 Visualizar</button>`
@@ -911,6 +977,7 @@ function renderSecM() {
       <div class="plan-links">${links}</div>
     </div>`;
   }).join('') || '<p style="font-size:13px;color:var(--z-text-sec)">Nenhum planejamento adicionado ainda.</p>';
+  document.getElementById('bod-m').innerHTML = destaque + cards;
 }
 
 // Abre a página do bimestre num iframe dentro do hub (mantém tudo no hub)
@@ -934,10 +1001,144 @@ function renderPlanIframe() {
 window.abrirPlan = function(idx, mode) { planOpen = { idx, mode }; renderTabContent(); window.scrollTo(0, 0); };
 window.voltarPlan = function() { planOpen = null; renderTabContent(); window.scrollTo(0, 0); };
 
+// ── VISÃO MACRO 2027 (conteúdo fixo, curado do documento estratégico) ──────────
+const MACRO_CICLOS = [
+  { n:1, per:'Jan–Fev', tema:'Recomeçar com intenção', cor:'#05C7F2', tag:'Topo · Alcance',
+    desc:'O ano começa com a volta às aulas, o acolhimento e a adaptação — atos pedagógicos, não etapas burocráticas. Retoma Os Princípios Norteadores da Zelo e define o tom do ano.',
+    datas:['Volta às aulas','Acolhimento','Adaptação'],
+    gera:'Campanha de acolhimento no Instagram, artigo no LinkedIn sobre planejamento pedagógico do ano, a primeira newsletter e um material de apoio à adaptação.',
+    ind:'Crescimento de seguidores' },
+  { n:2, per:'Mar–Abr', tema:'A arte de escutar a infância', cor:'#7F77DD', tag:'Meio · Engajamento',
+    desc:'Com a rotina no eixo, o foco vai para a escuta — pedagógica e da documentação — e para a imaginação e a narrativa. Escutar a criança e escutar a educadora.',
+    datas:['8/3 Mulher / Marco Legal','2/4 Autismo','18/4 Livro Infantil'],
+    gera:'Série de carrosséis sobre escuta e documentação, um artigo longo sobre o Marco Legal e Pílulas sobre inclusão.',
+    ind:'Engajamento (salvamentos e compartilhamentos)' },
+  { n:3, per:'Mai–Jun', tema:'Brincar é coisa séria', cor:'#05C7F2', tag:'Topo · Pico 1º sem', live:true,
+    desc:'O ciclo mais mobilizador do primeiro semestre, alinhado a um ponto de vista que a Zelo já defende: o brincar como direito, não como privilégio. Forte candidato a campanha própria e a live com parceiras.',
+    datas:['28/5 Dia do Brincar','Semana do Brincar','Dia das Mães','Festas juninas'],
+    gera:'Campanha do Brincar com identidade própria, Reels de forte apelo e um material rico sobre o brincar como direito.',
+    ind:'Alcance e novos seguidores' },
+  { n:4, per:'Jul–Ago', tema:'Quem cuida de quem cuida', cor:'#D9814E', tag:'Fundo · Relação', live:true,
+    desc:'Julho abre espaço para descanso e saúde do educador; agosto traz a valorização do profissional e o que a qualidade de fato exige. É o ciclo que mais fala com gestores — hora de acionar o LinkedIn e os artigos longos com força total.',
+    datas:['25/8 Dia Nacional da Educação Infantil','Semana Nacional da Ed. Infantil'],
+    gera:'Artigos no LinkedIn sobre condições e qualidade, série sobre saúde do educador, a newsletter mais institucional do ano e uma live voltada à gestão.',
+    ind:'Inscritos na newsletter e engajamento no LinkedIn' },
+  { n:5, per:'Set–Out', tema:'Criança é presente', cor:'#05C7F2', tag:'Topo · Pico do ano', live:true,
+    desc:'O ápice do ano, com pico duplo em outubro e identidade visual exclusiva para o Mês das Crianças. Ressignifica o Dia das Crianças: da lógica do consumo para a dos direitos — a criança como sujeito no presente. É a mensagem-síntese do ano.',
+    datas:['12/10 Dia das Crianças','15/10 Dia do Professor'],
+    gera:'A campanha central do ano com identidade exclusiva, Reels e carrosséis de pico, uma live especial e um material rico de maior fôlego.',
+    ind:'Alcance total e downloads do material rico' },
+  { n:6, per:'Nov–Dez', tema:'Infâncias no plural + fechamento', cor:'#D9814E', tag:'Fundo · Fechamento',
+    desc:'O ano se encerra abrindo o olhar para a pluralidade: infâncias negras, indígenas, do campo e das periferias. Dezembro é tempo de balanço — fecha com a retrospectiva anual, o Checklist da Zelo.',
+    datas:['20/11 Consciência Negra','Retrospectiva anual'],
+    gera:'Série sobre equidade e diversidade, a retrospectiva anual em formato de material rico (Checklist da Zelo) e a newsletter de encerramento.',
+    ind:'Alcance da retrospectiva e engajamento acumulado' },
+];
+
+function renderMacroView() {
+  const cont = document.getElementById('tab-content');
+  if (!cont) return;
+  const cyc = MACRO_CICLOS.map((c, i) => `
+    <div class="mac-cyc" id="mac-cyc-${i}" style="--cc:${c.cor}">
+      <div class="mac-cyc-head" onclick="toggleCicloMacro(${i})">
+        <div class="mac-cyc-num">${c.n}</div>
+        <div class="mac-cyc-info">
+          <div class="mac-cyc-per">${esc(c.per)}</div>
+          <div class="mac-cyc-tema">${esc(c.tema)}</div>
+        </div>
+        <div class="mac-cyc-tag">${esc(c.tag)}</div>
+        <div class="mac-cyc-chev">▸</div>
+      </div>
+      <div class="mac-cyc-body">
+        <div class="mac-cyc-desc">${esc(c.desc)}</div>
+        <div class="mac-datas">${c.datas.map(d => `<span class="mac-data">${esc(d)}</span>`).join('')}</div>
+        <div class="mac-mini-t">O que gera</div>
+        <div class="mac-gera">${esc(c.gera)}</div>
+        <div><span class="mac-ind">🎯 Indicador-âncora: ${esc(c.ind)}</span>${c.live ? '<span class="mac-live">🔴 Live do ciclo</span>' : ''}</div>
+      </div>
+    </div>`).join('');
+  cont.innerHTML = `
+    <div class="cycle-open-bar">
+      <button class="back-ciclos" onclick="fecharMacro()">← Voltar aos ciclos</button>
+      <div class="cycle-open-info"><span class="cycle-open-modo">🗺️ Visão macro do ano</span></div>
+    </div>
+    <div class="mac-wrap">
+      <div class="mac-hero">
+        <div class="mac-hero-k">Comunicação Zelo</div>
+        <h2>Plano 2027</h2>
+        <div class="mac-hero-sub">Um olhar sobre onde estamos e para onde podemos ir</div>
+        <div class="mac-thread">🧭 Fio condutor do ano: a infância vivida no presente</div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-sec-t">📍 Onde estamos</div>
+        <div class="mac-sec-d">A Zelo tem uma linha editorial com ponto de vista — carrosséis embasados, blog posts densos, collabs com profundidade técnica. Mas quase tudo hoje é conteúdo de profundidade, que educa quem já segue e não necessariamente atrai quem ainda não conhece a marca. O plano de 2027 conecta o que já é feito muito bem a uma estratégia de crescimento.</div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-sec-t">🎯 Do alcance à autoridade: um funil</div>
+        <div class="mac-sec-d">Distribuir o que já fazemos bem em três camadas, cada uma com uma função clara.</div>
+        <div class="mac-funnel">
+          <div class="mac-layer l-topo"><div class="mac-layer-h"><b>Topo — alcance e descoberta</b> <span>Reels</span></div><div class="mac-layer-f">O formato que o algoritmo mais entrega para não seguidores.</div></div>
+          <div class="mac-layer l-meio"><div class="mac-layer-h"><b>Meio — aprofundamento</b> <span>Carrosséis · Pílulas de Zelo</span></div><div class="mac-layer-f">O que a Zelo faz de melhor, agora recebendo quem chegou pelo topo.</div></div>
+          <div class="mac-layer l-fundo"><div class="mac-layer-h"><b>Fundo — autoridade e relação</b> <span>LinkedIn · newsletter · artigos · materiais</span></div><div class="mac-layer-f">Conteúdo que transforma audiência em relacionamento.</div></div>
+        </div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-sec-t">🗓️ Os 6 ciclos do ano</div>
+        <div class="mac-sec-d">O calendário organizado em seis ciclos bimestrais, cada um com um tema que atravessa todos os canais. Toque num ciclo para ver os detalhes.</div>
+        <div class="mac-cycles">${cyc}</div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-sec-t">✨ Novos quadros fixos</div>
+        <div class="mac-grid">
+          <div class="mac-feat"><div class="mac-feat-t">💊 Pílulas de Zelo</div><div class="mac-feat-d">Traduzir, com leveza e clareza, relatórios, estudos e pesquisas da área. A Zelo como mediadora e facilitadora para o educador.</div></div>
+          <div class="mac-feat"><div class="mac-feat-t">🎬 60 segundos de Zelo</div><div class="mac-feat-d">Reels que garimpam aspas fortes e discussões dos vídeos do YouTube, reciclando o que já temos em base.</div></div>
+        </div>
+        <div class="mac-band" style="margin-top:12px"><div class="mac-feat-t">⚡ Reels como motor de alcance</div><div class="mac-feat-d">Compromisso fixo mensal, com lógica própria: gancho nos 3 primeiros segundos, legendagem e chamada que faça salvar ou compartilhar. Não podem ser só sobra de reciclagem.</div></div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-sec-t">💼 LinkedIn como canal de nicho</div>
+        <div class="mac-sec-d">Quem decide contratar a Zelo (secretarias, gestores municipais, diretores de redes) está no LinkedIn. Dois movimentos para falar com esse público:</div>
+        <div class="mac-grid">
+          <div class="mac-feat"><div class="mac-feat-t">📰 Newsletter bimestral</div><div class="mac-feat-d">Material para gestores e políticas públicas: notícias do setor, eventos, uma recomendação e uma análise da Gabi. Bimestral porque encerra cada ciclo.</div></div>
+          <div class="mac-feat"><div class="mac-feat-t">📄 Artigos longos</div><div class="mac-feat-d">Adaptar blog posts que já têm a densidade certa para o formato de artigos do LinkedIn — pouco usado no nicho de educação.</div></div>
+        </div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-sec-t">✉️ E-mail marketing: dois fluxos</div>
+        <div class="mac-grid">
+          <div class="mac-feat"><div class="mac-feat-t">Newsletter bimestral</div><div class="mac-feat-d">Para a base de clientes e parceiras — síntese do que a Zelo produziu no ciclo. Curta, densa, no tom da marca. Encerra cada ciclo temático.</div></div>
+          <div class="mac-feat"><div class="mac-feat-t">Boas-vindas automatizada</div><div class="mac-feat-d">Para quem baixar um material rico: 3 e-mails em 15 dias — apresentação, cases de impacto e uma chamada leve. Transforma download em relacionamento.</div></div>
+        </div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-sec-t">📊 Material rico & como medir</div>
+        <div class="mac-grid">
+          <div class="mac-feat"><div class="mac-feat-t">✅ Checklist da Zelo</div><div class="mac-feat-d">Relatório anual de big numbers: redes atendidas, famílias transformadas, profissionais alcançados. Fecha o Ciclo 6 e abre a conversa do ano seguinte.</div></div>
+          <div class="mac-feat"><div class="mac-feat-t">📐 Indicador-âncora por ciclo</div><div class="mac-feat-d">Topo (ciclos 3 e 5): estamos chegando a quem ainda não nos conhece? Fundo (4 e 6): estamos convertendo audiência em vínculo?</div></div>
+        </div>
+      </div>
+
+      <div class="mac-sec">
+        <div class="mac-quote"><strong>O que muda:</strong> a Zelo em 2026 publica bem; em 2027 pode comunicar melhor — com narrativa de ano, canais que falam para públicos diferentes, um funil que transforma alcance em relação e lives nos ciclos certos. É colocar o que já funciona a serviço de um objetivo mais claro: ser reconhecida, pelos profissionais certos, como a referência técnica que já é na prática.</div>
+      </div>
+    </div>`;
+}
+window.abrirMacro = function() { planView = 'macro'; renderTabContent(); window.scrollTo(0, 0); };
+window.fecharMacro = function() { planView = null; renderTabContent(); window.scrollTo(0, 0); };
+window.toggleCicloMacro = function(i) { const el = document.getElementById('mac-cyc-' + i); if (el) el.classList.toggle('open'); };
+
 // ── ESTADO DE NAVEGAÇÃO ───────────────────────────────────────────────────────
 let tabAtivo = 'dados';  // 'plan' | 'copy' | 'dados' — abre em Base de Dados
 let subMode  = 'vis';    // 'vis'  | 'edit'
 let planOpen = null;     // null = lista de ciclos | { idx, mode } — ciclo aberto no iframe
+let planView = null;     // null = lista | 'macro' — visão macro 2027 aberta
 
 // ── BUILD HUB ─────────────────────────────────────────────────────────────────
 const TAB_META = {
@@ -987,6 +1188,7 @@ function renderTabContent() {
   const cont = document.getElementById('tab-content');
   if (!cont) return;
   if (tabAtivo === 'plan') {
+    if (planView === 'macro') { renderMacroView(); return; }
     if (planOpen) { renderPlanIframe(); return; }
     cont.innerHTML = `<div id="bod-m"></div>`;
     renderSecM();
@@ -1226,7 +1428,7 @@ window.copiarLink = function() {
 window.setTab = function(t) {
   tabAtivo = t;
   // toda aba abre na lista de ciclos
-  planOpen = null; copyMode = null; designMode = null;
+  planOpen = null; planView = null; copyMode = null; designMode = null;
   buildHub();
   window.scrollTo(0, 0);
 };
