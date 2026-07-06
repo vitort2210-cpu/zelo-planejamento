@@ -22,13 +22,15 @@ D:\zelo\
 │   ├── index.html                ← ★ O HUB (arquivo principal, ~129 KB, tudo aqui)
 │   ├── logo.png                  ← logo real do cliente
 │   └── logo.svg                  ← fallback do logo
+├── planejador/
+│   └── index.html                ← ★ planejador GENÉRICO (grade/calendário de qualquer ciclo via ?doc=<id>)
 ├── maio-junho-2027/
-│   └── index.html                ← ferramenta standalone de planejamento do bimestre
+│   └── index.html                ← planejador standalone antigo (legado; a grade vive no Firestore e é lida pelo genérico)
 ├── HANDOFF.md                    ← este documento
 └── (docx/imagens de briefing e copy do cliente)
 ```
 
-O **hub** é a camada que envolve tudo. A ferramenta de **planejamento por bimestre** (`maio-junho-2027/index.html`) continua sendo uma página standalone separada — o hub linka para ela na aba Planejamento.
+O **hub** é a camada que envolve tudo. O **planejador genérico** (`planejador/index.html`) edita a grade/calendário de qualquer ciclo por `?doc=<docId>` (e `?view=validacao`), lendo/gravando em `planejamentos/{docId}`; a aba Planejamento o abre num iframe. O `maio-junho-2027/index.html` é legado — a grade dele continua no Firestore e é servida pelo genérico via `?doc=maio-junho-2027`.
 
 ### Publicação
 - Repositório: GitHub Pages (`zelo-planejamento`), branch `main`
@@ -85,7 +87,7 @@ Teste local sem popup: `?as=editor|cliente|visualizador` só funciona em localho
 
 | Aba | Função | Estrutura hoje |
 |---|---|---|
-| 📅 **Planejamento** | ciclos de conteúdo | lista de **boxes de ciclo**; Editar/Visualizar abrem a página standalone **num iframe dentro do hub** (com "← Voltar aos ciclos" e atalho ↗ nova aba) |
+| 📅 **Planejamento** | ciclos de conteúdo | card **Visão Macro 2027** no topo + lista de **boxes de ciclo**; Editar/Visualizar abrem o **planejador genérico** (`../planejador/?doc=<id>`) num iframe dentro do hub; editor tem **+ Adicionar ciclo** |
 | ✍️ **Copy** | produção e validação de textos | lista de **boxes de ciclo** → dentro do box, editor tem Editar + Visualizar (pré-visualização da validação); cliente só Visualizar/Validar (comentários por trecho); modo controlado por `copyMode` (`'edit'`/`'valida'`) |
 | 🎨 **Validação de Design** | artes/vídeos para aprovação | lista de **boxes de ciclo** → botões por capacidade: `podeSubirDesign` vê "Subir/Editar" (upload Cloudinary + preview IG/LinkedIn + envio por e-mail); `podeValidarDesign` vê "Visualizar/Validar"; modo por `designMode` |
 | 📊 **Métricas** | desempenho redes/site | dashboard manual: visão **Mensal (contas)** e **Por conteúdo** (interações e engajamento calculados automaticamente) |
@@ -172,14 +174,20 @@ Todas as coleções acima têm regra de acesso. As duas últimas (`metricas`, `m
 
 ---
 
-## Ciclos macro 2027 (proposta — ainda não validada com Gabi)
+## Ciclos temáticos 2027 (do plano macro — `Zelo_Comunicacao_2027.md.docx`)
 
-| Ciclo | Trimestre | Tema |
-|---|---|---|
-| 1 | Jan–Mar | "O que a qualidade exige" |
-| 2 | Abr–Jun | "Territórios da infância" |
-| 3 | Jul–Set | "Quem cuida de quem cuida?" |
-| 4 | Out–Dez | "Infância e cidade" |
+Seis ciclos bimestrais, fio condutor **"a infância vivida no presente"**. Estão codados em `MACRO_CICLOS` (Visão Macro) e `CICLOS_2027` (migração) no hub.
+
+| Ciclo | Período | Tema | Indicador-âncora |
+|---|---|---|---|
+| 1 | Jan–Fev | Recomeçar com intenção | Crescimento de seguidores |
+| 2 | Mar–Abr | A arte de escutar a infância | Engajamento (salvamentos/compart.) |
+| 3 | Mai–Jun | Brincar é coisa séria (live) | Alcance e novos seguidores |
+| 4 | Jul–Ago | Quem cuida de quem cuida (live) | Inscritos newsletter / LinkedIn |
+| 5 | Set–Out | Criança é presente — pico (live) | Alcance total / downloads |
+| 6 | Nov–Dez | Infâncias no plural + fechamento | Alcance retrospectiva |
+
+Funil: **Topo** (Reels) → **Meio** (Carrosséis, Pílulas de Zelo) → **Fundo** (LinkedIn, newsletter, artigos, materiais).
 
 ---
 
@@ -216,7 +224,15 @@ Todas as coleções acima têm regra de acesso. As duas últimas (`metricas`, `m
 - **Planejamento** abre a página standalone do bimestre **num iframe** (`renderPlanIframe`, estado `planOpen`), em vez de nova aba.
 - `setTab` reseta `planOpen`/`copyMode`/`designMode` → toda aba começa na lista de ciclos.
 
-> Detalhe menor observado: a página standalone do bimestre ainda mostra "Ciclo 1 de 4" no próprio campo (o hub já corrige para "de 6" em `estado.planejamentos`, mas não dentro do iframe). Ajuste futuro opcional.
+## Trabalho recente (concluído em 2026-07-06)
+
+**Visão Macro 2027 + ciclos dinâmicos.**
+- **Visão Macro 2027** (fixa/curada do doc): card destaque no topo do Planejamento abre uma apresentação inline (`renderMacroView`, estado `planView='macro'`) — hero + fio condutor, funil de 3 camadas, timeline dos 6 ciclos (cards expansíveis), quadros novos, LinkedIn, fluxos de e-mail, material rico e como medir. Dados em `MACRO_CICLOS`.
+- **Planejador genérico** (`planejador/index.html`): parametrizado por `?doc=<id>` (+ `periodo`/`ciclo` na URL, `?view=validacao`); ciclo novo começa vazio; salva `contexto` por ciclo no Firestore. O iframe do hub aponta para ele (`renderPlanIframe` calcula o `src` a partir do `docId`).
+- **+ Adicionar ciclo** (editor): cria ciclo com `docId` slug (`slugCiclo`), aparece em Planejamento/Copy/Conteúdos.
+- **Migração `migrarCiclos2027`**: cadastra os 6 ciclos de 2027 e reetiqueta Mai–Jun para "Ciclo 3", preservando a grade (docId `maio-junho-2027` inalterado). Idempotente via `estado.planVersion='2027-6c'` (por isso `planVersion` está em `defaults`, senão não persistiria).
+
+> **A verificar em produção (não dá para testar no localhost, que não autentica):** abrir um ciclo no planejador dentro do hub logado e confirmar que a grade carrega e salva (o iframe compartilha a sessão Firebase Auth do mesmo domínio). A grade do Mai–Jun deve aparecer; o contexto estratégico dele começa em branco (foi para o Firestore agora), como combinado.
 
 ## Próximos passos
 
