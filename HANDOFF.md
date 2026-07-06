@@ -234,6 +234,17 @@ Funil: **Topo** (Reels) → **Meio** (Carrosséis, Pílulas de Zelo) → **Fundo
 
 > **A verificar em produção (não dá para testar no localhost, que não autentica):** abrir um ciclo no planejador dentro do hub logado e confirmar que a grade carrega e salva (o iframe compartilha a sessão Firebase Auth do mesmo domínio). A grade do Mai–Jun deve aparecer; o contexto estratégico dele começa em branco (foi para o Firestore agora), como combinado.
 
+## Trabalho recente (concluído em 2026-07-06) — Assistente do Hub
+
+**Chat pop-up por regras, client-side, sem custo/servidor** (não usa LLM/API — decisão do Vitor de não inserir custo externo). Prefixos `za-`/`asst` no código.
+- **Widget flutuante** (`montarAssistente`): botão 💬 + painel de chat, presente em todas as abas e papéis. Fica no `body` (persiste entre `buildHub`); montado no fim de `iniciarHub`; escondido em `mostrarLogin`.
+- **Cérebro por regras** (`zaResponder` + `zaNorm`): interpreta intenção (buscar, ir até, marcar status, pendências, métricas, ajuda) e faz **busca aproximada** (`zaBuscar`) sobre a grade de **todos os ciclos** (carregados em `carregarTudoAssistente`).
+- **Ferramentas:** navegar (`zaIrPara` → `setTab` + abrir ciclo + destacar card); marcar status com confirmação (`zaPrepararMarcar`/`zaExecutarMarcar`, respeita papel via `zaPodeMarcar`) — grava em `planejamentos.estados`, `copies.itens.statusGabi`, `design.itens.statusDesign` via `setDoc merge`; resumo de métricas (`zaResumoMetricas`); pendências (`zaFalta`).
+- **Mapa de status** por área em `ZA_STATUS` (aprovado / ajuste / bloqueado / redirecionado → valor certo em cada aba).
+- Seeder de teste só-localhost: `window.__zaSeed()`.
+
+> **A verificar em produção:** logado, testar buscar → navegar → marcar status (o localhost nega o Firestore). Foi construído "upgrade-ready": se um dia quiser IA de verdade (Claude via backend), a interface e as ferramentas já existem — só troca o "cérebro".
+
 ## Próximos passos
 
 1. "Etapas finais na Base de Dados" (a definir com Vitor).

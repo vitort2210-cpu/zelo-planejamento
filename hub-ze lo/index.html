@@ -319,6 +319,34 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .dv-ref-nome{font-size:13px;font-weight:600}
 .dv-ref-link{font-size:11px;color:var(--z-teal);text-decoration:none;white-space:nowrap}
 .dv-ref-desc{font-size:12px;color:var(--z-text-sec);line-height:1.45;margin-top:5px}
+/* ── ASSISTENTE DO HUB (chat pop-up) ────────────────────────────────── */
+.za-fab{position:fixed;right:20px;bottom:20px;z-index:1200;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,var(--z-teal),#0c5f68);color:#fff;font-size:24px;box-shadow:0 6px 20px rgba(17,128,140,.35);display:flex;align-items:center;justify-content:center;transition:transform .18s ease,box-shadow .18s ease}
+.za-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 26px rgba(17,128,140,.45)}
+.za-panel{position:fixed;right:20px;bottom:88px;z-index:1200;width:370px;max-width:calc(100vw - 32px);height:540px;max-height:calc(100vh - 120px);background:#fff;border:1px solid var(--z-border);border-radius:16px;box-shadow:0 14px 44px rgba(0,0,0,.2);display:none;flex-direction:column;overflow:hidden}
+.za-panel.open{display:flex;animation:za-in .18s ease}
+@keyframes za-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.za-head{background:linear-gradient(135deg,var(--z-teal),#0c5f68);color:#fff;padding:13px 15px;display:flex;align-items:center;gap:10px}
+.za-head-ico{font-size:19px}
+.za-head-t{font-size:14px;font-weight:700}
+.za-head-s{font-size:10.5px;opacity:.85;font-weight:500}
+.za-close{background:rgba(255,255,255,.18);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;line-height:1}
+.za-body{flex:1;overflow-y:auto;padding:14px;background:var(--z-bg);display:flex;flex-direction:column;gap:10px}
+.za-msg{max-width:86%;padding:9px 12px;border-radius:13px;font-size:13px;line-height:1.5;white-space:pre-wrap;word-wrap:break-word;overflow-wrap:anywhere}
+.za-msg.bot{background:#fff;border:1px solid var(--z-border);align-self:flex-start;border-bottom-left-radius:3px}
+.za-msg.user{background:var(--z-teal);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.za-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.za-act{padding:6px 11px;border-radius:8px;border:1px solid var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left}
+.za-act.primary{background:var(--z-terra);border-color:var(--z-terra);color:#fff}
+.za-act:hover{filter:brightness(.97)}
+.za-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;background:var(--z-bg)}
+.za-chip{font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer}
+.za-chip:hover{border-color:var(--z-teal);color:var(--z-teal)}
+.za-foot{padding:10px;border-top:1px solid var(--z-border);display:flex;gap:8px;background:#fff}
+.za-inp{flex:1;border:1.5px solid var(--z-border);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--z-text);resize:none;max-height:80px}
+.za-inp:focus{outline:none;border-color:var(--z-teal)}
+.za-send{border:none;background:var(--z-teal);color:#fff;width:40px;border-radius:10px;cursor:pointer;font-size:15px}
+.za-flash{animation:za-flash 1.7s ease}
+@keyframes za-flash{0%,100%{box-shadow:0 1px 3px rgba(0,0,0,.05)}30%{box-shadow:0 0 0 3px var(--z-cyan)}}
 
 /* LOADING / TOAST */
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:100;font-size:13px;color:var(--z-text-sec)}
@@ -2456,6 +2484,240 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
   };
 }
 
+// ══════════════════════════════════════════════════════════════════════════════
+// ASSISTENTE DO HUB — chat por regras (client-side, sem servidor/custo)
+// ══════════════════════════════════════════════════════════════════════════════
+let asstMontado = false, asstAberto = false;
+let asstCache = { carregado:false, cycles:[] };
+let asstMsgs = [];
+let asstPending = null;   // ação aguardando confirmação/escolha
+
+function zaNorm(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[^\x00-\x7f]/g,''); }
+
+// Mapa de status por área. Cada "alvo" vira o valor certo em cada aba.
+const ZA_STATUS = {
+  aprovado:      { plan:'aprovado',      copy:'aprovado',           design:'aprovado',            lbl:'Aprovado' },
+  ajuste:        { plan:'ajuste',        copy:'revisao_necessaria', design:'ajustes_necessarios', lbl:'Ajuste / revisão' },
+  bloqueado:     { plan:'bloqueado',     copy:'cancelado',          design:null,                  lbl:'Bloqueado / cancelado' },
+  redirecionado: { plan:'redirecionado', copy:null,                 design:null,                  lbl:'Redirecionado' },
+};
+const ZA_AREA_LBL = { plan:'Planejamento', copy:'Copy', design:'Conteúdos' };
+
+async function carregarTudoAssistente(){
+  const plist = estado.planejamentos || []; const cycles = [];
+  for (let i=0;i<plist.length;i++){
+    const p=plist[i], docId=cicloDocId(p);
+    const c={ docId, idx:i, periodo:p.periodo||'', ciclo:p.ciclo||'', items:[], estados:{}, copy:{}, design:{} };
+    try{ const g=await getDoc(doc(db,'planejamentos',docId)); if(g.exists()){ const d=g.data(); c.items=Array.isArray(d.items)?d.items:[]; c.estados=d.estados||{}; } }catch(e){}
+    try{ const cp=await getDoc(copyRef(docId)); if(cp.exists()) c.copy=cp.data().itens||{}; }catch(e){}
+    try{ const dz=await getDoc(designRef(docId)); if(dz.exists()) c.design=dz.data().itens||{}; }catch(e){}
+    cycles.push(c);
+  }
+  try{ const ms=await getDoc(metricasRef); if(ms.exists()&&Array.isArray(ms.data().snapshots)) metricasData={ snapshots:ms.data().snapshots }; }catch(e){}
+  asstCache={ carregado:true, cycles };
+}
+
+function zaBuscar(query){
+  const q=zaNorm(query); const qt=q.split(/\s+/).filter(w=>w.length>2); const res=[];
+  (asstCache.cycles||[]).forEach(c=>{
+    (c.items||[]).forEach(it=>{
+      const hay=zaNorm([it.titulo,it.pilar,it.formato,it.data].join(' '));
+      let sc=0;
+      if(q.length>2 && hay.includes(q)) sc+=12;
+      qt.forEach(w=>{ if(hay.includes(w)) sc+=3; });
+      if(sc>0) res.push({ sc, c, it });
+    });
+  });
+  res.sort((a,b)=>b.sc-a.sc);
+  return res.slice(0,6);
+}
+function zaStatusAtual(c,it){
+  const est=c.estados[it.id]||''; const cp=c.copy[it.id]||{}; const dz=c.design[it.id]||{};
+  const P={ aprovado:'✅ Aprovado', ajuste:'✏️ Ajuste', bloqueado:'⛔ Bloqueado', redirecionado:'↩️ Redirecionado' };
+  const G={ aprovado:'👍 Aprovado', revisao_necessaria:'✏️ Revisão', cancelado:'✕ Cancelado', em_validacao:'🔍 Em validação', validacao_necessaria:'⏳ A validar' };
+  const D={ aprovado:'👍 Aprovado', ajustes_necessarios:'✏️ Ajustes', em_analise:'🔍 Em análise' };
+  return `Planej.: ${P[est]||'—'}  ·  Copy: ${G[cp.statusGabi]||'—'}  ·  Conteúdo: ${D[dz.statusDesign]||'—'}`;
+}
+function zaStatusAlvo(t){
+  if(/aprov|valid/.test(t)) return 'aprovado';
+  if(/ajuste|revis/.test(t)) return 'ajuste';
+  if(/bloque|cancel/.test(t)) return 'bloqueado';
+  if(/redirecion/.test(t)) return 'redirecionado';
+  return null;
+}
+function zaAreaAlvo(t){
+  if(/planejamento|planej|grade|calendario/.test(t)) return 'plan';
+  if(/\bcopy\b|legenda|texto|roteiro/.test(t)) return 'copy';
+  if(/design|arte|conteudo|conteudos|imagem|foto|video|reels|carrossel/.test(t)) return 'design';
+  return null;
+}
+function zaPodeMarcar(area){
+  if(area==='design') return podeValidarDesign();
+  return ROLE==='editor' || ROLE==='cliente';
+}
+
+// ── Fluxo de conversa ──────────────────────────────────────────────────────────
+function zaResponder(txt){
+  asstMsgs.push({ from:'user', html:esc(txt) }); zaRender();
+  const t=zaNorm(txt);
+  if(!asstCache.carregado){ return zaBot('Ainda estou carregando os dados dos ciclos… tente de novo em instantes. ⏳'); }
+  if(/\bajuda\b|o que voce faz|como funciona|comandos/.test(t)) return zaAjuda();
+  if(/o que falta|quais faltam|falta valid|pendente|em aberto/.test(t)) return zaFalta();
+
+  const alvo = zaStatusAlvo(t);
+  const querMarcar = alvo && /(marc|aprov|valid|bloque|cancel|ajuste|revis|redirecion|muda|define|coloca)/.test(t);
+
+  if(/metrica|engajamento|alcance|seguidor|desempenho|impress|visitant|numero/.test(t) || (/\b(instagram|linkedin|site)\b/.test(t) && !querMarcar)){
+    const plat=/instagram|insta/.test(t)?'instagram':/linkedin/.test(t)?'linkedin':/\bsite\b/.test(t)?'site':null;
+    return zaBot(zaResumoMetricas(plat));
+  }
+
+  const matches = zaBuscar(txt);
+  if(querMarcar){
+    if(!matches.length) return zaBot('Não encontrei esse conteúdo. Pode me dizer o título (ou parte dele)?');
+    const m=matches[0], area=zaAreaAlvo(t);
+    if(area) return zaPrepararMarcar(m.c,m.it,area,alvo);
+    asstPending={ tipo:'area', c:m.c, it:m.it, alvo };
+    return zaBot(`Encontrei "${esc(m.it.titulo)}" (${esc(m.c.periodo)}). Marcar como **${ZA_STATUS[alvo].lbl}** em qual área?`,
+      [{lbl:'📅 Planejamento',act:'area:plan'},{lbl:'✍️ Copy',act:'area:copy'},{lbl:'🎨 Conteúdos',act:'area:design'},{lbl:'Cancelar',act:'cancel'}]);
+  }
+
+  if(matches.length){
+    if(matches.length===1) return zaMostrar(matches[0]);
+    return zaBot('Achei estes conteúdos — qual você quer?',
+      matches.map(m=>({ lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,44), act:`pick:${m.c.idx}:${m.it.id}` })).concat([{lbl:'Cancelar',act:'cancel'}]));
+  }
+  return zaAjuda('Não entendi bem 🤔\n\n');
+}
+function zaMostrar(m){
+  zaBot(`📌 **${esc(m.it.titulo)}**\n📅 ${esc(m.it.data||'--')} · ${esc(m.c.periodo)} · ${esc(m.it.pilar||'')} ${esc(m.it.formato||'')}\n${zaStatusAtual(m.c,m.it)}\n\nAbrir em:`,
+    [{lbl:'✍️ Copy',act:`go:${m.c.idx}:${m.it.id}:copy`},{lbl:'🎨 Conteúdos',act:`go:${m.c.idx}:${m.it.id}:design`},{lbl:'📅 Planejamento',act:`go:${m.c.idx}:${m.it.id}:plan`}]);
+}
+function zaPrepararMarcar(c,it,area,alvo){
+  const val=ZA_STATUS[alvo][area];
+  if(!val) return zaBot(`Não dá pra marcar "${ZA_STATUS[alvo].lbl}" em ${ZA_AREA_LBL[area]} — esse status não existe nessa área.`);
+  if(!zaPodeMarcar(area)) return zaBot(`Seu perfil (${ROLE}) não pode alterar o status em ${ZA_AREA_LBL[area]}. 🙅`);
+  asstPending={ tipo:'confirm', c, it, area, alvo, val };
+  return zaBot(`Confirmar: marcar **${esc(it.titulo)}** como **${ZA_STATUS[alvo].lbl}** em **${ZA_AREA_LBL[area]}** (${esc(c.periodo)})?`,
+    [{lbl:'✓ Sim, marcar',act:'mark:go',primary:true},{lbl:'Cancelar',act:'cancel'}]);
+}
+async function zaExecutarMarcar(p){
+  try{
+    const ts=new Date().toISOString();
+    if(p.area==='plan')        await setDoc(doc(db,'planejamentos',p.c.docId), { estados:{ [p.it.id]:p.val }, updatedAt:ts }, {merge:true});
+    else if(p.area==='copy')   await setDoc(copyRef(p.c.docId),  { itens:{ [p.it.id]:{ statusGabi:p.val } },   updatedAt:ts }, {merge:true});
+    else if(p.area==='design') await setDoc(designRef(p.c.docId),{ itens:{ [p.it.id]:{ statusDesign:p.val } }, updatedAt:ts }, {merge:true});
+    if(p.area==='plan') p.c.estados[p.it.id]=p.val;
+    else if(p.area==='copy')   p.c.copy[p.it.id]=Object.assign({},p.c.copy[p.it.id],{statusGabi:p.val});
+    else if(p.area==='design') p.c.design[p.it.id]=Object.assign({},p.c.design[p.it.id],{statusDesign:p.val});
+    zaBot(`Pronto! ✅ "${esc(p.it.titulo)}" marcado como **${ZA_STATUS[p.alvo].lbl}** em ${ZA_AREA_LBL[p.area]}.`,
+      [{lbl:'Ir até o conteúdo',act:`go:${p.c.idx}:${p.it.id}:${p.area}`}]);
+  }catch(e){ console.error(e); zaBot('❌ Não consegui gravar — verifique a conexão ou a permissão.'); }
+}
+function zaIrPara(area,c,it){
+  zaBot(`Abrindo "${esc(it.titulo)}" em ${ZA_AREA_LBL[area]}… 👉`);
+  if(area==='plan'){ setTab('plan'); abrirPlan(c.idx, ROLE==='editor'?'edit':'valida'); return; }
+  const mode = ROLE==='cliente' ? 'valida' : (area==='design' ? (podeSubirDesign()?'edit':'valida') : 'edit');
+  if(area==='copy'){ setTab('copy'); abrirCicloCopy(c.docId, mode); }
+  else if(area==='design'){ setTab('design'); abrirCicloDesign(c.docId, mode); }
+  setTimeout(()=>zaDestacar((area==='copy'?'copy-card-':'design-card-')+it.id), 950);
+}
+function zaDestacar(id){ const el=document.getElementById(id); if(el){ el.scrollIntoView({behavior:'smooth',block:'center'}); el.classList.add('za-flash'); setTimeout(()=>el.classList.remove('za-flash'),1700); } }
+function zaFalta(){
+  const linhas=[];
+  (asstCache.cycles||[]).forEach(c=>{
+    const total=(c.items||[]).length; if(!total) return;
+    let pend=0; (c.items||[]).forEach(it=>{ if((c.design[it.id]||{}).statusDesign!=='aprovado') pend++; });
+    linhas.push(`• ${c.periodo}: **${pend}** de ${total} conteúdo(s) ainda não aprovado(s)`);
+  });
+  if(!linhas.length) return zaBot('Não há ciclos com conteúdos cadastrados ainda.');
+  return zaBot('🗂️ Pendentes de aprovação (aba Conteúdos):\n\n'+linhas.join('\n'));
+}
+function zaResumoMetricas(plat){
+  const snaps=snapsSorted();
+  if(!snaps.length) return '📊 Ainda não há dados de métricas cadastrados. Peça ao Vitor para preencher a aba Métricas.';
+  const cur=snaps[snaps.length-1], prev=snaps[snaps.length-2]||null;
+  const plats = plat?[plat]:['instagram','linkedin','site'];
+  let out=`📊 Métricas — ${mesLabel(cur.mesRef)}${prev?` (vs. ${mesLabel(prev.mesRef)})`:''}:`;
+  plats.forEach(pl=>{
+    const cfg=METRICAS_CONFIG[pl]; const linhas=[];
+    allCampos(pl).forEach(f=>{
+      const cv=valorMetrica(cur,pl,f); if(cv===''||cv==null) return;
+      let s=`• ${f.lbl}: ${fmtMetric(cv,f.fmt)}`;
+      if(prev){ const pv=valorMetrica(prev,pl,f); if(pv!==''&&pv!=null&&!isNaN(pv)&&Number(pv)!==0){ const d=(Number(cv)-Number(pv))/Number(pv)*100; s+=` ${d>=0?'▲':'▼'} ${Math.abs(d).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`; } }
+      linhas.push(s);
+    });
+    if(linhas.length) out+=`\n\n**${cfg.nome}**\n${linhas.join('\n')}`;
+  });
+  return out;
+}
+function zaAjuda(prefix){
+  return zaBot((prefix||'')+'Posso te ajudar a:\n• **Encontrar** um conteúdo — "onde está o reels do brincar?"\n• **Levar você até ele** em Copy, Conteúdos ou Planejamento\n• **Marcar status** — "aprovar o carrossel de maio", "pedir ajuste no post X"\n• **Métricas** — "como está o engajamento do Instagram?"\n• **Pendências** — "o que falta validar?"');
+}
+
+// ── Ações dos botões ────────────────────────────────────────────────────────────
+window.zaAction = function(act){
+  if(act==='cancel'){ asstPending=null; return zaBot('Ok, cancelado. 👍'); }
+  if(act.startsWith('area:')){ const area=act.slice(5); const p=asstPending; asstPending=null; if(p&&p.tipo==='area') return zaPrepararMarcar(p.c,p.it,area,p.alvo); return; }
+  if(act==='mark:go'){ const p=asstPending; asstPending=null; if(p&&p.tipo==='confirm') return zaExecutarMarcar(p); return; }
+  if(act.startsWith('pick:')){ const a=act.split(':'); const c=(asstCache.cycles||[]).find(x=>x.idx===+a[1]); const it=c&&(c.items||[]).find(x=>String(x.id)===a[2]); if(c&&it) return zaMostrar({c,it}); return; }
+  if(act.startsWith('go:')){ const a=act.split(':'); const c=(asstCache.cycles||[]).find(x=>x.idx===+a[1]); const it=c&&(c.items||[]).find(x=>String(x.id)===a[2]); if(c&&it) return zaIrPara(a[3],c,it); return; }
+};
+
+// ── Render / UI do chat ─────────────────────────────────────────────────────────
+function zaMd(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>'); }
+function zaBot(md, acts){ asstMsgs.push({ from:'bot', html:zaMd(md), acts:acts||null }); zaRender(); }
+function zaRender(){
+  const body=document.getElementById('za-body'); if(!body) return;
+  body.innerHTML=asstMsgs.map(m=>{
+    let h=`<div class="za-msg ${m.from}">${m.html}`;
+    if(m.acts) h+=`<div class="za-acts">${m.acts.map(a=>`<button class="za-act${a.primary?' primary':''}" onclick="zaAction('${a.act}')">${esc(a.lbl)}</button>`).join('')}</div>`;
+    return h+'</div>';
+  }).join('');
+  body.scrollTop=body.scrollHeight;
+}
+function montarAssistente(){
+  const fab0=document.getElementById('za-fab'); if(fab0) fab0.style.display='flex';
+  if(asstMontado) return; asstMontado=true;
+  const fab=document.createElement('button'); fab.className='za-fab'; fab.id='za-fab'; fab.title='Assistente do Hub'; fab.innerHTML='💬'; fab.onclick=window.zaToggle;
+  const panel=document.createElement('div'); panel.className='za-panel'; panel.id='za-panel';
+  panel.innerHTML=`
+    <div class="za-head"><span class="za-head-ico">🤖</span><div style="flex:1"><div class="za-head-t">Assistente do Hub</div><div class="za-head-s">Pergunte, navegue e marque status</div></div><button class="za-close" onclick="zaToggle()">✕</button></div>
+    <div class="za-body" id="za-body"></div>
+    <div class="za-chips" id="za-chips"></div>
+    <div class="za-foot"><textarea class="za-inp" id="za-inp" rows="1" placeholder="Ex.: onde está o reels do brincar?"></textarea><button class="za-send" onclick="zaEnviar()" title="Enviar">➤</button></div>`;
+  document.body.appendChild(fab); document.body.appendChild(panel);
+  panel.querySelector('#za-inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); zaEnviar(); } });
+  document.getElementById('za-chips').innerHTML=['O que falta validar?','Como está o Instagram?','Ajuda'].map(c=>`<button class="za-chip" onclick="zaChip(this.textContent)">${esc(c)}</button>`).join('');
+  carregarTudoAssistente();
+}
+window.zaToggle = function(){
+  asstAberto=!asstAberto; const p=document.getElementById('za-panel'); if(!p) return;
+  p.classList.toggle('open',asstAberto);
+  if(asstAberto){
+    if(!asstMsgs.length) zaBot('Oi! 👋 Sou o assistente do hub. Posso encontrar conteúdos, te levar até eles, marcar status e resumir métricas.\nComo posso ajudar?');
+    if(!asstCache.carregado) carregarTudoAssistente();
+    setTimeout(()=>{ const i=document.getElementById('za-inp'); if(i) i.focus(); },60);
+  }
+};
+window.zaEnviar = function(){ const i=document.getElementById('za-inp'); if(!i) return; const v=i.value.trim(); if(!v) return; i.value=''; zaResponder(v); };
+window.zaChip = function(txt){ zaResponder(txt); };
+
+// Seeder de teste — só localhost (o Firestore nega leitura sem login); nunca roda em produção
+if(['localhost','127.0.0.1'].includes(location.hostname)){
+  window.__zaSeed = function(){
+    asstCache={ carregado:true, cycles:[
+      { docId:'maio-junho-2027', idx:2, periodo:'Maio — Junho 2027', ciclo:'Ciclo 3 · Brincar é coisa séria',
+        items:[ {id:4, data:'13/05', titulo:'O que a Zelo pensa sobre: brincar como direito', pilar:'Quadro Mensal', formato:'Blog Post'},
+                {id:12,data:'12/06', titulo:'Aprendendo com o brincar — Caixas sensoriais', pilar:'Quadro Mensal', formato:'Reels'} ],
+        estados:{4:'aprovado'}, copy:{12:{statusGabi:'em_validacao'}}, design:{4:{statusDesign:'ajustes_necessarios'}} } ] };
+    metricasData={ snapshots:[
+      { id:'a', mesRef:'2027-05', instagram:{seguidores:12800, alcance:9200, interacoes:540} },
+      { id:'b', mesRef:'2027-06', instagram:{seguidores:13800, alcance:8200, interacoes:632} } ] };
+    return 'seed ok';
+  };
+}
+
 // ── LOGIN / GATE DE ACESSO ────────────────────────────────────────────────────
 const isLocalhost = ['localhost','127.0.0.1'].includes(location.hostname);
 
@@ -2474,6 +2736,8 @@ function mostrarLogin(msgHTML, semAcesso) {
   document.getElementById('loading').classList.add('hide');
   document.getElementById('view-edit').innerHTML = '';
   document.getElementById('auth-screen').style.display = 'flex';
+  const _fab=document.getElementById('za-fab'); if(_fab) _fab.style.display='none';
+  const _pan=document.getElementById('za-panel'); if(_pan) _pan.classList.remove('open'); asstAberto=false;
   document.getElementById('auth-msg').innerHTML = msgHTML || 'Entre com sua conta Google para acessar o hub.';
   document.getElementById('auth-google').style.display = semAcesso ? 'none' : '';
   document.getElementById('auth-signout').style.display = semAcesso ? '' : 'none';
@@ -2488,6 +2752,7 @@ async function iniciarHub(role, email) {
   if (role === 'editor' && migrarCiclos2027()) agendarSalvamento();
   document.getElementById('loading').classList.add('hide');
   buildHub();
+  montarAssistente();
 }
 
 // Override de teste só em localhost (valida a UI por papel sem o popup do Google)
