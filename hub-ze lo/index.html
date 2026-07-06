@@ -259,6 +259,66 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .acf-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:4px}
 .acf-cancel{padding:8px 14px;border:1px solid var(--z-border);background:#fff;border-radius:8px;font-family:inherit;font-size:12px;font-weight:600;color:var(--z-text-sec);cursor:pointer}
 .acf-save{padding:8px 14px;border:none;background:var(--z-terra);color:#fff;border-radius:8px;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer}
+/* Barra de salvamento (Base de Dados > Edição) */
+.save-bar{position:sticky;top:0;z-index:6;margin-bottom:16px;padding:10px 14px;border-radius:9px;font-size:13px;font-weight:600;border:1px solid;display:flex;align-items:center;gap:8px}
+.save-bar-ico{font-size:13px}
+.save-bar.saved{background:var(--z-teal-light);color:var(--z-teal);border-color:rgba(17,128,140,.3)}
+.save-bar.saving{background:var(--z-ocre-light);color:var(--z-ocre-dark);border-color:var(--z-ocre)}
+.save-bar.error{background:var(--z-terra-light);color:var(--z-terra);border-color:var(--z-terra)}
+/* ── VISUALIZAÇÃO DASHBOARD (Base de Dados) ─────────────────────────── */
+.dv-hero{background:linear-gradient(135deg,var(--z-teal),#0c5f68);color:#fff;border-radius:14px;padding:22px;margin-bottom:16px}
+.dv-hero-slogan{font-size:20px;font-weight:800;line-height:1.3}
+.dv-hero-pos{font-size:13px;opacity:.92;margin-top:8px;line-height:1.5;white-space:pre-line}
+.dv-hero-tom{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.dv-hero-tom .doc-pill{background:rgba(255,255,255,.16);color:#fff;border:1px solid rgba(255,255,255,.25)}
+.dv-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:640px){.dv-grid{grid-template-columns:1fr}}
+.dv-card{background:#fff;border:1px solid var(--z-border);border-radius:12px;padding:16px 18px;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.dv-card-full{margin-bottom:12px}
+.dv-card-t{font-size:14px;font-weight:700;color:var(--z-teal);margin-bottom:12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.dv-card-hint{font-size:11px;font-weight:500;color:var(--z-text-sec);background:var(--z-bg);padding:2px 8px;border-radius:20px}
+.dv-blk{margin-top:10px}
+.dv-blk-l{font-size:10.5px;font-weight:700;color:var(--z-text-sec);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.dv-blk-v{font-size:13px;color:var(--z-text);line-height:1.55;white-space:pre-line}
+.dv-pills{display:flex;flex-wrap:wrap;gap:6px}
+.dv-swot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.dv-swot{grid-template-columns:1fr}}
+.dv-q{border-radius:10px;padding:12px 14px;cursor:pointer;border:1px solid;transition:box-shadow .2s ease,transform .2s ease}
+.dv-q:hover{box-shadow:0 6px 18px rgba(0,0,0,.1);transform:translateY(-2px)}
+.dv-q-head{display:flex;align-items:center;gap:8px}
+.dv-q-ico{font-size:16px}
+.dv-q-lbl{font-size:13.5px;font-weight:700;flex:1}
+.dv-q-count{font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;background:rgba(255,255,255,.7)}
+.dv-q-items{list-style:none;margin:0;padding:0;display:none}
+.dv-q:hover .dv-q-items,.dv-q.open .dv-q-items{display:block;margin-top:9px}
+.dv-q-items li{font-size:12.5px;line-height:1.45;padding:4px 0 4px 16px;position:relative;border-top:1px solid rgba(0,0,0,.06)}
+.dv-q-items li:before{content:'•';position:absolute;left:2px;opacity:.6}
+.dv-q-items li:first-child{border-top:0}
+.dv-q-empty{opacity:.6;font-style:italic;border-top:0!important}
+.dv-q-hint{font-size:10.5px;color:var(--z-text-sec);margin-top:6px;opacity:.7}
+.dv-q:hover .dv-q-hint,.dv-q.open .dv-q-hint{display:none}
+.dv-q-f{background:var(--z-teal-light);border-color:rgba(17,128,140,.35)}.dv-q-f .dv-q-lbl{color:var(--z-teal)}
+.dv-q-w{background:var(--z-terra-light);border-color:rgba(217,129,78,.4)}.dv-q-w .dv-q-lbl{color:var(--z-terra)}
+.dv-q-o{background:var(--z-cyan-light,#cdf2fc);border-color:rgba(5,199,242,.4)}.dv-q-o .dv-q-lbl{color:#0a7c99}
+.dv-q-a{background:var(--z-ocre-light);border-color:var(--z-ocre)}.dv-q-a .dv-q-lbl{color:var(--z-ocre-dark)}
+.dv-mats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.dv-mats{grid-template-columns:1fr}}
+.dv-mat{display:flex;align-items:center;gap:11px;padding:12px 14px;border:1px solid var(--z-border);border-radius:10px;background:var(--z-ocre-light);text-decoration:none;color:var(--z-text);transition:box-shadow .18s,transform .18s,border-color .18s}
+.dv-mat:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-2px);border-color:var(--z-ocre-dark)}
+.dv-mat-nolink{cursor:default}
+.dv-mat-ico{font-size:19px}
+.dv-mat-txt{flex:1;min-width:0}
+.dv-mat-tit{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dv-mat-tipo{font-size:11px;color:var(--z-ocre-dark);font-weight:600}
+.dv-mat-arrow{font-size:15px;color:var(--z-teal)}
+.dv-empty{font-size:13px;color:var(--z-text-sec);padding:6px 0}
+.dv-refs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.dv-refs{grid-template-columns:1fr}}
+.dv-ref{border:1px solid var(--z-border);border-radius:10px;padding:11px 13px;background:#fff}
+.dv-ref-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.dv-ref-nome{font-size:13px;font-weight:600}
+.dv-ref-link{font-size:11px;color:var(--z-teal);text-decoration:none;white-space:nowrap}
+.dv-ref-desc{font-size:12px;color:var(--z-text-sec);line-height:1.45;margin-top:5px}
 
 /* LOADING / TOAST */
 .loading{position:fixed;inset:0;background:rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;z-index:100;font-size:13px;color:var(--z-text-sec)}
@@ -705,6 +765,8 @@ let saveTimer = null;
 function agendarSalvamento() {
   const el = document.getElementById('save-status');
   if (el) { el.textContent = '● Salvando...'; el.classList.add('saving'); }
+  const bar = document.getElementById('save-bar');
+  if (bar) { bar.className = 'save-bar saving'; bar.innerHTML = '<span class="save-bar-ico">●</span> Salvando…'; }
   clearTimeout(saveTimer);
   saveTimer = setTimeout(salvarNoFirebase, 1200);
 }
@@ -728,12 +790,20 @@ async function salvarNoFirebase() {
     await setDoc(DOC_REF, { ...estado, updatedAt: new Date().toISOString() });
     const el = document.getElementById('save-status');
     if (el) { el.textContent = '✓ Salvo'; el.classList.remove('saving'); }
+    const bar = document.getElementById('save-bar');
+    if (bar) {
+      const t = new Date().toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+      bar.className = 'save-bar saved';
+      bar.innerHTML = `<span class="save-bar-ico">✓</span> Tudo salvo às ${t}`;
+    }
     setTimeout(() => {
       const e2 = document.getElementById('save-status');
       if (e2) e2.textContent = '';
     }, 2500);
   } catch (e) {
     showToast('Erro ao salvar. Verifique a conexão.');
+    const bar = document.getElementById('save-bar');
+    if (bar) { bar.className = 'save-bar error'; bar.innerHTML = '<span class="save-bar-ico">⚠</span> Erro ao salvar — verifique a conexão'; }
     console.error(e);
   }
 }
@@ -1319,6 +1389,7 @@ function buildEditSections() {
     </div>`;
   }
   document.getElementById('sub-content').innerHTML = `
+    <div class="save-bar saved" id="save-bar"><span class="save-bar-ico">✓</span> As alterações são salvas automaticamente</div>
     <div class="tier-lbl t1"><span class="tier-badge">Tier 1</span> Cliente preenche sozinho</div>
     ${sc('a','t1','A','Dados da empresa','Informações básicas de cadastro')}
     ${sc('b','t1','B','Dados fiscais para NF-e','Para emissão de nota fiscal eletrônica')}
@@ -1349,72 +1420,90 @@ function buildDocView() {
     return str.split(',').map(s => s.trim()).filter(Boolean)
       .map(s => `<span class="doc-pill${cls?' '+cls:''}">${esc(s)}</span>`).join('');
   }
-  function dv(v) {
-    return v ? `<div class="doc-value">${esc(v)}</div>`
-             : '<span style="color:#bbb;font-size:12px">—</span>';
-  }
-
   const id  = estado.identidade;
   const pub = estado.publicoAlvo;
   const obj = estado.objetivos;
   const sw  = estado.swot;
   const voz = estado.guiaVoz;
   const refs = estado.referencias.filter(r => r.nome);
+  const mats = (estado.materiais || []).filter(m => m.titulo || m.link || m.tipo);
 
-  const swotCards = [
-    { key:'forcas', lbl:'Forças', cls:'swot-f' },
-    { key:'fraquezas', lbl:'Fraquezas', cls:'swot-w' },
-    { key:'oportunidades', lbl:'Oportunidades', cls:'swot-o' },
-    { key:'ameacas', lbl:'Ameaças', cls:'swot-a' }
-  ].map(q => `
-    <div class="doc-swot-card ${q.cls}">
-      <div class="doc-swot-lbl">${q.lbl}</div>
-      <div class="doc-swot-body">${esc(sw[q.key] || '—')}</div>
-    </div>`).join('');
+  // SWOT interativa (2x2, hover/clique revela os itens)
+  const swotMeta = [
+    { key:'forcas',        lbl:'Forças',        ico:'💪', cls:'f' },
+    { key:'fraquezas',     lbl:'Fraquezas',     ico:'🔧', cls:'w' },
+    { key:'oportunidades', lbl:'Oportunidades', ico:'🚀', cls:'o' },
+    { key:'ameacas',       lbl:'Ameaças',       ico:'⚠️', cls:'a' }
+  ];
+  const swotHTML = swotMeta.map(q => {
+    const items = (sw[q.key] || '').split('\n').map(s => s.trim()).filter(Boolean);
+    const lis = items.length ? items.map(it => `<li>${esc(it)}</li>`).join('') : '<li class="dv-q-empty">— nada informado —</li>';
+    return `<div class="dv-q dv-q-${q.cls}" onclick="this.classList.toggle('open')">
+      <div class="dv-q-head"><span class="dv-q-ico">${q.ico}</span><span class="dv-q-lbl">${q.lbl}</span><span class="dv-q-count">${items.length}</span></div>
+      <ul class="dv-q-items">${lis}</ul>
+      ${items.length ? '<div class="dv-q-hint">passe o mouse para ver</div>' : ''}
+    </div>`;
+  }).join('');
+
+  const matsHTML = mats.length ? mats.map(m => {
+    const inner = `<div class="dv-mat-ico">📎</div>
+      <div class="dv-mat-txt"><div class="dv-mat-tit">${esc(m.titulo || m.tipo || 'Material')}</div>${m.tipo ? `<div class="dv-mat-tipo">${esc(m.tipo)}</div>` : ''}</div>
+      ${m.link ? '<div class="dv-mat-arrow">↗</div>' : ''}`;
+    return m.link ? `<a class="dv-mat" href="${esc(m.link)}" target="_blank" rel="noopener">${inner}</a>`
+                  : `<div class="dv-mat dv-mat-nolink">${inner}</div>`;
+  }).join('') : '<div class="dv-empty">Nenhum material adicionado ainda. Adicione em <strong>Edição → Materiais de apoio</strong>.</div>';
 
   const refsHTML = refs.map(r => `
-    <div class="doc-ref-item">
-      <div class="doc-ref-nome">${esc(r.nome)}
-        ${r.link ? `<a class="doc-ref-link" href="${esc(r.link)}" target="_blank">↗ ver</a>` : ''}
-      </div>
-      ${r.oQueGosta ? `<div class="doc-ref-gosta">${esc(r.oQueGosta)}</div>` : ''}
+    <div class="dv-ref">
+      <div class="dv-ref-top"><span class="dv-ref-nome">${esc(r.nome)}</span>${r.link ? `<a class="dv-ref-link" href="${esc(r.link)}" target="_blank" rel="noopener">↗ ver</a>` : ''}</div>
+      ${r.oQueGosta ? `<div class="dv-ref-desc">${esc(r.oQueGosta)}</div>` : ''}
     </div>`).join('');
 
   document.getElementById('sub-content').innerHTML = `
-    <div class="doc-card">
-      <div class="doc-card-title">Identidade da marca</div>
-      <div class="doc-field"><div class="doc-label">Posicionamento</div>${dv(id.posicionamento)}</div>
-      <div class="doc-field"><div class="doc-label">O que não somos</div>${dv(id.naoE)}</div>
-      <div class="doc-field"><div class="doc-label">Slogan</div>${dv(id.slogan)}</div>
-      <div class="doc-field"><div class="doc-label">Tom da marca</div><div class="doc-pills">${pillsCSV(id.adjetivos)}</div></div>
-      <div class="doc-field"><div class="doc-label">Temas centrais</div><div class="doc-pills">${pillsCSV(id.temasOK)}</div></div>
-      <div class="doc-field"><div class="doc-label">Temas a evitar</div><div class="doc-pills">${pillsCSV(id.temasEvitar,'terra')}</div></div>
+    <div class="dv-hero">
+      ${id.slogan ? `<div class="dv-hero-slogan">“${esc(id.slogan)}”</div>` : ''}
+      ${id.posicionamento ? `<div class="dv-hero-pos">${esc(id.posicionamento)}</div>` : ''}
+      ${id.adjetivos ? `<div class="dv-hero-tom">${pillsCSV(id.adjetivos)}</div>` : ''}
     </div>
-    <div class="doc-card">
-      <div class="doc-card-title">Público-alvo</div>
-      <div class="doc-field"><div class="doc-label">Quem é</div>${dv(pub.descricao)}</div>
-      ${pub.perguntaChave ? `<div class="doc-field"><div class="doc-label">Pergunta que a marca responde</div>${dv(pub.perguntaChave)}</div>` : ''}
-      ${pub.oQuePrecisaSaber ? `<div class="doc-field"><div class="doc-label">O que ainda não sabe que precisa saber</div>${dv(pub.oQuePrecisaSaber)}</div>` : ''}
-      ${pub.jornada ? `<div class="doc-field"><div class="doc-label">Momento da jornada</div>${dv(pub.jornada)}</div>` : ''}
+
+    <div class="dv-grid">
+      <div class="dv-card">
+        <div class="dv-card-t">🎯 Identidade</div>
+        ${id.naoE ? `<div class="dv-blk"><div class="dv-blk-l">O que NÃO somos</div><div class="dv-blk-v">${esc(id.naoE)}</div></div>` : ''}
+        <div class="dv-blk"><div class="dv-blk-l">Temas centrais</div><div class="dv-pills">${pillsCSV(id.temasOK)}</div></div>
+        <div class="dv-blk"><div class="dv-blk-l">Temas a evitar</div><div class="dv-pills">${pillsCSV(id.temasEvitar,'terra')}</div></div>
+      </div>
+      <div class="dv-card">
+        <div class="dv-card-t">👥 Público-alvo</div>
+        <div class="dv-blk-v">${esc(pub.descricao) || '—'}</div>
+        ${pub.perguntaChave ? `<div class="dv-blk"><div class="dv-blk-l">Pergunta que a marca responde</div><div class="dv-blk-v">${esc(pub.perguntaChave)}</div></div>` : ''}
+      </div>
+      <div class="dv-card">
+        <div class="dv-card-t">🚩 Objetivos (6 meses)</div>
+        <div class="dv-blk-v">${esc(obj.objetivo6m) || '—'}</div>
+        ${obj.metrica ? `<div class="dv-blk"><div class="dv-blk-l">Como medir o sucesso</div><div class="dv-blk-v">${esc(obj.metrica)}</div></div>` : ''}
+      </div>
+      <div class="dv-card">
+        <div class="dv-card-t">🗣️ Guia de voz</div>
+        ${voz.tomFrase ? `<div class="dv-blk-v">${esc(voz.tomFrase)}</div>` : ''}
+        <div class="dv-blk"><div class="dv-blk-l">Vocabulário positivo</div><div class="dv-pills">${pillsCSV(voz.palavrasOK)}</div></div>
+        <div class="dv-blk"><div class="dv-blk-l">A evitar</div><div class="dv-pills">${pillsCSV(voz.palavrasEvitar,'terra')}</div></div>
+      </div>
     </div>
-    <div class="doc-card">
-      <div class="doc-card-title">Objetivos</div>
-      <div class="doc-field"><div class="doc-label">Objetivo nos próximos 6 meses</div>${dv(obj.objetivo6m)}</div>
-      <div class="doc-field"><div class="doc-label">Como medir o sucesso</div>${dv(obj.metrica)}</div>
+
+    <div class="dv-card dv-card-full">
+      <div class="dv-card-t">📊 Análise SWOT <span class="dv-card-hint">passe o mouse (ou toque) em cada quadrante</span></div>
+      <div class="dv-swot">${swotHTML}</div>
     </div>
-    <div class="doc-card">
-      <div class="doc-card-title">Análise SWOT</div>
-      <div class="doc-swot-grid">${swotCards}</div>
+
+    <div class="dv-card dv-card-full">
+      <div class="dv-card-t">📎 Materiais de apoio</div>
+      <div class="dv-mats">${matsHTML}</div>
     </div>
-    <div class="doc-card">
-      <div class="doc-card-title">Guia de voz</div>
-      <div class="doc-field"><div class="doc-label">Tom em uma frase</div>${dv(voz.tomFrase)}</div>
-      <div class="doc-field"><div class="doc-label">Vocabulário positivo</div><div class="doc-pills">${pillsCSV(voz.palavrasOK)}</div></div>
-      <div class="doc-field"><div class="doc-label">A evitar</div><div class="doc-pills">${pillsCSV(voz.palavrasEvitar,'terra')}</div></div>
-      ${voz.regras ? `<div class="doc-field"><div class="doc-label">Regras de linguagem</div>${dv(voz.regras)}</div>` : ''}
-    </div>
-    ${refs.length ? `<div class="doc-card">
-      <div class="doc-card-title">Referências de marca</div>${refsHTML}
+
+    ${refs.length ? `<div class="dv-card dv-card-full">
+      <div class="dv-card-t">⭐ Referências de marca</div>
+      <div class="dv-refs">${refsHTML}</div>
     </div>` : ''}`;
 }
 
