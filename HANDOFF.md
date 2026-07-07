@@ -246,9 +246,13 @@ Funil: **Topo** (Reels) → **Meio** (Carrosséis, Pílulas de Zelo) → **Fundo
 
 > **A verificar em produção:** logado, testar buscar → navegar → marcar status (o localhost nega o Firestore). Foi construído "upgrade-ready": se um dia quiser IA de verdade (Claude via backend), a interface e as ferramentas já existem — só troca o "cérebro".
 
+## Trabalho recente (2026-07-07) — Atas de reunião
+
+Bloco **📋 Atas de reunião** no topo da aba Base de Dados (acima do toggle Visualização/Edição, `#atas-wrap` em `renderTabContent` branch `dados`). Painel colapsável com atas `{id, data, titulo, texto}` em `estado.atas` (auto-save). Editor + cliente criam/editam (`atasPodeEditar`); visualizador só lê. Funções `renderAtas`/`addAta`/`updateAta`/`removeAta`/`toggleAta`/`toggleAtasPainel`. Sem transcrição automática por ora (decisão do Vitor — custo/complexidade); é digitar/colar. Upgrade futuro possível: transcrição ao vivo grátis via Web Speech API (Chrome/Edge, sem custo) — descartado agora.
+
 ## Próximos passos
 
-1. "Etapas finais na Base de Dados" (a definir com Vitor).
+1. "Etapas finais na Base de Dados" (a definir com Vitor) — atas ✅ feito; ver se falta mais algo.
 2. Depois disso, **replicar a estrutura para um novo cliente** que o Vitor vai prospectar — o hub é multi-cliente por `CLIENT_ID`.
 
 > Regra nº 1 continua valendo: 100% de certeza / perguntar antes de implementar.

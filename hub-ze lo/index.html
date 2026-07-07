@@ -346,6 +346,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .za-mbtn{text-align:left;padding:9px 12px;border-radius:9px;border:1px solid var(--z-border);background:var(--z-bg);color:var(--z-text);font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
 .za-mbtn:hover{border-color:var(--z-teal);background:var(--z-teal-light)}
 .za-mbtn.area{font-weight:700;color:var(--z-teal)}
+/* ── ATAS DE REUNIÃO ────────────────────────────────────────────────── */
+.atas-panel{background:#fff;border:1px solid var(--z-border);border-radius:12px;margin-bottom:16px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.atas-head{display:flex;align-items:center;gap:9px;padding:13px 16px;cursor:pointer;background:var(--z-ocre-light);border-bottom:1px solid var(--z-ocre)}
+.atas-ico{font-size:17px}
+.atas-t{font-size:14px;font-weight:700;color:var(--z-ocre-dark);flex:1}
+.atas-count{font-size:11px;font-weight:700;background:var(--z-ocre);color:var(--z-ocre-dark);padding:1px 9px;border-radius:20px}
+.atas-chev{color:var(--z-ocre-dark);font-size:12px}
+.atas-body{padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.ata-vazio{font-size:13px;color:var(--z-text-sec);padding:6px 2px}
+.ata-item{border:1px solid var(--z-border);border-radius:9px;overflow:hidden}
+.ata-item.open{border-color:var(--z-ocre)}
+.ata-item-head{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.ata-item-head:hover{background:var(--z-bg)}
+.ata-data{font-size:11px;font-weight:700;color:var(--z-ocre-dark);white-space:nowrap;background:var(--z-ocre-light);padding:2px 8px;border-radius:6px}
+.ata-titulo{font-size:13px;font-weight:600;color:var(--z-text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ata-chev{color:var(--z-text-sec);font-size:12px}
+.ata-item-body{padding:6px 12px 12px;border-top:1px dashed var(--z-border)}
+.ata-row{margin-top:9px}
+.ata-lbl{display:block;font-size:11px;font-weight:700;color:var(--z-text-sec);text-transform:uppercase;letter-spacing:.03em;margin-bottom:4px}
+.ata-row input,.ata-row textarea{width:100%;box-sizing:border-box;border:1.5px solid var(--z-border);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:13px;color:var(--z-text);resize:vertical}
+.ata-row input:focus,.ata-row textarea:focus{outline:none;border-color:var(--z-teal)}
+.ata-texto{font-size:13px;color:var(--z-text);line-height:1.55;white-space:pre-wrap}
+.ata-del{margin-top:10px;background:none;border:1px solid var(--z-terra);color:var(--z-terra);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.ata-add{align-self:flex-start;margin-top:4px;background:var(--z-teal-light);border:1.5px dashed var(--z-teal);color:var(--z-teal);border-radius:9px;padding:9px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .za-foot{padding:10px;border-top:1px solid var(--z-border);display:flex;gap:8px;background:#fff}
 .za-inp{flex:1;border:1.5px solid var(--z-border);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--z-text);resize:none;max-height:80px}
 .za-inp:focus{outline:none;border-color:var(--z-teal)}
@@ -677,6 +701,7 @@ function designRef(docId){ return doc(db, 'design', CLIENT_ID + '__' + docId); }
 // ── ESTADO PADRÃO (dados Zelo pré-populados do briefing) ─────────────────────
 const defaults = {
   planVersion: "",   // marca de migração dos ciclos (ver migrarCiclos2027)
+  atas: [],          // atas de reunião { id, data, titulo, texto }
   dadosEmpresa: {
     razaoSocial: "Zelo Consultoria em Educação e Desenvolvimento Infantil Ltda.",
     nomeFantasia: "Zelo Consultoria em Educação e Desenvolvimento Infantil",
@@ -1389,9 +1414,10 @@ function renderTabContent() {
   } else {
     if (ehVisualizador()) {
       subMode = 'vis'; // equipe de design só visualiza a Base de Dados
-      cont.innerHTML = `<div id="sub-content"></div>`;
+      cont.innerHTML = `<div id="atas-wrap"></div><div id="sub-content"></div>`;
     } else {
       cont.innerHTML = `
+        <div id="atas-wrap"></div>
         <div class="sub-bar">
           <button class="sub-btn${subMode==='vis'?' active':''}" onclick="setSubMode('vis')">👁 Visualização</button>
           <button class="sub-btn${subMode==='edit'?' active':''}" onclick="setSubMode('edit')">✏ Edição</button>
@@ -1399,6 +1425,7 @@ function renderTabContent() {
         <div id="sub-content"></div>`;
     }
     renderSubContent();
+    renderAtas();
   }
 }
 
@@ -1539,6 +1566,43 @@ function buildDocView() {
       <div class="dv-refs">${refsHTML}</div>
     </div>` : ''}`;
 }
+
+// ── ATAS DE REUNIÃO (topo da Base de Dados) ───────────────────────────────────
+let atasPainelAberto = true, atasAbertaId = null;
+function atasPodeEditar(){ return ROLE==='editor' || ROLE==='cliente'; }
+function fmtDataAta(d){ if(!d) return '—'; const p=String(d).split('-'); return (p.length===3)?`${p[2]}/${p[1]}/${p[0]}`:d; }
+function renderAtas(){
+  const wrap=document.getElementById('atas-wrap'); if(!wrap) return;
+  const atas=estado.atas||[], pode=atasPodeEditar();
+  const lista=atas.slice().sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
+  const itens=lista.map(a=>{
+    const ab=atasAbertaId===a.id;
+    const head=`<div class="ata-item-head" onclick="toggleAta(${a.id})"><span class="ata-data">${esc(fmtDataAta(a.data))}</span><span class="ata-titulo">${esc(a.titulo||'Sem título')}</span><span class="ata-chev">${ab?'▾':'▸'}</span></div>`;
+    let body='';
+    if(ab){
+      body = pode
+        ? `<div class="ata-item-body">
+            <div class="ata-row"><label class="ata-lbl">Data</label><input type="date" value="${esc(a.data||'')}" onchange="updateAta(${a.id},'data',this.value)"></div>
+            <div class="ata-row"><label class="ata-lbl">Título / assunto</label><input type="text" value="${esc(a.titulo||'')}" placeholder="Ex.: Alinhamento de junho" oninput="updateAta(${a.id},'titulo',this.value)"></div>
+            <div class="ata-row"><label class="ata-lbl">Anotações</label><textarea rows="6" placeholder="Cole a transcrição da reunião ou escreva os pontos discutidos…" oninput="updateAta(${a.id},'texto',this.value)">${esc(a.texto||'')}</textarea></div>
+            <button class="ata-del" onclick="removeAta(${a.id})">✕ Remover ata</button>
+          </div>`
+        : `<div class="ata-item-body"><div class="ata-texto">${esc(a.texto||'(sem anotações)')}</div></div>`;
+    }
+    return `<div class="ata-item${ab?' open':''}">${head}${body}</div>`;
+  }).join('');
+  const addBtn=pode?`<button class="ata-add" onclick="addAta()">+ Nova ata</button>`:'';
+  const vazio=!atas.length?`<div class="ata-vazio">Nenhuma ata ainda.${pode?' Clique em “+ Nova ata” para registrar uma reunião.':''}</div>`:'';
+  wrap.innerHTML=`<div class="atas-panel">
+      <div class="atas-head" onclick="toggleAtasPainel()"><span class="atas-ico">📋</span><span class="atas-t">Atas de reunião</span><span class="atas-count">${atas.length}</span><span class="atas-chev">${atasPainelAberto?'▾':'▸'}</span></div>
+      ${atasPainelAberto?`<div class="atas-body">${vazio}${itens}${addBtn}</div>`:''}
+    </div>`;
+}
+window.toggleAtasPainel=function(){ atasPainelAberto=!atasPainelAberto; renderAtas(); };
+window.toggleAta=function(id){ atasAbertaId=(atasAbertaId===id?null:id); renderAtas(); };
+window.addAta=function(){ if(!atasPodeEditar()) return; const nova={ id:Date.now()+Math.floor(Math.random()*1000), data:new Date().toISOString().slice(0,10), titulo:'', texto:'' }; estado.atas=estado.atas||[]; estado.atas.unshift(nova); atasAbertaId=nova.id; atasPainelAberto=true; agendarSalvamento(); renderAtas(); };
+window.removeAta=function(id){ if(!atasPodeEditar()) return; if(!confirm('Remover esta ata de reunião?')) return; estado.atas=(estado.atas||[]).filter(a=>a.id!==id); agendarSalvamento(); renderAtas(); };
+window.updateAta=function(id,field,val){ const a=(estado.atas||[]).find(x=>x.id===id); if(a){ a[field]=val; agendarSalvamento(); } };
 
 // ── WINDOW EVENT HANDLERS ─────────────────────────────────────────────────────
 window.updateField = function(el) {
