@@ -2569,6 +2569,24 @@ function zaResponder(txt){
   const t=zaNorm(txt);
   if(!asstCache.carregado){ return zaBot('Ainda estou carregando os dados dos ciclos… tente de novo em instantes. ⏳'); }
   if(/\bajuda\b|o que voce faz|como funciona|comandos/.test(t)) return zaAjuda();
+  if(/^(oi+|ola|opa|e ?ai|bom dia|boa tarde|boa noite|hello|hey)\b/.test(t)) return zaBot('Oi! 👋 Como posso ajudar? Toque numa opção do menu abaixo ou escreva sua pergunta.');
+  if(/obrigad|valeu|agradec|\bobg\b|thank/.test(t)) return zaBot('De nada! 😊 Precisando, é só chamar.');
+  const zaAtalhos=[
+    [/glossario|o que (e|é|significa).*(engajamento|alcance|metrica|impress|intera)/,'met-glossario'],
+    [/evolu(c|ç)ao|cresc(imento|eu)/,'met-evolucao'],
+    [/slogan/,'db-slogan'],
+    [/posicionamento/,'db-posicionamento'],
+    [/publico[ -]?alvo|nosso publico/,'db-publico'],
+    [/objetivo/,'db-objetivos'],
+    [/guia de voz|tom de voz|vocabulario/,'db-voz'],
+    [/referencia/,'db-referencias'],
+    [/quantos conteudos|numero de conteudos/,'plan-contagem'],
+    [/materiais|guia de comunicacao/,'db-materiais'],
+    [/resumo da marca|sobre a marca/,'db-resumo'],
+    [/dados da empresa|contato da empresa/,'db-empresa'],
+  ];
+  for(const [re,qid] of zaAtalhos){ if(re.test(t)) return zaQuery(qid); }
+  if(/\bresumo\b/.test(t) && zaCicloFoco) return zaQuery('ciclo-resumo');
   if(/o que falta|quais faltam|falta valid|pendente|em aberto/.test(t)) return zaFalta();
 
   const alvo = zaStatusAlvo(t);
@@ -2594,7 +2612,7 @@ function zaResponder(txt){
     return zaBot('Achei estes conteúdos — qual você quer?',
       matches.map(m=>({ lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,44), act:`pick:${m.c.idx}:${m.it.id}` })).concat([{lbl:'Cancelar',act:'cancel'}]));
   }
-  return zaAjuda('Não entendi bem 🤔\n\n');
+  return zaBot('Não achei uma resposta pronta pra isso 🤔.\nToque em **☰ Início** no menu abaixo para ver as opções — ou tente pelo título do conteúdo (ex.: "reels do brincar").');
 }
 function zaMostrar(m){
   zaBot(`📌 **${esc(m.it.titulo)}**\n📅 ${esc(m.it.data||'--')} · ${esc(m.c.periodo)} · ${esc(m.it.pilar||'')} ${esc(m.it.formato||'')}\n${zaStatusAtual(m.c,m.it)}\n\nAbrir em:`,
@@ -2722,7 +2740,7 @@ const _podeValidar = () => ROLE==='editor' || ROLE==='cliente';
 function zaMb(t,c,cls){ return `<button class="za-mbtn${cls?' '+cls:''}" onclick="zaMenu('${c}')">${t}</button>`; }
 function zaBc(){
   if(zaTela==='main') return `<div class="za-menu-bc"><span>Escolha uma opção 👇</span></div>`;
-  const nomes={ dados:'🗂️ Base de Dados', plan:'📅 Planejamento', copy:'✍️ Copy', design:'🎨 Conteúdos', metricas:'📊 Métricas', ciclos:'📦 Escolher ciclo', ajuda:'❓ Ajuda', ciclo:'📦 '+(zaCicloFoco?zaCicloFoco.periodo:'Ciclo') };
+  const nomes={ dados:'🗂️ Base de Dados', plan:'📅 Planejamento', copy:'✍️ Textos (Copy)', design:'🎨 Artes (Conteúdos)', metricas:'📊 Métricas', ciclos:'📦 Escolher ciclo', ajuda:'❓ Ajuda', ciclo:'📦 '+(zaCicloFoco?zaCicloFoco.periodo:'Ciclo') };
   const volta = (zaTela==='ciclo') ? 'tela:ciclos' : 'tela:main';
   return `<div class="za-menu-bc"><button onclick="zaMenu('${volta}')">‹ Voltar</button><span>${esc(nomes[zaTela]||'')}</span><button onclick="zaMenu('tela:main')">☰ Início</button></div>`;
 }
@@ -2733,11 +2751,12 @@ function zaRenderMenu(){
     case 'main': b=[
       zaMb('📦 Trabalhar num ciclo','tela:ciclos','area'),
       zaMb('📅 Planejamento','tela:plan','area'),
-      zaMb('✍️ Copy','tela:copy','area'),
-      zaMb('🎨 Conteúdos','tela:design','area'),
+      zaMb('✍️ Textos (Copy)','tela:copy','area'),
+      zaMb('🎨 Artes (Conteúdos)','tela:design','area'),
       zaMb('📊 Métricas','tela:metricas','area'),
       zaMb('🗂️ Base de Dados','tela:dados','area'),
-      zaMb('❓ Como usar o assistente','tela:ajuda') ]; break;
+      zaMb('❓ Como usar o assistente','tela:ajuda'),
+      zaMb('🆘 Não achei o que preciso','q:ajuda-humano') ]; break;
     case 'ciclos':
       b=(asstCache.cycles||[]).map(c=>zaMb(('📦 '+c.periodo+' — '+(c.ciclo||'')).slice(0,48),'foco:'+c.idx));
       if(!b.length) b=['<div style="font-size:12px;color:var(--z-text-sec);padding:4px">Carregando ciclos… (ou nenhum cadastrado)</div>'];
@@ -2745,7 +2764,10 @@ function zaRenderMenu(){
     case 'ciclo': b=[
       zaMb('📋 Resumo deste ciclo','q:ciclo-resumo'),
       zaMb('📝 Listar os conteúdos (com status)','q:ciclo-listar'),
+      zaMb('🗓️ Agenda (ordem de data)','q:ciclo-agenda'),
       zaMb('⏳ O que falta validar aqui','q:ciclo-falta'),
+      zaMb('✅ O que já aprovei aqui','q:ciclo-aprovados'),
+      zaMb('💬 Onde deixei comentários','q:ciclo-comentarios'),
       ...(pv?[zaMb('👍 Validar CONTEÚDOS (artes)','q:ciclo-valida-design'), zaMb('👍 Validar COPY (textos)','q:ciclo-valida-copy')]:[]),
       zaMb('📊 Métricas por conteúdo','q:ciclo-metricas'),
       zaMb('📅 Abrir a grade (planejamento)','cicloabrir:plan'),
@@ -2753,7 +2775,9 @@ function zaRenderMenu(){
       zaMb('🎨 Abrir os Conteúdos deste ciclo','cicloabrir:design'),
       zaMb('🔄 Trocar de ciclo','tela:ciclos') ]; break;
     case 'dados': b=[
+      zaMb('🧭 Resumo da marca','q:db-resumo'),
       zaMb('📍 Nosso posicionamento','q:db-posicionamento'),
+      zaMb('🏁 Slogan da marca','q:db-slogan'),
       zaMb('👥 Público-alvo','q:db-publico'),
       zaMb('🎯 Objetivos','q:db-objetivos'),
       zaMb('🗣️ Guia de voz','q:db-voz'),
@@ -2761,6 +2785,7 @@ function zaRenderMenu(){
       zaMb('📎 Materiais de apoio','q:db-materiais'),
       zaMb('🏢 Dados da empresa','q:db-empresa'),
       zaMb('📊 Resumo da SWOT','q:db-swot'),
+      zaMb('⭐ Referências de marca','q:db-referencias'),
       zaMb('↗ Abrir a Base de Dados','nav:dados') ]; break;
     case 'plan': b=[
       zaMb('🗺️ Ver o plano do ano (Visão Macro)','abrirmacro'),
@@ -2772,21 +2797,27 @@ function zaRenderMenu(){
       zaMb('📝 Textos prontos para eu validar','q:copy-prontos'),
       zaMb('✅ Aprovados x pendentes','q:copy-contagem'),
       ...(pv?[zaMb('👍 Validar um texto','q:copy-validar')]:[]),
+      zaMb('📖 Ler um texto específico','q:copy-ler'),
+      zaMb('💬 Meus comentários nos textos','q:copy-comentarios'),
       zaMb('↗ Abrir a aba Copy','nav:copy') ]; break;
     case 'design': b=[
       zaMb('🖼️ Artes prontas para validação','q:des-prontas'),
       zaMb('🗂️ O que falta aprovar (por ciclo)','q:des-falta'),
       zaMb('✏️ O que pedi ajuste','q:des-ajuste'),
       ...(pv?[zaMb('👍 Aprovar/validar uma arte','q:des-validar')]:[]),
+      zaMb('📖 Ver uma arte específica','q:des-ver'),
+      zaMb('💬 Meus comentários nas artes','q:des-comentarios'),
       zaMb('↗ Abrir a aba Conteúdos','nav:design') ]; break;
     case 'metricas': b=[
       zaMb('📈 Resumo geral do mês','q:met-resumo'),
       zaMb('📷 Instagram','q:met-instagram'),
       zaMb('💼 LinkedIn','q:met-linkedin'),
       zaMb('🌐 Site','q:met-site'),
+      zaMb('📈 Evolução (seguidores/alcance)','q:met-evolucao'),
       zaMb('🏆 Melhor desempenho','q:met-melhor'),
+      zaMb('❓ O que significa cada métrica?','q:met-glossario'),
       zaMb('↗ Abrir a aba Métricas','nav:metricas') ]; break;
-    case 'ajuda': b=[ zaMb('📖 O que eu sei fazer','q:ajuda'), zaMb('« Voltar ao início','tela:main') ]; break;
+    case 'ajuda': b=[ zaMb('📖 O que eu sei fazer','q:ajuda'), zaMb('🆘 Não achei o que preciso','q:ajuda-humano'), zaMb('« Voltar ao início','tela:main') ]; break;
   }
   el.innerHTML = zaBc() + `<div class="za-menu-grid">${b.join('')}</div>`;
 }
@@ -2815,6 +2846,16 @@ function zaFichaValidar(area,c,it){
 function zaQuery(id){
   const E=estado, v=x=>(x&&String(x).trim())?String(x):'—', cy=asstCache.cycles||[];
   if(id==='ajuda') return zaAjuda();
+  if(id==='ajuda-humano') return zaBot('🆘 Sem problema! Você pode:\n• **Escrever sua pergunta** aqui embaixo que eu tento encontrar.\n• Usar **☰ Início** para ver todas as opções.\n• Falar direto com o **Vitor** (vitort2210@gmail.com) para o que eu não resolver.');
+  if(id==='db-slogan') return zaBot(`🏁 **Slogan**\n"${v(E.identidade.slogan)}"`);
+  if(id==='db-resumo') return zaBot(`🧭 **Resumo da marca**\n📍 ${v(E.identidade.posicionamento)}\n🏁 "${v(E.identidade.slogan)}"\n👥 Público: ${v(E.publicoAlvo.descricao)}\n🗣️ Tom: ${v(E.identidade.adjetivos)}`);
+  if(id==='db-referencias'){ const r=(E.referencias||[]).filter(x=>x.nome); return zaBot(r.length?'⭐ **Referências de marca:**\n'+r.map(x=>`• ${x.nome}${x.oQueGosta?` — ${x.oQueGosta}`:''}${x.link?` (${x.link})`:''}`).join('\n'):'Nenhuma referência de marca cadastrada.'); }
+  if(id==='met-glossario') return zaBot('📖 **Glossário de métricas:**\n• **Alcance** — pessoas diferentes que viram o conteúdo.\n• **Impressões** — quantas vezes apareceu (a mesma pessoa conta mais de uma vez).\n• **Interações** — curtidas + comentários + salvamentos + compartilhamentos.\n• **Taxa de engajamento** — interações ÷ alcance (%). Mostra o quanto quem viu se envolveu.\n• **Seguidores** — contas que seguem o perfil.\n• **Visitantes / Sessões** — pessoas e visitas ao site.');
+  if(id==='met-evolucao') return zaBot(zaEvolucao());
+  if(id==='copy-ler'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cp=c.copy[it.id]; if(cp&&(cp.legenda||cp.reels||(cp.slides&&cp.slides.some(s=>s.texto)))) p.push({c,it}); })); return zaBot(p.length?'📖 Escolha o texto para abrir:':'Nenhum texto de copy preenchido ainda.', p.length?p.slice(0,14).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':copy'})):null); }
+  if(id==='copy-comentarios'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const n=((c.copy[it.id]||{}).comentarios||[]).filter(x=>!x.resolvido).length; if(n) out.push({c,it,n}); })); return zaBot(out.length?'💬 Textos com comentário seu — toque para abrir:':'💬 Você não tem comentários abertos nos textos.', out.length?out.slice(0,14).map(m=>({lbl:`${m.it.titulo} (${m.n})`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':copy'})):null); }
+  if(id==='des-ver'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]; if(d&&((d.imagens&&d.imagens.length)||d.video||d.enviadoEm)) p.push({c,it}); })); return zaBot(p.length?'📖 Escolha a arte para ver:':'Nenhuma arte enviada ainda.', p.length?p.slice(0,14).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':design'})):null); }
+  if(id==='des-comentarios'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cm=((c.design[it.id]||{}).comentarioDesign||'').trim(); if(cm) out.push({c,it}); })); return zaBot(out.length?'💬 Artes com comentário seu — toque para abrir:':'💬 Você não deixou comentários nas artes.', out.length?out.slice(0,14).map(m=>({lbl:`${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':design'})):null); }
   if(id==='db-posicionamento') return zaBot(`📍 **Posicionamento**\n${v(E.identidade.posicionamento)}`);
   if(id==='db-publico')        return zaBot(`👥 **Público-alvo**\n${v(E.publicoAlvo.descricao)}`);
   if(id==='db-objetivos')      return zaBot(`🎯 **Objetivos (6 meses)**\n${v(E.objetivos.objetivo6m)}\n\n**Como medir:**\n${v(E.objetivos.metrica)}`);
@@ -2852,11 +2893,23 @@ function zaQuery(id){
       return zaBot(`📋 **${f.periodo}** — ${f.ciclo||''}\nTotal: **${its.length}** conteúdo(s)\nConteúdos aprovados: **${aprov}/${its.length}**\n\n**Por camada:** ${Object.entries(cam).map(([k,x])=>`${k} ${x}`).join(' · ')}\n**Por formato:** ${Object.entries(fmt).map(([k,x])=>`${k} ${x}`).join(' · ')}`); }
     if(id==='ciclo-listar'){ return zaBot(its.length?`📝 Conteúdos de **${esc(f.periodo)}** — toque para ver:`:'Sem conteúdos neste ciclo.', its.length?its.slice(0,14).map(it=>({lbl:`${it.data||''} · ${it.titulo}`.slice(0,42),act:'pick:'+f.idx+':'+it.id})):null); }
     if(id==='ciclo-falta'){ const p=its.filter(it=>(f.design[it.id]||{}).statusDesign!=='aprovado'); return zaBot(p.length?`⏳ Falta aprovar em **${esc(f.periodo)}** (${p.length}):\n`+p.map(it=>`• ${it.data||''} ${it.titulo}`).join('\n'):`✅ Tudo aprovado em ${esc(f.periodo)}!`); }
+    if(id==='ciclo-aprovados'){ const p=its.filter(it=>(f.design[it.id]||{}).statusDesign==='aprovado'); return zaBot(p.length?`✅ Já aprovados em **${esc(f.periodo)}** (${p.length}):\n`+p.map(it=>`• ${it.data||''} ${it.titulo}`).join('\n'):`Nenhum conteúdo aprovado ainda em ${esc(f.periodo)}.`); }
+    if(id==='ciclo-agenda'){ const ord=its.slice().sort((a,b)=>{ const pa=String(a.data||'').split('/'),pb=String(b.data||'').split('/'); return ((+pa[1]||0)*100+(+pa[0]||0))-((+pb[1]||0)*100+(+pb[0]||0)); }); return zaBot(ord.length?`🗓️ **Agenda — ${esc(f.periodo)}:**\n`+ord.map(it=>`• ${it.data||'--'} — ${it.titulo} (${it.formato||''})`).join('\n'):'Sem conteúdos neste ciclo.'); }
+    if(id==='ciclo-comentarios'){ const out=[]; its.forEach(it=>{ const nc=((f.copy[it.id]||{}).comentarios||[]).filter(x=>!x.resolvido).length; const cd=((f.design[it.id]||{}).comentarioDesign||'').trim(); const tg=[]; if(nc)tg.push('copy'); if(cd)tg.push('arte'); if(tg.length) out.push({it,tg}); }); return zaBot(out.length?`💬 Onde você comentou em **${esc(f.periodo)}** — toque para abrir:`:`💬 Nenhum comentário seu em ${esc(f.periodo)}.`, out.length?out.slice(0,14).map(m=>({lbl:`${m.it.titulo} (${m.tg.join('/')})`.slice(0,42),act:'pick:'+f.idx+':'+m.it.id})):null); }
     if(id==='ciclo-valida-design'){ const p=its.filter(it=>(f.design[it.id]||{}).statusDesign!=='aprovado'); return zaBot(p.length?'👍 Escolha a arte para validar:':'✅ Nada pendente nas artes deste ciclo.', p.length?p.slice(0,14).map(it=>({lbl:`${it.data||''} · ${it.titulo}`.slice(0,42),act:'valdesign:'+f.idx+':'+it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
     if(id==='ciclo-valida-copy'){ const p=its.filter(it=>(f.copy[it.id]||{}).statusGabi!=='aprovado'); return zaBot(p.length?'👍 Escolha o texto para validar:':'✅ Nada pendente nos textos deste ciclo.', p.length?p.slice(0,14).map(it=>({lbl:`${it.data||''} · ${it.titulo}`.slice(0,42),act:'valcopy:'+f.idx+':'+it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
     if(id==='ciclo-metricas') return zaBot(zaTopConteudos([f], f.periodo));
   }
   return zaAjuda('Opção não reconhecida. ');
+}
+function zaEvolucao(){
+  const snaps=snapsSorted(); if(!snaps.length) return '📈 Ainda não há dados de métricas cadastrados.';
+  let out='📈 **Evolução por mês:**';
+  ['instagram','linkedin','site'].forEach(pl=>{ const cfg=METRICAS_CONFIG[pl]; const linhas=[];
+    cfg.campos.slice(0,2).forEach(f=>{ const seq=snaps.map(s=>{ const val=valorMetrica(s,pl,f); return (val===''||val==null||isNaN(val))?null:Number(val); });
+      if(seq.every(x=>x==null)) return; linhas.push(`${f.lbl}: `+snaps.map((s,i)=>`${mesLabel(s.mesRef)} ${seq[i]==null?'—':fmtMetric(seq[i],f.fmt)}`).join(' → ')); });
+    if(linhas.length) out+=`\n\n**${cfg.nome}**\n`+linhas.join('\n'); });
+  return out;
 }
 function zaTopConteudos(cy, tituloCiclo){
   const arr=[];
@@ -2880,8 +2933,8 @@ if(['localhost','127.0.0.1'].includes(location.hostname)){
         items:[ {id:4, data:'13/05', titulo:'O que a Zelo pensa sobre: brincar como direito', pilar:'Quadro Mensal', formato:'Blog Post', camada:'autoridade'},
                 {id:12,data:'12/06', titulo:'Aprendendo com o brincar — Caixas sensoriais', pilar:'Quadro Mensal', formato:'Reels', camada:'comunidade'} ],
         estados:{4:'aprovado'},
-        copy:{12:{statusCopy:'finalizado', statusGabi:'em_validacao', legenda:'texto...'}},
-        design:{4:{statusDesign:'ajustes_necessarios', enviadoEm:'x', imagens:[{url:'x'}]}, 12:{statusDesign:'em_analise', enviadoEm:'x', video:{url:'x'}}},
+        copy:{12:{statusCopy:'finalizado', statusGabi:'em_validacao', legenda:'texto...', comentarios:[{texto:'Ajustar o gancho',resolvido:false}]}},
+        design:{4:{statusDesign:'ajustes_necessarios', enviadoEm:'x', imagens:[{url:'x'}], comentarioDesign:'Deixar a cor mais clara'}, 12:{statusDesign:'em_analise', enviadoEm:'x', video:{url:'x'}}},
         posts:{4:{alcance:8200,curtidas:410,comentarios:38,salvamentos:120,compartilhamentos:64}, 12:{alcance:15000,curtidas:900,comentarios:60,salvamentos:210,compartilhamentos:130}} } ] };
     metricasData={ snapshots:[
       { id:'a', mesRef:'2027-05', instagram:{seguidores:12800, alcance:9200, interacoes:540} },
