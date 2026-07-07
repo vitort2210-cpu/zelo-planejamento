@@ -238,7 +238,8 @@ Funil: **Topo** (Reels) → **Meio** (Carrosséis, Pílulas de Zelo) → **Fundo
 
 **Chat pop-up por regras, client-side, sem custo/servidor** (não usa LLM/API — decisão do Vitor de não inserir custo externo). Prefixos `za-`/`asst` no código.
 - **Widget flutuante** (`montarAssistente`): botão 💬 + painel de chat, presente em todas as abas e papéis. Fica no `body` (persiste entre `buildHub`); montado no fim de `iniciarHub`; escondido em `mostrarLogin`.
-- **Cérebro por regras** (`zaResponder` + `zaNorm`): interpreta intenção (buscar, ir até, marcar status, pendências, métricas, ajuda) e faz **busca aproximada** (`zaBuscar`) sobre a grade de **todos os ciclos** (carregados em `carregarTudoAssistente`).
+- **Menu guiado** (`zaRenderMenu`/`zaMenu`, estado `zaTela`/`zaCicloFoco`): telas por aba (Base de Dados, Planejamento, Copy, Conteúdos, Métricas) + modo **"Trabalhar num ciclo"** (o principal). Perguntas/ações curadas em `zaQuery(id)`. **Validação pela lista**: `zaFichaValidar` → Aprovar/Ajuste → `zaPrepararMarcar`. Botões de ação escondidos por papel (`_podeValidar`). Substituiu os chips fixos; texto livre segue como reserva.
+- **Cérebro por regras (texto livre, reserva)** (`zaResponder` + `zaNorm`): interpreta intenção e faz **busca aproximada** (`zaBuscar`) sobre a grade de **todos os ciclos** (`carregarTudoAssistente` — carrega grade+copy+design+**posts** de cada ciclo + snapshots de métricas).
 - **Ferramentas:** navegar (`zaIrPara` → `setTab` + abrir ciclo + destacar card); marcar status com confirmação (`zaPrepararMarcar`/`zaExecutarMarcar`, respeita papel via `zaPodeMarcar`) — grava em `planejamentos.estados`, `copies.itens.statusGabi`, `design.itens.statusDesign` via `setDoc merge`; resumo de métricas (`zaResumoMetricas`); pendências (`zaFalta`).
 - **Mapa de status** por área em `ZA_STATUS` (aprovado / ajuste / bloqueado / redirecionado → valor certo em cada aba).
 - Seeder de teste só-localhost: `window.__zaSeed()`.

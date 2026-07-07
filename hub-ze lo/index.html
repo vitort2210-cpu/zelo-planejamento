@@ -338,9 +338,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .za-act{padding:6px 11px;border-radius:8px;border:1px solid var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);font-family:inherit;font-size:12px;font-weight:600;cursor:pointer;text-align:left}
 .za-act.primary{background:var(--z-terra);border-color:var(--z-terra);color:#fff}
 .za-act:hover{filter:brightness(.97)}
-.za-chips{display:flex;flex-wrap:wrap;gap:6px;padding:0 14px 10px;background:var(--z-bg)}
-.za-chip{font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid var(--z-border);background:#fff;color:var(--z-text-sec);cursor:pointer}
-.za-chip:hover{border-color:var(--z-teal);color:var(--z-teal)}
+.za-menu{border-top:1px solid var(--z-border);background:#fff;max-height:230px;overflow-y:auto;padding:10px 12px}
+.za-menu-bc{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.za-menu-bc button{background:none;border:none;color:var(--z-teal);font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;padding:2px 0}
+.za-menu-bc span{font-size:11px;color:var(--z-text-sec);font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.za-menu-grid{display:flex;flex-direction:column;gap:6px}
+.za-mbtn{text-align:left;padding:9px 12px;border-radius:9px;border:1px solid var(--z-border);background:var(--z-bg);color:var(--z-text);font-family:inherit;font-size:12.5px;font-weight:500;cursor:pointer;transition:border-color .15s,background .15s}
+.za-mbtn:hover{border-color:var(--z-teal);background:var(--z-teal-light)}
+.za-mbtn.area{font-weight:700;color:var(--z-teal)}
 .za-foot{padding:10px;border-top:1px solid var(--z-border);display:flex;gap:8px;background:#fff}
 .za-inp{flex:1;border:1.5px solid var(--z-border);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--z-text);resize:none;max-height:80px}
 .za-inp:focus{outline:none;border-color:var(--z-teal)}
@@ -2507,14 +2512,16 @@ async function carregarTudoAssistente(){
   const plist = estado.planejamentos || []; const cycles = [];
   for (let i=0;i<plist.length;i++){
     const p=plist[i], docId=cicloDocId(p);
-    const c={ docId, idx:i, periodo:p.periodo||'', ciclo:p.ciclo||'', items:[], estados:{}, copy:{}, design:{} };
+    const c={ docId, idx:i, periodo:p.periodo||'', ciclo:p.ciclo||'', items:[], estados:{}, copy:{}, design:{}, posts:{} };
     try{ const g=await getDoc(doc(db,'planejamentos',docId)); if(g.exists()){ const d=g.data(); c.items=Array.isArray(d.items)?d.items:[]; c.estados=d.estados||{}; } }catch(e){}
     try{ const cp=await getDoc(copyRef(docId)); if(cp.exists()) c.copy=cp.data().itens||{}; }catch(e){}
     try{ const dz=await getDoc(designRef(docId)); if(dz.exists()) c.design=dz.data().itens||{}; }catch(e){}
+    try{ const pp=await getDoc(postsRef(docId)); if(pp.exists()) c.posts=pp.data().itens||{}; }catch(e){}
     cycles.push(c);
   }
   try{ const ms=await getDoc(metricasRef); if(ms.exists()&&Array.isArray(ms.data().snapshots)) metricasData={ snapshots:ms.data().snapshots }; }catch(e){}
   asstCache={ carregado:true, cycles };
+  if(document.getElementById('za-menu')) zaRenderMenu();
 }
 
 function zaBuscar(query){
@@ -2656,12 +2663,17 @@ function zaAjuda(prefix){
 }
 
 // ── Ações dos botões ────────────────────────────────────────────────────────────
+function zaAcharItem(idx,id){ const c=(asstCache.cycles||[]).find(x=>x.idx===+idx); const it=c&&(c.items||[]).find(x=>String(x.id)===String(id)); return {c,it}; }
 window.zaAction = function(act){
+  const a=act.split(':');
   if(act==='cancel'){ asstPending=null; return zaBot('Ok, cancelado. 👍'); }
-  if(act.startsWith('area:')){ const area=act.slice(5); const p=asstPending; asstPending=null; if(p&&p.tipo==='area') return zaPrepararMarcar(p.c,p.it,area,p.alvo); return; }
+  if(a[0]==='area'){ const p=asstPending; asstPending=null; if(p&&p.tipo==='area') return zaPrepararMarcar(p.c,p.it,a[1],p.alvo); return; }
   if(act==='mark:go'){ const p=asstPending; asstPending=null; if(p&&p.tipo==='confirm') return zaExecutarMarcar(p); return; }
-  if(act.startsWith('pick:')){ const a=act.split(':'); const c=(asstCache.cycles||[]).find(x=>x.idx===+a[1]); const it=c&&(c.items||[]).find(x=>String(x.id)===a[2]); if(c&&it) return zaMostrar({c,it}); return; }
-  if(act.startsWith('go:')){ const a=act.split(':'); const c=(asstCache.cycles||[]).find(x=>x.idx===+a[1]); const it=c&&(c.items||[]).find(x=>String(x.id)===a[2]); if(c&&it) return zaIrPara(a[3],c,it); return; }
+  if(a[0]==='pick'){ const {c,it}=zaAcharItem(a[1],a[2]); if(c&&it) return zaMostrar({c,it}); return; }
+  if(a[0]==='go'){ const {c,it}=zaAcharItem(a[1],a[2]); if(c&&it) return zaIrPara(a[3],c,it); return; }
+  if(a[0]==='valcopy'||a[0]==='valdesign'){ const {c,it}=zaAcharItem(a[1],a[2]); if(c&&it) return zaFichaValidar(a[0]==='valcopy'?'copy':'design',c,it); return; }
+  if(a[0]==='domark'){ const {c,it}=zaAcharItem(a[2],a[3]); if(c&&it) return zaPrepararMarcar(c,it,a[1],a[4]); return; }
+  if(a[0]==='mes'){ const m=+a[1]; const found=[]; (asstCache.cycles||[]).forEach(c=>(c.items||[]).forEach(it=>{ if(+(String(it.data||'').split('/')[1])===m) found.push({c,it}); })); return zaBot(found.length?`🗓️ **${MESES_ABR[m-1]}:**\n`+found.map(f=>`• ${f.it.data} ${f.it.titulo} — ${f.c.periodo}`).join('\n'):`Nada planejado para ${MESES_ABR[m-1]}.`); }
 };
 
 // ── Render / UI do chat ─────────────────────────────────────────────────────────
@@ -2684,18 +2696,19 @@ function montarAssistente(){
   panel.innerHTML=`
     <div class="za-head"><span class="za-head-ico">🤖</span><div style="flex:1"><div class="za-head-t">Assistente do Hub</div><div class="za-head-s">Pergunte, navegue e marque status</div></div><button class="za-close" onclick="zaToggle()">✕</button></div>
     <div class="za-body" id="za-body"></div>
-    <div class="za-chips" id="za-chips"></div>
-    <div class="za-foot"><textarea class="za-inp" id="za-inp" rows="1" placeholder="Ex.: onde está o reels do brincar?"></textarea><button class="za-send" onclick="zaEnviar()" title="Enviar">➤</button></div>`;
+    <div class="za-menu" id="za-menu"></div>
+    <div class="za-foot"><textarea class="za-inp" id="za-inp" rows="1" placeholder="Ou escreva sua pergunta…"></textarea><button class="za-send" onclick="zaEnviar()" title="Enviar">➤</button></div>`;
   document.body.appendChild(fab); document.body.appendChild(panel);
   panel.querySelector('#za-inp').addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); zaEnviar(); } });
-  document.getElementById('za-chips').innerHTML=['O que falta validar?','Como está o Instagram?','Ajuda'].map(c=>`<button class="za-chip" onclick="zaChip(this.textContent)">${esc(c)}</button>`).join('');
+  zaRenderMenu();
   carregarTudoAssistente();
 }
 window.zaToggle = function(){
   asstAberto=!asstAberto; const p=document.getElementById('za-panel'); if(!p) return;
   p.classList.toggle('open',asstAberto);
   if(asstAberto){
-    if(!asstMsgs.length) zaBot('Oi! 👋 Sou o assistente do hub. Posso encontrar conteúdos, te levar até eles, marcar status e resumir métricas.\nComo posso ajudar?');
+    if(!asstMsgs.length) zaBot('Oi! 👋 Escolha uma opção no menu abaixo — ou escreva sua pergunta. Posso achar conteúdos, te levar até eles, marcar status e resumir métricas.');
+    zaTela='main'; zaRenderMenu();
     if(!asstCache.carregado) carregarTudoAssistente();
     setTimeout(()=>{ const i=document.getElementById('za-inp'); if(i) i.focus(); },60);
   }
@@ -2703,14 +2716,173 @@ window.zaToggle = function(){
 window.zaEnviar = function(){ const i=document.getElementById('za-inp'); if(!i) return; const v=i.value.trim(); if(!v) return; i.value=''; zaResponder(v); };
 window.zaChip = function(txt){ zaResponder(txt); };
 
+// ── MENU GUIADO (perguntas e ações frequentes por aba/ciclo) ────────────────────
+let zaTela='main', zaCicloFoco=null;
+const _podeValidar = () => ROLE==='editor' || ROLE==='cliente';
+function zaMb(t,c,cls){ return `<button class="za-mbtn${cls?' '+cls:''}" onclick="zaMenu('${c}')">${t}</button>`; }
+function zaBc(){
+  if(zaTela==='main') return `<div class="za-menu-bc"><span>Escolha uma opção 👇</span></div>`;
+  const nomes={ dados:'🗂️ Base de Dados', plan:'📅 Planejamento', copy:'✍️ Copy', design:'🎨 Conteúdos', metricas:'📊 Métricas', ciclos:'📦 Escolher ciclo', ajuda:'❓ Ajuda', ciclo:'📦 '+(zaCicloFoco?zaCicloFoco.periodo:'Ciclo') };
+  const volta = (zaTela==='ciclo') ? 'tela:ciclos' : 'tela:main';
+  return `<div class="za-menu-bc"><button onclick="zaMenu('${volta}')">‹ Voltar</button><span>${esc(nomes[zaTela]||'')}</span><button onclick="zaMenu('tela:main')">☰ Início</button></div>`;
+}
+function zaRenderMenu(){
+  const el=document.getElementById('za-menu'); if(!el) return;
+  let b=[]; const pv=_podeValidar();
+  switch(zaTela){
+    case 'main': b=[
+      zaMb('📦 Trabalhar num ciclo','tela:ciclos','area'),
+      zaMb('📅 Planejamento','tela:plan','area'),
+      zaMb('✍️ Copy','tela:copy','area'),
+      zaMb('🎨 Conteúdos','tela:design','area'),
+      zaMb('📊 Métricas','tela:metricas','area'),
+      zaMb('🗂️ Base de Dados','tela:dados','area'),
+      zaMb('❓ Como usar o assistente','tela:ajuda') ]; break;
+    case 'ciclos':
+      b=(asstCache.cycles||[]).map(c=>zaMb(('📦 '+c.periodo+' — '+(c.ciclo||'')).slice(0,48),'foco:'+c.idx));
+      if(!b.length) b=['<div style="font-size:12px;color:var(--z-text-sec);padding:4px">Carregando ciclos… (ou nenhum cadastrado)</div>'];
+      break;
+    case 'ciclo': b=[
+      zaMb('📋 Resumo deste ciclo','q:ciclo-resumo'),
+      zaMb('📝 Listar os conteúdos (com status)','q:ciclo-listar'),
+      zaMb('⏳ O que falta validar aqui','q:ciclo-falta'),
+      ...(pv?[zaMb('👍 Validar CONTEÚDOS (artes)','q:ciclo-valida-design'), zaMb('👍 Validar COPY (textos)','q:ciclo-valida-copy')]:[]),
+      zaMb('📊 Métricas por conteúdo','q:ciclo-metricas'),
+      zaMb('📅 Abrir a grade (planejamento)','cicloabrir:plan'),
+      zaMb('✍️ Abrir a Copy deste ciclo','cicloabrir:copy'),
+      zaMb('🎨 Abrir os Conteúdos deste ciclo','cicloabrir:design'),
+      zaMb('🔄 Trocar de ciclo','tela:ciclos') ]; break;
+    case 'dados': b=[
+      zaMb('📍 Nosso posicionamento','q:db-posicionamento'),
+      zaMb('👥 Público-alvo','q:db-publico'),
+      zaMb('🎯 Objetivos','q:db-objetivos'),
+      zaMb('🗣️ Guia de voz','q:db-voz'),
+      zaMb('🚫 O que evitar','q:db-evitar'),
+      zaMb('📎 Materiais de apoio','q:db-materiais'),
+      zaMb('🏢 Dados da empresa','q:db-empresa'),
+      zaMb('📊 Resumo da SWOT','q:db-swot'),
+      zaMb('↗ Abrir a Base de Dados','nav:dados') ]; break;
+    case 'plan': b=[
+      zaMb('🗺️ Ver o plano do ano (Visão Macro)','abrirmacro'),
+      zaMb('🔢 Quantos conteúdos por ciclo','q:plan-contagem'),
+      zaMb('⏳ O que ainda não validei','q:plan-naovalidados'),
+      zaMb('🗓️ O que está planejado num mês','q:plan-mes'),
+      zaMb('↗ Abrir o Planejamento','nav:plan') ]; break;
+    case 'copy': b=[
+      zaMb('📝 Textos prontos para eu validar','q:copy-prontos'),
+      zaMb('✅ Aprovados x pendentes','q:copy-contagem'),
+      ...(pv?[zaMb('👍 Validar um texto','q:copy-validar')]:[]),
+      zaMb('↗ Abrir a aba Copy','nav:copy') ]; break;
+    case 'design': b=[
+      zaMb('🖼️ Artes prontas para validação','q:des-prontas'),
+      zaMb('🗂️ O que falta aprovar (por ciclo)','q:des-falta'),
+      zaMb('✏️ O que pedi ajuste','q:des-ajuste'),
+      ...(pv?[zaMb('👍 Aprovar/validar uma arte','q:des-validar')]:[]),
+      zaMb('↗ Abrir a aba Conteúdos','nav:design') ]; break;
+    case 'metricas': b=[
+      zaMb('📈 Resumo geral do mês','q:met-resumo'),
+      zaMb('📷 Instagram','q:met-instagram'),
+      zaMb('💼 LinkedIn','q:met-linkedin'),
+      zaMb('🌐 Site','q:met-site'),
+      zaMb('🏆 Melhor desempenho','q:met-melhor'),
+      zaMb('↗ Abrir a aba Métricas','nav:metricas') ]; break;
+    case 'ajuda': b=[ zaMb('📖 O que eu sei fazer','q:ajuda'), zaMb('« Voltar ao início','tela:main') ]; break;
+  }
+  el.innerHTML = zaBc() + `<div class="za-menu-grid">${b.join('')}</div>`;
+}
+window.zaMenu = function(code){
+  const i=code.indexOf(':'), k=i<0?code:code.slice(0,i), arg=i<0?'':code.slice(i+1);
+  if(k==='tela'){ zaTela=arg; zaRenderMenu(); return; }
+  if(k==='foco'){ const c=(asstCache.cycles||[]).find(x=>x.idx===+arg); if(c){ zaCicloFoco=c; zaTela='ciclo'; zaBot(`📦 Ciclo em foco: **${esc(c.periodo)}** (${esc(c.ciclo||'')}).`); zaRenderMenu(); } return; }
+  if(k==='nav'){ setTab(arg); return; }
+  if(k==='abrirmacro'){ setTab('plan'); abrirMacro(); return; }
+  if(k==='cicloabrir'){ if(zaCicloFoco) zaAbrirCicloArea(arg,zaCicloFoco); return; }
+  if(k==='q'){ return zaQuery(arg); }
+};
+function zaAbrirCicloArea(area,c){
+  if(area==='plan'){ setTab('plan'); abrirPlan(c.idx, ROLE==='editor'?'edit':'valida'); }
+  else { const mode = ROLE==='cliente'?'valida':(area==='design'?(podeSubirDesign()?'edit':'valida'):'edit');
+    if(area==='copy'){ setTab('copy'); abrirCicloCopy(c.docId,mode); } else { setTab('design'); abrirCicloDesign(c.docId,mode); } }
+  zaBot(`Abri **${ZA_AREA_LBL[area]}** do ciclo ${esc(c.periodo)}. 👉`);
+}
+function zaFichaValidar(area,c,it){
+  const acts=[{lbl:'👍 Aprovar',act:`domark:${area}:${c.idx}:${it.id}:aprovado`,primary:true}];
+  if(ZA_STATUS.ajuste[area]) acts.push({lbl:'✏️ Pedir ajuste',act:`domark:${area}:${c.idx}:${it.id}:ajuste`});
+  acts.push({lbl:'📖 Abrir para ver',act:`go:${c.idx}:${it.id}:${area}`});
+  zaBot(`**${esc(it.titulo)}** (${esc(c.periodo)})\n${zaStatusAtual(c,it)}\n\nO que deseja fazer?`, acts);
+}
+// Perguntas/consultas curadas
+function zaQuery(id){
+  const E=estado, v=x=>(x&&String(x).trim())?String(x):'—', cy=asstCache.cycles||[];
+  if(id==='ajuda') return zaAjuda();
+  if(id==='db-posicionamento') return zaBot(`📍 **Posicionamento**\n${v(E.identidade.posicionamento)}`);
+  if(id==='db-publico')        return zaBot(`👥 **Público-alvo**\n${v(E.publicoAlvo.descricao)}`);
+  if(id==='db-objetivos')      return zaBot(`🎯 **Objetivos (6 meses)**\n${v(E.objetivos.objetivo6m)}\n\n**Como medir:**\n${v(E.objetivos.metrica)}`);
+  if(id==='db-voz')            return zaBot(`🗣️ **Guia de voz**\nTom: ${v(E.guiaVoz.tomFrase)}\n✅ Usar: ${v(E.guiaVoz.palavrasOK)}\n🚫 Evitar: ${v(E.guiaVoz.palavrasEvitar)}`);
+  if(id==='db-evitar')         return zaBot(`🚫 **O que a marca NÃO é**\n${v(E.identidade.naoE)}\n\n**Temas a evitar:** ${v(E.identidade.temasEvitar)}`);
+  if(id==='db-empresa'){ const d=E.dadosEmpresa||{}; return zaBot(`🏢 **${v(d.nomeFantasia)}**\n📍 ${v(d.endereco)}\n📞 ${v(d.telefone)}\n✉️ ${v(d.email)}`); }
+  if(id==='db-materiais'){ const m=(E.materiais||[]).filter(x=>x.titulo||x.link); return zaBot(m.length?'📎 **Materiais de apoio:**\n'+m.map(x=>`• ${x.titulo||x.tipo||'Material'}${x.link?` — ${x.link}`:''}`).join('\n'):'📎 Nenhum material de apoio cadastrado ainda.'); }
+  if(id==='db-swot'){ const s=E.swot||{}, f=t=>((t||'').split('\n')[0]||'—'); return zaBot(`📊 **SWOT (resumo)**\n💪 Força: ${f(s.forcas)}\n🔧 Fraqueza: ${f(s.fraquezas)}\n🚀 Oportunidade: ${f(s.oportunidades)}\n⚠️ Ameaça: ${f(s.ameacas)}`); }
+
+  if(id==='plan-contagem'){ const l=cy.filter(c=>(c.items||[]).length).map(c=>`• ${c.periodo}: **${c.items.length}** conteúdo(s)`); return zaBot(l.length?'🔢 **Conteúdos por ciclo:**\n'+l.join('\n'):'Nenhum conteúdo cadastrado ainda.'); }
+  if(id==='plan-naovalidados'){ const out=[]; cy.forEach(c=>{ const p=(c.items||[]).filter(it=>(c.estados[it.id]||'')!=='aprovado'); if(p.length) out.push(`**${c.periodo}** (${p.length}):\n`+p.slice(0,8).map(it=>`  • ${it.data||''} ${it.titulo}`).join('\n')); }); return zaBot(out.length?'⏳ **Ainda não aprovados no planejamento:**\n\n'+out.join('\n\n'):'✅ Tudo aprovado no planejamento!'); }
+  if(id==='plan-mes') return zaBot('🗓️ Qual mês você quer ver?', MESES_ABR.map((m,i)=>({lbl:m,act:'mes:'+(i+1)})).concat([{lbl:'Cancelar',act:'cancel'}]));
+
+  if(id==='copy-prontos'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cp=c.copy[it.id]||{}; if(cp.statusCopy==='finalizado'&&cp.statusGabi!=='aprovado') out.push(`• ${it.data||''} ${it.titulo} — ${c.periodo}`); })); return zaBot(out.length?'📝 **Textos prontos para você validar:**\n'+out.join('\n'):'Nenhum texto finalizado aguardando validação.'); }
+  if(id==='copy-contagem'){ let ap=0,tot=0; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cp=c.copy[it.id]; if(cp&&(cp.legenda||cp.reels||cp.statusCopy||(cp.slides&&cp.slides.some(s=>s.texto)))){ tot++; if(cp.statusGabi==='aprovado')ap++; } })); return zaBot(tot?`✅ **Copy:** ${ap} aprovado(s) de ${tot} com texto. Faltam **${tot-ap}**.`:'Ainda não há textos de copy preenchidos.'); }
+  if(id==='copy-validar'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cp=c.copy[it.id]||{}; if((cp.statusCopy==='finalizado'||cp.legenda||cp.reels||(cp.slides&&cp.slides.some(s=>s.texto)))&&cp.statusGabi!=='aprovado') p.push({c,it}); })); return zaBot(p.length?'👍 Escolha o texto para validar:':'✅ Nenhum texto pendente de validação.', p.length?p.slice(0,12).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'valcopy:'+m.c.idx+':'+m.it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
+
+  if(id==='des-prontas'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]||{}; if(d.enviadoEm&&d.statusDesign!=='aprovado') out.push(`• ${it.data||''} ${it.titulo} — ${c.periodo}`); })); return zaBot(out.length?'🖼️ **Artes enviadas aguardando validação:**\n'+out.join('\n'):'Nenhuma arte enviada aguardando validação.'); }
+  if(id==='des-falta') return zaFalta();
+  if(id==='des-ajuste'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ if((c.design[it.id]||{}).statusDesign==='ajustes_necessarios') out.push(`• ${it.data||''} ${it.titulo} — ${c.periodo}`); })); return zaBot(out.length?'✏️ **Artes que você pediu ajuste:**\n'+out.join('\n'):'Nenhuma arte marcada como "ajustes necessários".'); }
+  if(id==='des-validar'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]||{}; if((d.enviadoEm||(d.imagens&&d.imagens.length)||d.video)&&d.statusDesign!=='aprovado') p.push({c,it}); })); return zaBot(p.length?'👍 Escolha a arte para validar:':'✅ Nenhuma arte pendente de validação.', p.length?p.slice(0,12).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'valdesign:'+m.c.idx+':'+m.it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
+
+  if(id==='met-resumo')    return zaBot(zaResumoMetricas(null));
+  if(id==='met-instagram') return zaBot(zaResumoMetricas('instagram'));
+  if(id==='met-linkedin')  return zaBot(zaResumoMetricas('linkedin'));
+  if(id==='met-site')      return zaBot(zaResumoMetricas('site'));
+  if(id==='met-melhor')    return zaBot(zaTopConteudos(cy, null));
+
+  if(id.slice(0,6)==='ciclo-'){
+    const f=zaCicloFoco; if(!f) return zaBot('Escolha um ciclo primeiro em 📦 Trabalhar num ciclo.');
+    const its=f.items||[];
+    if(id==='ciclo-resumo'){ if(!its.length) return zaBot(`📋 ${f.periodo}: ainda sem conteúdos na grade.`);
+      const cam={}, fmt={}; its.forEach(it=>{ cam[it.camada||'—']=(cam[it.camada||'—']||0)+1; fmt[it.formato||'—']=(fmt[it.formato||'—']||0)+1; });
+      const aprov=its.filter(it=>(f.design[it.id]||{}).statusDesign==='aprovado').length;
+      return zaBot(`📋 **${f.periodo}** — ${f.ciclo||''}\nTotal: **${its.length}** conteúdo(s)\nConteúdos aprovados: **${aprov}/${its.length}**\n\n**Por camada:** ${Object.entries(cam).map(([k,x])=>`${k} ${x}`).join(' · ')}\n**Por formato:** ${Object.entries(fmt).map(([k,x])=>`${k} ${x}`).join(' · ')}`); }
+    if(id==='ciclo-listar'){ return zaBot(its.length?`📝 Conteúdos de **${esc(f.periodo)}** — toque para ver:`:'Sem conteúdos neste ciclo.', its.length?its.slice(0,14).map(it=>({lbl:`${it.data||''} · ${it.titulo}`.slice(0,42),act:'pick:'+f.idx+':'+it.id})):null); }
+    if(id==='ciclo-falta'){ const p=its.filter(it=>(f.design[it.id]||{}).statusDesign!=='aprovado'); return zaBot(p.length?`⏳ Falta aprovar em **${esc(f.periodo)}** (${p.length}):\n`+p.map(it=>`• ${it.data||''} ${it.titulo}`).join('\n'):`✅ Tudo aprovado em ${esc(f.periodo)}!`); }
+    if(id==='ciclo-valida-design'){ const p=its.filter(it=>(f.design[it.id]||{}).statusDesign!=='aprovado'); return zaBot(p.length?'👍 Escolha a arte para validar:':'✅ Nada pendente nas artes deste ciclo.', p.length?p.slice(0,14).map(it=>({lbl:`${it.data||''} · ${it.titulo}`.slice(0,42),act:'valdesign:'+f.idx+':'+it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
+    if(id==='ciclo-valida-copy'){ const p=its.filter(it=>(f.copy[it.id]||{}).statusGabi!=='aprovado'); return zaBot(p.length?'👍 Escolha o texto para validar:':'✅ Nada pendente nos textos deste ciclo.', p.length?p.slice(0,14).map(it=>({lbl:`${it.data||''} · ${it.titulo}`.slice(0,42),act:'valcopy:'+f.idx+':'+it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
+    if(id==='ciclo-metricas') return zaBot(zaTopConteudos([f], f.periodo));
+  }
+  return zaAjuda('Opção não reconhecida. ');
+}
+function zaTopConteudos(cy, tituloCiclo){
+  const arr=[];
+  cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=(c.posts||{})[it.id]; if(!d) return;
+    const alc=Number(d.alcance)||0, inter=(Number(d.curtidas)||0)+(Number(d.comentarios)||0)+(Number(d.salvamentos)||0)+(Number(d.compartilhamentos)||0);
+    if(alc<=0&&inter<=0) return; arr.push({ t:it.titulo, per:c.periodo, alc, inter, taxa:alc>0?inter/alc*100:0 }); }));
+  if(!arr.length) return '🏆 Ainda não há métricas por conteúdo preenchidas'+(tituloCiclo?` para ${tituloCiclo}`:'')+'. Peça ao Vitor para preencher em Métricas → Por conteúdo.';
+  arr.sort((a,b)=>b.taxa-a.taxa);
+  const med=['🥇','🥈','🥉','4º','5º'];
+  return `🏆 **Conteúdos com melhor desempenho${tituloCiclo?` — ${tituloCiclo}`:''}:**\n\n`+arr.slice(0,5).map((x,i)=>`${med[i]} ${x.t}${tituloCiclo?'':` (${x.per})`}\n   Taxa ${x.taxa.toLocaleString('pt-BR',{maximumFractionDigits:1})}% · ${x.inter} interações · alcance ${x.alc}`).join('\n');
+}
+
 // Seeder de teste — só localhost (o Firestore nega leitura sem login); nunca roda em produção
 if(['localhost','127.0.0.1'].includes(location.hostname)){
   window.__zaSeed = function(){
     asstCache={ carregado:true, cycles:[
+      { docId:'marco-abril-2027', idx:1, periodo:'Março — Abril 2027', ciclo:'Ciclo 2 · A arte de escutar a infância',
+        items:[ {id:1,data:'08/03',titulo:'8 de março e o Marco Legal',pilar:'Data Comemorativa',formato:'Carrossel',camada:'causa'} ],
+        estados:{}, copy:{}, design:{}, posts:{} },
       { docId:'maio-junho-2027', idx:2, periodo:'Maio — Junho 2027', ciclo:'Ciclo 3 · Brincar é coisa séria',
-        items:[ {id:4, data:'13/05', titulo:'O que a Zelo pensa sobre: brincar como direito', pilar:'Quadro Mensal', formato:'Blog Post'},
-                {id:12,data:'12/06', titulo:'Aprendendo com o brincar — Caixas sensoriais', pilar:'Quadro Mensal', formato:'Reels'} ],
-        estados:{4:'aprovado'}, copy:{12:{statusGabi:'em_validacao'}}, design:{4:{statusDesign:'ajustes_necessarios'}} } ] };
+        items:[ {id:4, data:'13/05', titulo:'O que a Zelo pensa sobre: brincar como direito', pilar:'Quadro Mensal', formato:'Blog Post', camada:'autoridade'},
+                {id:12,data:'12/06', titulo:'Aprendendo com o brincar — Caixas sensoriais', pilar:'Quadro Mensal', formato:'Reels', camada:'comunidade'} ],
+        estados:{4:'aprovado'},
+        copy:{12:{statusCopy:'finalizado', statusGabi:'em_validacao', legenda:'texto...'}},
+        design:{4:{statusDesign:'ajustes_necessarios', enviadoEm:'x', imagens:[{url:'x'}]}, 12:{statusDesign:'em_analise', enviadoEm:'x', video:{url:'x'}}},
+        posts:{4:{alcance:8200,curtidas:410,comentarios:38,salvamentos:120,compartilhamentos:64}, 12:{alcance:15000,curtidas:900,comentarios:60,salvamentos:210,compartilhamentos:130}} } ] };
     metricasData={ snapshots:[
       { id:'a', mesRef:'2027-05', instagram:{seguidores:12800, alcance:9200, interacoes:540} },
       { id:'b', mesRef:'2027-06', instagram:{seguidores:13800, alcance:8200, interacoes:632} } ] };
