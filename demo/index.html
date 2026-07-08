@@ -372,6 +372,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ata-add{align-self:flex-start;margin-top:4px;background:var(--z-teal-light);border:1.5px dashed var(--z-teal);color:var(--z-teal);border-radius:9px;padding:9px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 .demo-badge{position:fixed;left:16px;bottom:16px;z-index:1100;background:rgba(26,26,26,.9);color:#fff;font-size:11.5px;font-weight:600;padding:7px 13px;border-radius:20px;box-shadow:0 4px 14px rgba(0,0,0,.25);pointer-events:none}
 @media(max-width:620px){.demo-badge{font-size:10px;left:10px;bottom:76px}}
+/* Tour guiado (demo) */
+#tour-fab{position:fixed;left:16px;bottom:52px;z-index:1150;background:var(--z-terra);color:#fff;border:none;border-radius:22px;padding:10px 16px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 5px 16px rgba(217,129,78,.45)}
+#tour-fab:hover{filter:brightness(1.05)}
+#tour-cap{display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:22px;z-index:1160;width:min(560px,calc(100vw - 32px));background:rgba(18,18,18,.93);color:#fff;border-radius:14px;padding:15px 18px 14px;box-shadow:0 12px 34px rgba(0,0,0,.4)}
+#tour-cap .tc-x{position:absolute;top:10px;right:12px;background:rgba(255,255,255,.15);border:none;color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:12px;line-height:1}
+#tour-cap .tc-step{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#8fd4dc}
+#tour-cap .tc-t{font-size:15.5px;font-weight:800;margin:3px 0 4px}
+#tour-cap .tc-d{font-size:13px;line-height:1.5;opacity:.95}
+#tour-cap .tc-bar{height:3px;background:rgba(255,255,255,.2);border-radius:3px;margin-top:11px;overflow:hidden}
+#tour-cap .tc-fill{height:100%;width:0;background:var(--z-cyan)}
 .za-foot{padding:10px;border-top:1px solid var(--z-border);display:flex;gap:8px;background:#fff}
 .za-inp{flex:1;border:1.5px solid var(--z-border);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--z-text);resize:none;max-height:80px}
 .za-inp:focus{outline:none;border-color:var(--z-teal)}
@@ -3105,7 +3115,47 @@ iniciarHub('editor', 'demonstracao@zelo').then(() => {
   badge.className='demo-badge';
   badge.textContent='🔒 Demonstração — dados de exemplo, nada é salvo';
   document.body.appendChild(badge);
+  const tf=document.createElement('button'); tf.id='tour-fab'; tf.textContent='▶ Tour guiado'; tf.onclick=tourStart; document.body.appendChild(tf);
+  const tc=document.createElement('div'); tc.id='tour-cap'; document.body.appendChild(tc);
 });
+// ── TOUR GUIADO (demo) — apresentação automática com legendas ─────────────────
+const _sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function _scrollSel(s){ const el=document.querySelector(s); if(el) el.scrollIntoView({behavior:'smooth',block:'center'}); }
+const TOUR=[
+  { cap:{t:'Hub da Zelo', d:'Uma central onde o cliente acompanha, valida e entende toda a comunicação da marca — num lugar só.'},
+    run:async()=>{ setTab('dados'); await _sleep(400); window.scrollTo({top:0,behavior:'smooth'}); }, wait:8500 },
+  { cap:{t:'A base da marca', d:'Posicionamento, público e uma SWOT interativa. E, no topo, as atas de reunião ficam registradas.'},
+    run:async()=>{ _scrollSel('.dv-swot'); const q=document.querySelector('.dv-q'); if(q) q.classList.add('open'); await _sleep(4200); _scrollSel('.atas-panel'); if(window.toggleAta) window.toggleAta(1); }, wait:11000 },
+  { cap:{t:'O plano do ano — Visão Macro 2027', d:'O funil de conteúdo (topo, meio e fundo) e os seis ciclos temáticos que guiam tudo.'},
+    run:async()=>{ setTab('plan'); await _sleep(300); abrirMacro(); await _sleep(600); window.scrollTo({top:0}); await _sleep(2600); _scrollSel('.mac-funnel'); await _sleep(3000); _scrollSel('.mac-cycles'); }, wait:13500 },
+  { cap:{t:'Cada ciclo em detalhe', d:'Tema, datas-chave e o indicador que vamos medir — tudo abre com um toque.'},
+    run:async()=>{ const c=document.querySelector('.mac-cyc'); if(c){ c.scrollIntoView({behavior:'smooth',block:'center'}); c.classList.add('open'); } }, wait:7500 },
+  { cap:{t:'Conteúdos por ciclo', d:'Cada arte com preview de como fica no Instagram e no LinkedIn, e o status de validação.'},
+    run:async()=>{ setTab('design'); await _sleep(300); abrirCicloDesign('maio-junho-2027','edit'); await _sleep(800); _scrollSel('#design-cards'); }, wait:11000 },
+  { cap:{t:'Textos (Copy) na mesma linha', d:'Os textos passam pela mesma aprovação, ciclo a ciclo — o cliente valida direto aqui.'},
+    run:async()=>{ setTab('copy'); await _sleep(300); abrirCicloCopy('maio-junho-2027','edit'); await _sleep(700); _scrollSel('#copy-cards'); }, wait:8500 },
+  { cap:{t:'Métricas claras', d:'Crescimento mês a mês, engajamento calculado sozinho e o desempenho de cada conteúdo.'},
+    run:async()=>{ setTab('metricas'); await _sleep(500); window.scrollTo({top:0,behavior:'smooth'}); }, wait:10000 },
+  { cap:{t:'Assistente do Hub', d:'Ele guia o cliente: responde "o que falta validar?", leva até o conteúdo e valida a um clique.'},
+    run:async()=>{ if(!document.getElementById('za-panel').classList.contains('open')) zaToggle(); await _sleep(600); zaChip('o que falta validar?'); }, wait:11000 },
+  { cap:{t:'Feito sob medida', d:'Do planejamento à aprovação e aos resultados — construído do zero, sem depender de plataformas externas.'},
+    run:async()=>{ if(document.getElementById('za-panel').classList.contains('open')) zaToggle(); setTab('plan'); await _sleep(300); abrirMacro(); window.scrollTo({top:0,behavior:'smooth'}); }, wait:8500 },
+];
+let tourAtivo=false;
+function setTourCap(step,i){
+  const c=document.getElementById('tour-cap'); if(!c) return;
+  c.innerHTML=`<button class="tc-x" onclick="tourSair()" title="Sair do tour">✕</button><div class="tc-step">Passo ${i+1} de ${TOUR.length}</div><div class="tc-t">${esc(step.cap.t)}</div><div class="tc-d">${esc(step.cap.d)}</div><div class="tc-bar"><div class="tc-fill" id="tc-fill"></div></div>`;
+  const f=document.getElementById('tc-fill'); if(f){ f.style.transition='none'; f.style.width='0%'; requestAnimationFrame(()=>{ f.style.transition=`width ${step.wait}ms linear`; f.style.width='100%'; }); }
+}
+window.tourStart=async function(){
+  if(tourAtivo) return; tourAtivo=true;
+  const fab=document.getElementById('tour-fab'); if(fab) fab.style.display='none';
+  const c=document.getElementById('tour-cap'); if(c) c.style.display='block';
+  for(let i=0;i<TOUR.length && tourAtivo;i++){ setTourCap(TOUR[i],i); try{ await TOUR[i].run(); }catch(e){} await _sleep(TOUR[i].wait); }
+  tourFim();
+};
+window.tourSair=function(){ tourAtivo=false; tourFim(); };
+function tourFim(){ const c=document.getElementById('tour-cap'); if(c) c.style.display='none'; const fab=document.getElementById('tour-fab'); if(fab) fab.style.display=''; }
 </script>
 </body>
 </html>
