@@ -268,10 +268,7 @@ select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
   <div class="section">
     <div class="section-label">Calendário visual</div>
     <div class="cal-card">
-      <div class="month-title" id="cal-m1-title"></div>
-      <div class="cal-grid" id="cal-m1"></div>
-      <div style="margin-top:14px" class="month-title" id="cal-m2-title"></div>
-      <div class="cal-grid" id="cal-m2"></div>
+      <div id="cal-meses"></div>
       <div class="cal-legend">
         <span><span class="ldot" style="background:#11808C"></span>Autoridade</span>
         <span><span class="ldot" style="background:#7F77DD"></span>Comunidade</span>
@@ -567,19 +564,17 @@ function buildDoc() {
     <div class="macro-pills">${publicos.map(p=>`<span class="macro-pill">${p}</span>`).join('')}</div>
     <div class="intencao"><strong>Intenção do bimestre:</strong> ${document.getElementById('e-intencao').value}</div>`;
 
+  // Um bloco por mês presente na grade — o ciclo pode ter 2, 3 ou mais meses
+  // (ex.: Junho—Agosto 2026), então os meses são gerados, não fixos.
   const meses = getMeses();
-  if (meses.length >= 1) {
-    document.getElementById('cal-m1-title').textContent = `${nomeMes[meses[0]]} ${ANO}`;
-    buildCal(meses[0], 'cal-m1');
-  }
-  if (meses.length >= 2) {
-    document.getElementById('cal-m2-title').textContent = `${nomeMes[meses[1]]} ${ANO}`;
-    buildCal(meses[1], 'cal-m2');
-    document.getElementById('cal-m2-title').style.display = 'block';
-    document.getElementById('cal-m2').style.display = 'grid';
-  } else {
-    document.getElementById('cal-m2-title').style.display = 'none';
-    document.getElementById('cal-m2').style.display = 'none';
+  const calWrap = document.getElementById('cal-meses');
+  if (calWrap) {
+    calWrap.innerHTML = meses.length
+      ? meses.map((m, i) => `
+          <div class="month-title"${i ? ' style="margin-top:14px"' : ''}>${nomeMes[m]} ${ANO}</div>
+          <div class="cal-grid" id="cal-m${m}"></div>`).join('')
+      : `<div style="font-size:13px;color:var(--z-text-sec);padding:6px 2px">Adicione conteúdos com data para o calendário aparecer.</div>`;
+    meses.forEach(m => buildCal(m, 'cal-m' + m));
   }
 
   buildChecklist();
@@ -588,6 +583,8 @@ function buildDoc() {
 }
 
 function buildCal(mesNum, containerId) {
+  const alvo = document.getElementById(containerId);
+  if (!alvo) return;
   const total = diasNoMes(mesNum, ANO);
   const primeiro = primeiroDia(mesNum, ANO);
   const dias = ['D','S','T','Q','Q','S','S'];
@@ -602,7 +599,7 @@ function buildCal(mesNum, containerId) {
       html += `<div class="cal-day"><span class="dnum">${d}</span></div>`;
     }
   }
-  document.getElementById(containerId).innerHTML = html;
+  alvo.innerHTML = html;
 }
 
 function buildChecklist() {
