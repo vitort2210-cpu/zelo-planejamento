@@ -328,7 +328,9 @@ const DOC_ID = _params.get('doc') || "maio-junho-2027";
 const ANO = parseInt(_params.get('ano'), 10) || 2027;
 const CTX_FIELDS = { periodo:'e-periodo', ciclo:'e-ciclo', cicloNome:'e-ciclo-nome', cicloTitulo:'e-ciclo-titulo', cicloDesc:'e-ciclo-desc', publicos:'e-publicos', intencao:'e-intencao' };
 const camadaCor = {autoridade:"#11808C",comunidade:"#7F77DD",causa:"#D9814E",institucional:"#9A7A1F"};
-const pilares = ["#FormaçãoZelo","#DireitodasCrianças","#ConsultoriaZelo","Collab","Blog Post","Data Comemorativa","Quadro Mensal","Criativo"];
+// Os quadros/séries fixos viraram pilares próprios (antes ficavam sob "Quadro Mensal",
+// com a série só na TAG) — assim o card mostra o quadro direto.
+const pilares = ["#FormaçãoZelo","#DireitodasCrianças","#ConsultoriaZelo","Collab","Blog Post","Data Comemorativa","Mentes da Primeira Infância","TBT da Zelo","Aprendendo com o Brincar","Quadro Mensal","Criativo"];
 const formatos = ["Carrossel","Post estático","Blog Post","Reels","Story"];
 const camadas = ["autoridade","comunidade","causa","institucional"];
 const nomeMes = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"};
