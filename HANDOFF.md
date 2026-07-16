@@ -250,9 +250,27 @@ Funil: **Topo** (Reels) → **Meio** (Carrosséis, Pílulas de Zelo) → **Fundo
 
 Bloco **📋 Atas de reunião** no topo da aba Base de Dados (acima do toggle Visualização/Edição, `#atas-wrap` em `renderTabContent` branch `dados`). Painel colapsável com atas `{id, data, titulo, texto}` em `estado.atas` (auto-save). Editor + cliente criam/editam (`atasPodeEditar`); visualizador só lê. Funções `renderAtas`/`addAta`/`updateAta`/`removeAta`/`toggleAta`/`toggleAtasPainel`. Sem transcrição automática por ora (decisão do Vitor — custo/complexidade); é digitar/colar. Upgrade futuro possível: transcrição ao vivo grátis via Web Speech API (Chrome/Edge, sem custo) — descartado agora.
 
+## Trabalho recente (2026-07-16) — Ciclos por ANO (2026 + 2027)
+
+O hub começa a rodar com a Zelo **ainda em 2026**, então Planejamento, Copy e Conteúdos passaram a ser separados **por ano**.
+
+- **Campo `ano` por ciclo** em `estado.planejamentos`. Ciclos antigos não têm o campo: `anoCiclo(p)` deduz do período (`/20\d\d/`), com 2027 de fallback.
+- **Seletor de ano** (`anoBarHTML` + `window.setAno`, estado `anoAtivo`, **padrão 2026**) no topo das 3 abas, com contagem de ciclos por ano. Trocar de ano reseta `planOpen`/`planView`/`copyMode`/`designMode`. As listas usam `ciclosDoAno()` — que **preserva o índice original** de `estado.planejamentos` (`{p, i}`), porque `abrirPlan(i)` depende dele.
+- **Ciclos de 2026** (`CICLOS_2026`): Jun—Ago (em andamento, docId `junho-agosto-2026`), Set—Out, Nov—Dez ("Ciclo 3 · Do balanço ao recomeço"). Os rótulos dos ciclos 1 e 2 estão **sem tema de propósito** — serão nomeados quando cada grade for montada (o Vitor vai enviar o planejamento de jul/ago; set/out sairá da skill `zelo-planejamento-bimestral`).
+- **2026 não tem Visão Macro** (decisão do Vitor) — o card destaque só renderiza quando `anoAtivo === 2027`.
+- **Migração `migrarCiclos`** (renomeada de `migrarCiclos2027`): cadastra 2026 + 2027, preservando `status`, os `docId` (logo, todas as grades/copies/designs de 2027 continuam intactos) e **ciclos criados à mão** (`extras`). Idempotente via `estado.planVersion === '2026-2027'`.
+- **Novo ciclo** entra no ano selecionado (`ano: anoAtivo`). O iframe do planejador recebe **`&ano=`** (`anoCiclo(p)`) — o calendário do planejador usa `ANO`.
+- **Assistente ciente do ano**: `zaCy()` filtra `asstCache.cycles` por `anoAtivo` (o `cy` de `zaQuery` é `zaCy()`, então todas as consultas curadas passaram a ser do ano ativo), e `zaSincAno(c)` alinha o ano ao navegar/focar um ciclo. Necessário porque **junho existe em 2026 e 2027** — sem isso, contagens e listas misturariam os dois. A **busca por texto livre segue global** (achar em qualquer ano), mas navegar troca o ano.
+
+> **Pendências conhecidas desta mudança:**
+> - **Calendário do planejador só renderiza 2 meses** (`cal-m1`/`cal-m2`), mas **Jun—Ago 2026 tem 3** — agosto não apareceria no calendário. Precisa virar dinâmico (N meses) se o ciclo de 3 meses for pra frente.
+> - **`demo/index.html` está desatualizada** — é cópia do hub antes dos anos (não tem seletor). Regerar quando quiser usar no Behance de novo.
+> - **A verificar em produção:** a migração só roda para o **editor** (`if (role === 'editor' && migrarCiclos())`) — o Vitor precisa entrar uma vez logado para os ciclos de 2026 serem gravados; até lá a Gabi vê a lista antiga.
+
 ## Próximos passos
 
-1. "Etapas finais na Base de Dados" (a definir com Vitor) — atas ✅ feito; ver se falta mais algo.
-2. Depois disso, **replicar a estrutura para um novo cliente** que o Vitor vai prospectar — o hub é multi-cliente por `CLIENT_ID`.
+1. Montar a **grade do ciclo Jun—Ago 2026** (Vitor vai enviar o planejamento de julho/agosto) e nomear o "Ciclo 1".
+2. Criar juntos o **planejamento de Set—Out 2026** com a skill `zelo-planejamento-bimestral` e nomear o "Ciclo 2".
+3. Replicar a estrutura para outro cliente **está pausado** — foco exclusivo na Zelo por ora (decisão do Vitor em 16/07/2026); o hub segue multi-cliente por `CLIENT_ID` quando voltar.
 
 > Regra nº 1 continua valendo: 100% de certeza / perguntar antes de implementar.
