@@ -1,0 +1,38 @@
+name: Lembrete de prazo (Zelo HUB)
+
+# Resumo diário: avisa a Gabi de conteúdos chegando ao prazo sem validação.
+# Roda sozinho (não precisa do HUB aberto). Sem custo — GitHub Actions.
+on:
+  schedule:
+    - cron: '0 12 * * *'   # 12:00 UTC = 09:00 (horário de Brasília), todo dia
+  workflow_dispatch:        # permite rodar manualmente pela aba Actions
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lembrete-prazo
+  cancel-in-progress: false
+
+jobs:
+  lembrete:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Instalar dependências
+        working-directory: .github/scripts
+        run: npm install --no-audit --no-fund
+      - name: Rodar lembrete
+        working-directory: .github/scripts
+        run: node lembrete-prazo.mjs
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EMAILJS_PRIVATE_KEY: ${{ secrets.EMAILJS_PRIVATE_KEY }}
+          # Opcionais (têm padrão no script):
+          # LEMBRETE_DESTINOS: "consultoria.zelo@gmail.com,vitort2210@gmail.com"
+          # DIAS_AVISO: "14"

@@ -1,0 +1,9 @@
+{
+  "name": "zelo-lembrete-prazo",
+  "private": true,
+  "type": "module",
+  "description": "Resumo diario: avisa a Gabi de conteudos chegando ao prazo sem validacao.",
+  "dependencies": {
+    "firebase-admin": "^12.6.0"
+  }
+}
