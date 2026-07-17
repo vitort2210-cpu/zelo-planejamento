@@ -1350,14 +1350,14 @@ const CICLOS_2027 = [
 // Ciclos de 2026 (jun→dez). Jun–Ago é o planejamento em andamento; os rótulos dos
 // ciclos 1 e 2 ficam sem tema de propósito — serão nomeados ao montar cada grade.
 const CICLOS_2026 = [
-  { periodo:'Junho — Agosto 2026',      ciclo:'Ciclo 1',                          docId:'junho-agosto-2026', ano:2026 },
+  { periodo:'Junho — Agosto 2026',      ciclo:'Ciclo 1 · Brincar é direito, não concessão', docId:'junho-agosto-2026', ano:2026 },
   { periodo:'Setembro — Outubro 2026',  ciclo:'Ciclo 2',                          docId:'setembro-outubro-2026', ano:2026 },
   { periodo:'Novembro — Dezembro 2026', ciclo:'Ciclo 3 · Do balanço ao recomeço', docId:'novembro-dezembro-2026', ano:2026 },
 ];
 // Cadastra os ciclos de 2026 + 2027 uma única vez, preservando status, a grade de
 // cada ciclo (docId inalterado) e quaisquer ciclos extras criados à mão.
 function migrarCiclos() {
-  if (estado.planVersion === '2026-2027') return false;
+  if (estado.planVersion === '2026-2027b') return false;
   const antigos = estado.planejamentos || [];
   const base = [...CICLOS_2026, ...CICLOS_2027];
   const previstos = base.map(c => c.docId);
@@ -1369,7 +1369,7 @@ function migrarCiclos() {
     .filter(p => !previstos.includes(cicloDocId(p)))
     .map(p => ({ ...p, ano: anoCiclo(p) }));
   estado.planejamentos = [...cadastrados, ...extras];
-  estado.planVersion = '2026-2027';
+  estado.planVersion = '2026-2027b';
   return true;
 }
 
@@ -2246,6 +2246,10 @@ function desMidias(d){
 // Reels (9:16) só quando é UM único vídeo, sem imagens. Carrossel com um slide de
 // vídeo continua sendo carrossel (4:5).
 function desIsReels(d){ const m=desMidias(d); return m.length===1 && m[0].type==='video'; }
+// A proporção do preview segue o TIPO do conteúdo: Story e Reels são verticais
+// (9:16, sem bordas nas laterais); os demais (Carrossel, Post estático) são 4:5.
+function itFormato(id){ const it=(gradeItems||[]).find(x=>String(x.id)===String(id)); return it?(it.formato||''):''; }
+function desVertical(id,d){ const f=itFormato(id); return f==='Story'||f==='Reels'||desIsReels(d); }
 function slideInner(md,idx){
   return md&&md.type==='video'
     ? `<video src="${esc(md.url)}" controls playsinline></video>`
@@ -2369,17 +2373,16 @@ function carouselHTML(id,plat,d){
   const head = plat==='ig'
     ? `<div class="ig-head"><span class="ig-ava"></span><span class="ig-user">zelo_consultoria</span><span class="ig-more">•••</span></div>`
     : `<div class="li-head"><span class="li-ava">in</span><div class="li-id"><div class="li-user">Zelo Consultoria</div><div class="li-sub">Consultoria em primeira infância</div></div></div>`;
-  const reels=desIsReels(d);
+  const vert=desVertical(id,d);
+  const vpClass=vert?'car-viewport is-reels':'car-viewport';
   let body;
-  if(reels){
-    body=`<div class="car-viewport is-reels"><video src="${esc(imgs[0].url)}" controls playsinline></video></div>`;
-  } else if(imgs.length){
-    body=`<div class="car-viewport">${slideInner(imgs[0],0)}</div>
+  if(imgs.length){
+    body=`<div class="${vpClass}">${slideInner(imgs[0],0)}</div>
       ${imgs.length>1?`<button class="car-arrow left" onclick="carNav(${id},'${plat}',-1)">‹</button><button class="car-arrow right" onclick="carNav(${id},'${plat}',1)">›</button>`:''}`;
   } else {
     body=`<div class="car-viewport car-empty">Sem artes ainda</div>`;
   }
-  const foot=(!reels&&imgs.length>1)
+  const foot=(imgs.length>1)
     ? `<div class="car-foot"><div class="car-dots">${imgs.map((_,i)=>`<span class="car-dot${i===0?' on':''}"></span>`).join('')}</div><span class="car-counter">1/${imgs.length}</span></div>`
     : '';
   const label = plat==='ig' ? '📷 Instagram' : '💼 LinkedIn';
