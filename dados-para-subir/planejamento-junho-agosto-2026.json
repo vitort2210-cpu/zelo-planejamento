@@ -1,0 +1,171 @@
+{
+  "contexto": {
+    "periodo": "Junho — Agosto 2026",
+    "ciclo": "Ciclo 1 de 3",
+    "cicloNome": "Ciclo 1 — 2026",
+    "cicloTitulo": "Brincar é direito, não concessão",
+    "cicloDesc": "Primeiro ciclo do HUB com a Zelo. O fio condutor é o brincar como direito garantido em lei — e a intencionalidade do adulto que o torna possível. O ciclo abre com o argumento econômico (Heckman) e os Parâmetros Nacionais de Qualidade, passa pelo ambiente e pelos materiais como educadores (collabs com Julia Tolla e Gabriela Soares) e fecha na evidência: GSED, Pikler, rotinas e as janelas de desenvolvimento.",
+    "publicos": "Gestores públicos, Educadoras, Pesquisadores PI",
+    "intencao": "Firmar a autoridade técnica da Zelo mostrando que brincar, ambiente e cuidado são condições estruturais — sustentadas por evidência e por lei —, não escolhas de estilo pedagógico."
+  },
+  "items": [
+    {
+      "id": 1,
+      "data": "01/06",
+      "titulo": "BEBETECAS: Onde o Livro e o Brincar se Encontram",
+      "pilar": "#DireitodasCrianças",
+      "formato": "Carrossel",
+      "camada": "causa",
+      "descricao": "TAG: Direito da Criança\n"
+    },
+    {
+      "id": 2,
+      "data": "05/06",
+      "titulo": "James Heckman e a Equação do Capital Humano",
+      "pilar": "Mentes da Primeira Infância",
+      "formato": "Carrossel",
+      "camada": "autoridade",
+      "descricao": "TAG: Mentes da Primeira Infância (série)\n"
+    },
+    {
+      "id": 3,
+      "data": "09/06",
+      "titulo": "Parâmetros Nacionais de Qualidade",
+      "pilar": "#FormaçãoZelo",
+      "formato": "Carrossel",
+      "camada": "autoridade",
+      "descricao": "TAG: Formação Zelo\n"
+    },
+    {
+      "id": 4,
+      "data": "16/06",
+      "titulo": "O que é o efeito do \"vídeo déficit\" e como ele afeta a Primeira Infância?",
+      "pilar": "#FormaçãoZelo",
+      "formato": "Carrossel",
+      "camada": "autoridade",
+      "descricao": "TAG: #FormaçãoZelo\n"
+    },
+    {
+      "id": 5,
+      "data": "23/06",
+      "titulo": "Zelo + Julia Tolla: Materiais e Materialidades",
+      "pilar": "Collab",
+      "formato": "Carrossel",
+      "camada": "comunidade",
+      "descricao": "TAG: #ConsultoriaZelo\n"
+    },
+    {
+      "id": 6,
+      "data": "25/06",
+      "titulo": "TBT Zelo",
+      "pilar": "TBT da Zelo",
+      "formato": "Story",
+      "camada": "comunidade",
+      "descricao": "TAG: #TBTdaZelo (série)\n"
+    },
+    {
+      "id": 7,
+      "data": "30/06",
+      "titulo": "Zelo + Gabriela Soares: O Ambiente como Terceiro Educador",
+      "pilar": "Collab",
+      "formato": "Carrossel",
+      "camada": "comunidade",
+      "descricao": "TAG: #ConsultoriaZelo\n"
+    },
+    {
+      "id": 8,
+      "data": "07/07",
+      "titulo": "REFLEXÃO: Apego Seguro e Presença",
+      "pilar": "#FormaçãoZelo",
+      "formato": "Post estático",
+      "camada": "autoridade",
+      "descricao": "TAG: #FormaçãoZelo\n"
+    },
+    {
+      "id": 9,
+      "data": "14/07",
+      "titulo": "Você conhece as GSED? (Medir o que Importa)",
+      "pilar": "#FormaçãoZelo",
+      "formato": "Carrossel",
+      "camada": "autoridade",
+      "descricao": "TAG: #FormaçãoZelo\n"
+    },
+    {
+      "id": 10,
+      "data": "23/07",
+      "titulo": "Emmi Pikler e a abordagem Pikleriana",
+      "pilar": "Mentes da Primeira Infância",
+      "formato": "Carrossel",
+      "camada": "autoridade",
+      "descricao": "TAG: Mentes da Primeira Infância (série)\n"
+    },
+    {
+      "id": 11,
+      "data": "30/07",
+      "titulo": "Dia da Amizade – Qual a importância desse vínculo na Primeira Infância?",
+      "pilar": "Data Comemorativa",
+      "formato": "Post estático",
+      "camada": "causa",
+      "descricao": ""
+    },
+    {
+      "id": 12,
+      "data": "04/08",
+      "titulo": "Qual a importância de criar rotinas estruturadas para a educação infantil?",
+      "pilar": "#FormaçãoZelo",
+      "formato": "Carrossel",
+      "camada": "autoridade",
+      "descricao": "TAG: #FormaçãoZelo\n"
+    },
+    {
+      "id": 13,
+      "data": "08/08",
+      "titulo": "Zelo + Milena: Aprendendo com o Brincar",
+      "pilar": "Aprendendo com o Brincar",
+      "formato": "Reels",
+      "camada": "comunidade",
+      "descricao": "[VÍDEO]"
+    },
+    {
+      "id": 14,
+      "data": "11/08",
+      "titulo": "Educação Infantil avança em Linguagem e Matemática",
+      "pilar": "#FormaçãoZelo",
+      "formato": "Post estático",
+      "camada": "autoridade",
+      "descricao": "TAG: #FormaçãoZelo\n"
+    },
+    {
+      "id": 15,
+      "data": "12/08",
+      "titulo": "Dia Internacional da Juventude",
+      "pilar": "Data Comemorativa",
+      "formato": "Story",
+      "camada": "causa",
+      "descricao": ""
+    },
+    {
+      "id": 16,
+      "data": "17/08",
+      "titulo": "Zelo + Clarice: Aprendendo com o Brincar",
+      "pilar": "Aprendendo com o Brincar",
+      "formato": "Reels",
+      "camada": "comunidade",
+      "descricao": "[VÍDEO]"
+    },
+    {
+      "id": 17,
+      "data": "20/08",
+      "titulo": "O que são as janelas de desenvolvimento cerebral nos primeiros 3 anos e por que elas importam para decisões pedagógicas e de gestão",
+      "pilar": "Blog Post",
+      "formato": "Blog Post",
+      "camada": "autoridade",
+      "descricao": "TAG: #FormaçãoZelo\n"
+    }
+  ],
+  "estados": {},
+  "observacoes": {},
+  "gabiEdits": {},
+  "nextId": 18,
+  "updatedAt": "2026-07-17T14:59:20.347655Z"
+}

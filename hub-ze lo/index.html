@@ -480,6 +480,17 @@ mark.cmt:hover{background:#f6d9c4}
 .pop-cancel{background:var(--z-bg);color:var(--z-text-sec)}
 /* hint do modo validação (cliente) */
 .copy-hint{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:10px;padding:10px 13px;margin-bottom:1.1rem;font-size:12px;color:var(--z-text);line-height:1.5}
+.copy-imp-btn{margin-left:auto;padding:8px 13px;font-size:12px;border-radius:8px;border:1px solid var(--z-terra);background:#fff;color:var(--z-terra);font-family:inherit;font-weight:600;cursor:pointer}
+.copy-imp-btn:hover{background:var(--z-terra-light)}
+.impc-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center;padding:16px}
+.impc-box{background:#fff;border-radius:12px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.impc-box h3{font-size:15px;color:var(--z-teal);margin:0 0 4px}
+.impc-box p{font-size:12px;color:var(--z-text-sec);margin:0 0 12px}
+.impc-box textarea{width:100%;height:150px;font-family:ui-monospace,monospace;font-size:11px;border:1px solid var(--z-border);border-radius:8px;padding:8px;resize:vertical;box-sizing:border-box}
+.impc-box input[type=file]{display:block;font-size:12px;margin:8px 0}
+.impc-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.impc-actions button{padding:9px 16px;font-size:13px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;border:1px solid var(--z-border);background:#fff;color:var(--z-text-sec)}
+.impc-actions .impc-go{border-color:var(--z-teal);background:var(--z-teal);color:#fff}
 /* banner da Gabi */
 .gabi-banner{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:12px;padding:14px 16px;margin-bottom:1.25rem}
 .gabi-banner-title{font-size:14px;font-weight:700;color:var(--z-terra);margin-bottom:3px}
@@ -1855,6 +1866,50 @@ async function salvarCopy() {
   } catch(e) { showToast('Erro ao salvar copy. Verifique a conexão.'); console.error(e); }
 }
 
+// ── Importar copy (JSON) — grava os textos do ciclo de uma vez ─────────────────
+window.abrirImportCopy = function() {
+  let m = document.getElementById('impc-modal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'impc-modal'; m.className = 'impc-modal';
+    m.innerHTML = `<div class="impc-box">
+      <h3>Importar copy (JSON)</h3>
+      <p>Selecione o arquivo <strong>copy-…json</strong> ou cole o conteúdo. Isso substitui os textos deste ciclo.</p>
+      <input type="file" accept="application/json,.json" onchange="impcFile(this)">
+      <textarea id="impc-text" placeholder="… ou cole o JSON aqui"></textarea>
+      <div class="impc-actions">
+        <button onclick="fecharImportCopy()">Cancelar</button>
+        <button class="impc-go" onclick="importarCopyJSON()">Importar e salvar</button>
+      </div></div>`;
+    document.body.appendChild(m);
+  }
+  document.getElementById('impc-text').value = '';
+  m.style.display = 'flex';
+}
+window.fecharImportCopy = function() { const m = document.getElementById('impc-modal'); if (m) m.style.display = 'none'; }
+window.impcFile = function(inp) {
+  const f = inp.files && inp.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { document.getElementById('impc-text').value = r.result; };
+  r.readAsText(f);
+}
+window.importarCopyJSON = async function() {
+  if (!copyCiclo) { showToast('Abra um ciclo primeiro.'); return; }
+  let data;
+  try { data = JSON.parse(document.getElementById('impc-text').value); }
+  catch(e) { showToast('JSON inválido.'); return; }
+  const itens = (data && data.itens && typeof data.itens === 'object') ? data.itens
+    : ((data && typeof data === 'object' && !Array.isArray(data)) ? data : null);
+  if (!itens) { showToast('JSON de copy sem "itens".'); return; }
+  const n = Object.keys(itens).length;
+  if (!confirm('Isso vai SUBSTITUIR os textos deste ciclo por ' + n + ' itens de copy. Continuar?')) return;
+  copyData = { itens };
+  await salvarCopy();
+  renderCopyCards();
+  fecharImportCopy();
+  showToast('✓ Copy importado: ' + n + ' itens');
+}
+
 // ── Lista de ciclos (boxes) ────────────────────────────────────────────────────
 function buildCopyCiclos() {
   const cont = document.getElementById('tab-content');
@@ -1888,12 +1943,15 @@ function buildCopyTab() {
   const plist = estado.planejamentos || [];
   const cur = plist.find(p => cicloDocId(p) === copyCiclo) || plist[0] || {};
   const modoLbl = copyMode === 'edit' ? '✏ Edição' : (ehCliente() ? '👁 Validação' : '👁 Visualização');
+  const impBtn = (copyMode === 'edit' && ROLE === 'editor')
+    ? `<button class="copy-imp-btn" onclick="abrirImportCopy()">⬆ Importar copy (JSON)</button>` : '';
   const bar = `<div class="cycle-open-bar">
       <button class="back-ciclos" onclick="voltarCiclosCopy()">← Voltar aos ciclos</button>
       <div class="cycle-open-info">
         <span class="cycle-open-nome">${esc(cur.periodo||'')}</span>
         <span class="cycle-open-modo">${modoLbl}</span>
       </div>
+      ${impBtn}
     </div>`;
   const hint = (copyMode === 'valida' && ehCliente())
     ? `<div class="copy-hint"><strong>Selecione qualquer trecho</strong> de um texto para comentar exatamente o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`

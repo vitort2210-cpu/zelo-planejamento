@@ -153,6 +153,21 @@ button.sbtn.is-redirecionado span{color:#5C2A0D !important}
 .del-btn{font-size:11px;color:var(--z-terra);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px}
 .add-item-btn{width:100%;padding:8px;font-size:12px;border-radius:8px;border:1px dashed var(--z-teal);background:transparent;cursor:pointer;color:var(--z-teal);font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;font-weight:500}
 .add-item-btn:hover{background:var(--z-teal-light)}
+.sel-add{display:flex;gap:4px;align-items:stretch}
+.sel-add select{flex:1;min-width:0}
+.add-tag-btn{flex:0 0 auto;width:30px;border:1px dashed var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);border-radius:8px;font-size:16px;line-height:1;cursor:pointer;font-family:inherit;font-weight:700}
+.add-tag-btn:hover{background:#d5eaec}
+.imp-btn{width:100%;padding:9px;margin-bottom:14px;font-size:12.5px;border-radius:8px;border:1px solid var(--z-terra);background:#fff;color:var(--z-terra);font-family:inherit;font-weight:600;cursor:pointer}
+.imp-btn:hover{background:#fbeee6}
+.imp-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;align-items:center;justify-content:center;padding:16px}
+.imp-box{background:#fff;border-radius:12px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)}
+.imp-box h3{font-size:15px;color:var(--z-teal);margin:0 0 4px}
+.imp-box p{font-size:12px;color:var(--z-text-sec);margin:0 0 12px}
+.imp-box textarea{width:100%;height:150px;font-family:ui-monospace,monospace;font-size:11px;border:1px solid var(--z-border);border-radius:8px;padding:8px;resize:vertical}
+.imp-file{display:block;font-size:12px;margin:8px 0 12px}
+.imp-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.imp-actions button{padding:9px 16px;font-size:13px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;border:1px solid var(--z-border);background:#fff;color:var(--z-text-sec)}
+.imp-actions .imp-go{border-color:var(--z-teal);background:var(--z-teal);color:#fff}
 .two-col{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .page-title{font-size:18px;font-weight:600;color:var(--z-teal);margin-bottom:4px}
 .page-sub{font-size:13px;color:var(--z-text-sec);margin-bottom:1.5rem}
@@ -188,10 +203,26 @@ select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
 <!-- Toast -->
 <div class="toast" id="toast"></div>
 
+<!-- Modal: importar JSON -->
+<div class="imp-modal" id="imp-modal">
+  <div class="imp-box">
+    <h3>Importar planejamento (JSON)</h3>
+    <p>Selecione o arquivo <strong>planejamento-…json</strong> ou cole o conteúdo. Isso substitui a grade e o contexto deste ciclo.</p>
+    <input type="file" class="imp-file" accept="application/json,.json" onchange="impFile(this)">
+    <textarea id="imp-text" placeholder="… ou cole o JSON aqui"></textarea>
+    <div class="imp-actions">
+      <button type="button" onclick="fecharImport()">Cancelar</button>
+      <button type="button" class="imp-go" onclick="importarJSON()">Importar e salvar</button>
+    </div>
+  </div>
+</div>
+
 <!-- TELA DE EDIÇÃO -->
 <div id="screen-edit" class="screen active">
   <div class="page-title">Novo planejamento</div>
   <div class="page-sub">Preencha as informações e monte a grade de conteúdos</div>
+
+  <button type="button" class="imp-btn" id="imp-open-btn" onclick="abrirImport()">⬆ Importar planejamento (JSON)</button>
 
   <div class="section">
     <div class="section-label">Cabeçalho</div>
@@ -330,9 +361,14 @@ const CTX_FIELDS = { periodo:'e-periodo', ciclo:'e-ciclo', cicloNome:'e-ciclo-no
 const camadaCor = {autoridade:"#11808C",comunidade:"#7F77DD",causa:"#D9814E",institucional:"#9A7A1F"};
 // Os quadros/séries fixos viraram pilares próprios (antes ficavam sob "Quadro Mensal",
 // com a série só na TAG) — assim o card mostra o quadro direto.
-const pilares = ["#FormaçãoZelo","#DireitodasCrianças","#ConsultoriaZelo","Collab","Blog Post","Data Comemorativa","Mentes da Primeira Infância","TBT da Zelo","Aprendendo com o Brincar","Quadro Mensal","Criativo"];
+const PILARES_BASE = ["#FormaçãoZelo","#DireitodasCrianças","#ConsultoriaZelo","Collab","Blog Post","Data Comemorativa","Mentes da Primeira Infância","TBT da Zelo","Aprendendo com o Brincar","Quadro Mensal","Criativo"];
+const CAMADAS_BASE = ["autoridade","comunidade","causa","institucional"];
 const formatos = ["Carrossel","Post estático","Blog Post","Reels","Story"];
-const camadas = ["autoridade","comunidade","causa","institucional"];
+// Tags/categorias criadas pelo editor no botão "+ nova" — persistidas no doc do ciclo.
+let pilaresCustom = [], camadasCustom = [];
+// Listas efetivas = base + customizadas (recompostas ao carregar/importar).
+let pilares = PILARES_BASE.slice();
+let camadas = CAMADAS_BASE.slice();
 const nomeMes = {1:"Janeiro",2:"Fevereiro",3:"Março",4:"Abril",5:"Maio",6:"Junho",7:"Julho",8:"Agosto",9:"Setembro",10:"Outubro",11:"Novembro",12:"Dezembro"};
 
 // ─── ESTADO ───────────────────────────────────────────────────────────────────
@@ -377,6 +413,10 @@ async function carregarDoFirebase() {
       if (data.gabiEdits) gabiEdits = data.gabiEdits;
       if (data.nextId) nextId = data.nextId;
       if (data.contexto) _ctx = data.contexto;
+      if (Array.isArray(data.pilaresCustom)) pilaresCustom = data.pilaresCustom;
+      if (Array.isArray(data.camadasCustom)) camadasCustom = data.camadasCustom;
+      pilares = PILARES_BASE.concat(pilaresCustom.filter(p => !PILARES_BASE.includes(p)));
+      camadas = CAMADAS_BASE.concat(camadasCustom.filter(c => !CAMADAS_BASE.includes(c)));
     }
   } catch(e) {
     console.warn("Erro ao carregar Firebase:", e);
@@ -410,7 +450,7 @@ async function salvarNoFirebase() {
   try {
     const contexto = {};
     for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); contexto[k] = el ? el.value : ''; }
-    await setDoc(DOC_REF, { items, estados, observacoes, gabiEdits, nextId, contexto, updatedAt: new Date().toISOString() });
+    await setDoc(DOC_REF, { items, estados, observacoes, gabiEdits, nextId, contexto, pilaresCustom, camadasCustom, updatedAt: new Date().toISOString() });
     showToast("✓ Salvo automaticamente");
   } catch(e) {
     showToast("⚠ Erro ao salvar — verifique a conexão");
@@ -493,11 +533,17 @@ window.renderEditItems = function() {
       <div class="two-col">
         <div class="edit-field" style="margin-bottom:0">
           <label class="edit-label">Pilar</label>
-          <select onchange="updateItem(${it.id},'pilar',this.value)">${pilares.map(p=>`<option value="${p}"${p===it.pilar?' selected':''}>${p}</option>`).join('')}</select>
+          <div class="sel-add">
+            <select onchange="updateItem(${it.id},'pilar',this.value)">${pilares.map(p=>`<option value="${esc(p)}"${p===it.pilar?' selected':''}>${esc(p)}</option>`).join('')}</select>
+            <button type="button" class="add-tag-btn" title="Adicionar nova tag de pilar" onclick="addPilar(${it.id})">+</button>
+          </div>
         </div>
         <div class="edit-field" style="margin-bottom:0">
           <label class="edit-label">Camada</label>
-          <select onchange="updateItem(${it.id},'camada',this.value)">${camadas.map(c=>`<option value="${c}"${c===it.camada?' selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}</select>
+          <div class="sel-add">
+            <select onchange="updateItem(${it.id},'camada',this.value)">${camadas.map(c=>`<option value="${esc(c)}"${c===it.camada?' selected':''}>${c.charAt(0).toUpperCase()+c.slice(1)}</option>`).join('')}</select>
+            <button type="button" class="add-tag-btn" title="Adicionar nova categoria de camada" onclick="addCamada(${it.id})">+</button>
+          </div>
         </div>
       </div>
       <div class="edit-field" style="margin-top:6px;margin-bottom:0">
@@ -514,6 +560,62 @@ window.updateItem = function(id, field, val) {
   const it = items.find(x => x.id === id);
   if (it) it[field] = val;
   document.getElementById('e-total').value = items.length;
+}
+
+// Adiciona uma nova tag de pilar (fica salva no ciclo via pilaresCustom).
+window.addPilar = function(id) {
+  const v = (prompt('Nova tag de pilar (ex.: "Semana do Bebê", "#SaúdeInfantil"):') || '').trim();
+  if (!v) return;
+  if (!pilares.includes(v)) { pilares.push(v); pilaresCustom.push(v); }
+  updateItem(id, 'pilar', v);
+  renderEditItems();
+  agendarSalvamento();
+}
+// Adiciona uma nova categoria de camada.
+window.addCamada = function(id) {
+  const v = (prompt('Nova categoria de camada (ex.: "conversão", "bastidores"):') || '').trim().toLowerCase();
+  if (!v) return;
+  if (!camadas.includes(v)) { camadas.push(v); camadasCustom.push(v); }
+  updateItem(id, 'camada', v);
+  renderEditItems();
+  agendarSalvamento();
+}
+
+// ─── IMPORTAR JSON (grava a grade de uma vez, sem depender do console) ──────────
+window.abrirImport = function() { document.getElementById('imp-text').value = ''; document.getElementById('imp-modal').style.display = 'flex'; }
+window.fecharImport = function() { document.getElementById('imp-modal').style.display = 'none'; }
+window.impFile = function(inp) {
+  const f = inp.files && inp.files[0]; if (!f) return;
+  const r = new FileReader();
+  r.onload = () => { document.getElementById('imp-text').value = r.result; };
+  r.readAsText(f);
+}
+window.importarJSON = async function() {
+  let data;
+  try { data = JSON.parse(document.getElementById('imp-text').value); }
+  catch(e) { showToast('⚠ JSON inválido'); return; }
+  if (!data || !Array.isArray(data.items)) { showToast('⚠ JSON sem a lista "items"'); return; }
+  if (!confirm('Isso vai SUBSTITUIR a grade atual (' + items.length + ' itens) por ' + data.items.length + ' conteúdos. Continuar?')) return;
+  items = data.items;
+  estados = data.estados || {};
+  observacoes = data.observacoes || {};
+  gabiEdits = data.gabiEdits || {};
+  nextId = data.nextId || (items.reduce((m, i) => Math.max(m, +i.id || 0), 0) + 1);
+  // redefine as tags customizadas conforme o JSON importado (evita resíduos de tags
+  // antigas): parte das tags do arquivo + as usadas pelos itens que não são base.
+  pilaresCustom = Array.isArray(data.pilaresCustom) ? data.pilaresCustom.slice() : [];
+  camadasCustom = Array.isArray(data.camadasCustom) ? data.camadasCustom.slice() : [];
+  items.forEach(it => {
+    if (it.pilar && !PILARES_BASE.includes(it.pilar) && !pilaresCustom.includes(it.pilar)) pilaresCustom.push(it.pilar);
+    if (it.camada && !CAMADAS_BASE.includes(it.camada) && !camadasCustom.includes(it.camada)) camadasCustom.push(it.camada);
+  });
+  pilares = PILARES_BASE.concat(pilaresCustom);
+  camadas = CAMADAS_BASE.concat(camadasCustom);
+  if (data.contexto) { for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); if (el && data.contexto[k] != null) el.value = data.contexto[k]; } }
+  renderEditItems();
+  await salvarNoFirebase();
+  fecharImport();
+  showToast('✓ Importado: ' + items.length + ' conteúdos');
 }
 
 window.addItem = function() {
