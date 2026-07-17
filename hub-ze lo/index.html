@@ -499,9 +499,16 @@ mark.cmt:hover{background:#f6d9c4}
 /* ════ ABA DESIGN ════ */
 .dz-area{margin:.4rem 0 1rem}
 .dz-thumbs{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
-.dz-thumb{position:relative;width:64px;height:64px;border-radius:8px;overflow:hidden;border:0.5px solid var(--z-border);background:var(--z-bg)}
-.dz-thumb img,.dz-thumb video{width:100%;height:100%;object-fit:cover;display:block}
+.dz-thumb{position:relative;width:64px;height:78px;border-radius:8px;overflow:hidden;border:0.5px solid var(--z-border);background:var(--z-bg)}
+.dz-thumb img,.dz-thumb video{width:100%;height:64px;object-fit:cover;display:block}
+.dz-thumb.dz-video{border-color:var(--z-terra)}
+.dz-vtag{position:absolute;top:2px;left:2px;background:rgba(217,129,78,.92);color:#fff;font-size:8.5px;font-weight:700;padding:1px 5px;border-radius:20px;line-height:1.4}
 .dz-del{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:none;background:rgba(0,0,0,.6);color:#fff;font-size:10px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.dz-move{position:absolute;left:0;right:0;bottom:0;height:14px;display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.72)}
+.dz-move button{flex:0 0 auto;width:20px;height:14px;border:none;background:none;color:#fff;font-size:12px;line-height:1;cursor:pointer;padding:0}
+.dz-move button:disabled{opacity:.3;cursor:default}
+.dz-pos{color:#fff;font-size:9px;font-weight:700}
+.dz-ordhint{font-size:11px;color:var(--z-text-sec);margin-top:6px;line-height:1.4}
 .dz-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px dashed var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);cursor:pointer;font-family:inherit}
 .dz-btn:hover{background:#d3ebee}
 .dz-progress{font-size:11px;color:var(--z-text-sec);margin-left:10px}
@@ -2225,8 +2232,26 @@ document.addEventListener('mousedown', (e) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // ABA DESIGN — upload (Cloudinary) + preview IG/LinkedIn + validação + notificação
 // ══════════════════════════════════════════════════════════════════════════════
-function defaultDesign(){ return { imagens:[], video:null, statusDesign:'', comentarioDesign:'', enviadoEm:'', enviadoPor:'' }; }
-function normalizeDesign(d){ if(!Array.isArray(d.imagens)) d.imagens=[]; return d; }
+function defaultDesign(){ return { midias:[], statusDesign:'', comentarioDesign:'', enviadoEm:'', enviadoPor:'' }; }
+// Mídias ordenadas: [{type:'image'|'video', url, publicId, w?, h?}]. Lê o formato
+// antigo ({imagens:[], video:{}}) sem mutar — imagens na ordem + vídeo ao final.
+function desMidias(d){
+  if(!d) return [];
+  if(Array.isArray(d.midias)) return d.midias;
+  const m=[];
+  (Array.isArray(d.imagens)?d.imagens:[]).forEach(im=>m.push({ type:'image', url:im.url, publicId:im.publicId, w:im.w, h:im.h }));
+  if(d.video) m.push({ type:'video', url:d.video.url, publicId:d.video.publicId });
+  return m;
+}
+// Reels (9:16) só quando é UM único vídeo, sem imagens. Carrossel com um slide de
+// vídeo continua sendo carrossel (4:5).
+function desIsReels(d){ const m=desMidias(d); return m.length===1 && m[0].type==='video'; }
+function slideInner(md,idx){
+  return md&&md.type==='video'
+    ? `<video src="${esc(md.url)}" controls playsinline></video>`
+    : `<img src="${esc(md?md.url:'')}" alt="slide ${(idx||0)+1}">`;
+}
+function normalizeDesign(d){ if(!Array.isArray(d.midias)){ d.midias=desMidias(d); delete d.imagens; delete d.video; } return d; }
 function getDesign(id){ return normalizeDesign(designData.itens[id] ? designData.itens[id] : defaultDesign()); }
 function ensureDesign(id){ if(!designData.itens[id]) designData.itens[id]=defaultDesign(); return normalizeDesign(designData.itens[id]); }
 function designLabel(s){ return { aprovado:'Aprovado', ajustes_necessarios:'Ajustes necessários', em_analise:'Em análise' }[s] || s; }
@@ -2312,12 +2337,22 @@ function statusDesignBadge(d){
   return `<span class="gd-chip on ${d.statusDesign}" style="cursor:default;align-self:flex-start;white-space:nowrap">${designLabel(d.statusDesign)}</span>`;
 }
 function uploadAreaHTML(id,d){
-  const thumbs=(d.imagens||[]).map((im,i)=>`<div class="dz-thumb"><img src="${esc(im.url)}"><button class="dz-del" onclick="removeDesignImg(${id},${i})" title="Remover">✕</button></div>`).join('');
-  const vid=d.video?`<div class="dz-thumb dz-video"><video src="${esc(d.video.url)}" muted></video><button class="dz-del" onclick="removeDesignVideo(${id})" title="Remover">✕</button></div>`:'';
+  const m=desMidias(d);
+  const thumbs=m.map((md,i)=>{
+    const inner = md.type==='video'
+      ? `<video src="${esc(md.url)}" muted></video><span class="dz-vtag">▶ vídeo</span>`
+      : `<img src="${esc(md.url)}">`;
+    const mover = m.length>1
+      ? `<div class="dz-move"><button onclick="moveDesignMidia(${id},${i},-1)" title="Mover para trás" ${i===0?'disabled':''}>‹</button><span class="dz-pos">${i+1}</span><button onclick="moveDesignMidia(${id},${i},1)" title="Mover para frente" ${i===m.length-1?'disabled':''}>›</button></div>`
+      : '';
+    return `<div class="dz-thumb${md.type==='video'?' dz-video':''}">${inner}<button class="dz-del" onclick="removeDesignMidia(${id},${i})" title="Remover">✕</button>${mover}</div>`;
+  }).join('');
+  const dica = m.length>1 ? `<div class="dz-ordhint">A ordem acima é a ordem dos slides no carrossel. Reels só quando houver um único vídeo, sozinho.</div>` : '';
   return `<div class="dz-area">
-    <div class="dz-thumbs">${thumbs}${vid}</div>
+    <div class="dz-thumbs">${thumbs}</div>
     <label class="dz-btn">📎 Subir arte / vídeo<input type="file" accept="image/*,video/*" multiple style="display:none" onchange="onDesignFiles(${id},this)"></label>
     <span class="dz-progress" id="dz-prog-${id}"></span>
+    ${dica}
   </div>`;
 }
 function designStatusRow(id,d){
@@ -2330,20 +2365,21 @@ function designStatusRow(id,d){
   <div class="cf"><textarea rows="2" placeholder="Comentário para o design (opcional)..." oninput="updateDesignComment(${id},this)">${esc(d.comentarioDesign||'')}</textarea></div>`;
 }
 function carouselHTML(id,plat,d){
-  const imgs=d.imagens||[];
+  const imgs=desMidias(d);
   const head = plat==='ig'
     ? `<div class="ig-head"><span class="ig-ava"></span><span class="ig-user">zelo_consultoria</span><span class="ig-more">•••</span></div>`
     : `<div class="li-head"><span class="li-ava">in</span><div class="li-id"><div class="li-user">Zelo Consultoria</div><div class="li-sub">Consultoria em primeira infância</div></div></div>`;
+  const reels=desIsReels(d);
   let body;
-  if(d.video){
-    body=`<div class="car-viewport is-reels"><video src="${esc(d.video.url)}" controls playsinline></video></div>`;
+  if(reels){
+    body=`<div class="car-viewport is-reels"><video src="${esc(imgs[0].url)}" controls playsinline></video></div>`;
   } else if(imgs.length){
-    body=`<div class="car-viewport"><img src="${esc(imgs[0].url)}" alt="slide 1"></div>
+    body=`<div class="car-viewport">${slideInner(imgs[0],0)}</div>
       ${imgs.length>1?`<button class="car-arrow left" onclick="carNav(${id},'${plat}',-1)">‹</button><button class="car-arrow right" onclick="carNav(${id},'${plat}',1)">›</button>`:''}`;
   } else {
     body=`<div class="car-viewport car-empty">Sem artes ainda</div>`;
   }
-  const foot=(!d.video&&imgs.length>1)
+  const foot=(!reels&&imgs.length>1)
     ? `<div class="car-foot"><div class="car-dots">${imgs.map((_,i)=>`<span class="car-dot${i===0?' on':''}"></span>`).join('')}</div><span class="car-counter">1/${imgs.length}</span></div>`
     : '';
   const label = plat==='ig' ? '📷 Instagram' : '💼 LinkedIn';
@@ -2373,23 +2409,26 @@ function designCardInner(it,d){
 // ── Carrossel ─────────────────────────────────────────────────────────────────
 function carKey(id,plat){ return id+'-'+plat; }
 function updateCarousel(id,plat){
-  const d=getDesign(id); const imgs=d.imagens||[];
+  const d=getDesign(id); const m=desMidias(d);
   const wrap=document.getElementById('car-'+id+'-'+plat);
-  if(!wrap || d.video || !imgs.length) return;
-  let idx=carouselIdx[carKey(id,plat)]||0; if(idx>=imgs.length) idx=0;
+  if(!wrap || desIsReels(d) || !m.length) return;
+  let idx=carouselIdx[carKey(id,plat)]||0; if(idx>=m.length) idx=0;
   carouselIdx[carKey(id,plat)]=idx;
-  const vp=wrap.querySelector('.car-viewport'); if(vp) vp.innerHTML=`<img src="${esc(imgs[idx].url)}" alt="slide ${idx+1}">`;
-  const c=wrap.querySelector('.car-counter'); if(c) c.textContent=`${idx+1}/${imgs.length}`;
-  const dots=wrap.querySelector('.car-dots'); if(dots) dots.innerHTML=imgs.map((_,i)=>`<span class="car-dot${i===idx?' on':''}"></span>`).join('');
+  const vp=wrap.querySelector('.car-viewport'); if(vp) vp.innerHTML=slideInner(m[idx],idx);
+  const c=wrap.querySelector('.car-counter'); if(c) c.textContent=`${idx+1}/${m.length}`;
+  const dots=wrap.querySelector('.car-dots'); if(dots) dots.innerHTML=m.map((_,i)=>`<span class="car-dot${i===idx?' on':''}"></span>`).join('');
 }
 window.carNav=function(id,plat,dir){
-  const n=(getDesign(id).imagens||[]).length; if(!n) return;
+  const n=desMidias(getDesign(id)).length; if(!n) return;
   const k=carKey(id,plat); carouselIdx[k]=(((carouselIdx[k]||0)+dir)%n+n)%n; updateCarousel(id,plat);
 };
 // Seeders só de teste (localhost) — nunca definidos em produção
 if (['localhost','127.0.0.1'].includes(location.hostname)) {
-  window.__seedDesign = (id, n=3) => { const d=ensureDesign(id); d.imagens=Array.from({length:n},(_,i)=>({url:`https://picsum.photos/seed/z${id}-${i}/900/1100`,publicId:'seed'+i,w:900,h:1100})); renderDesignCard(id); };
-  window.__seedVideo  = (id) => { const d=ensureDesign(id); d.video={url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'seedvid'}; renderDesignCard(id); };
+  window.__seedDesign = (id, n=3) => { const d=ensureDesign(id); d.midias=Array.from({length:n},(_,i)=>({type:'image',url:`https://picsum.photos/seed/z${id}-${i}/900/1100`,publicId:'seed'+i,w:900,h:1100})); renderDesignCard(id); };
+  window.__seedVideo  = (id) => { const d=ensureDesign(id); d.midias=[{type:'video',url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'seedvid'}]; renderDesignCard(id); };
+  window.__seedCarVideo = (id, n=3) => { const d=ensureDesign(id); d.midias=[...Array.from({length:n},(_,i)=>({type:'image',url:`https://picsum.photos/seed/z${id}-${i}/900/1100`,publicId:'seed'+i,w:900,h:1100})), {type:'video',url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'seedvid'}]; renderDesignCard(id); };
+  window.__seedGrade = (items) => { gradeItems = items; renderDesignCards(); };
+  window.__seedLegacy = (id, nImg=2, comVideo=true) => { designData.itens[id]={ imagens:Array.from({length:nImg},(_,i)=>({url:`https://picsum.photos/seed/L${id}-${i}/900/1100`,publicId:'L'+i})), video: comVideo?{url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'Lvid'}:null, statusDesign:'', comentarioDesign:'' }; renderDesignCard(id); };
 }
 
 // ── Upload / validação / envio ────────────────────────────────────────────────
@@ -2404,21 +2443,21 @@ window.onDesignFiles=async function(id,input){
     if(prog) prog.textContent=`Enviando ${ok+1}/${files.length}...`;
     try{
       const r=await uploadCloudinary(f);
-      if(r.resource_type==='video') d.video={ url:r.url, publicId:r.publicId };
-      else d.imagens.push({ url:r.url, publicId:r.publicId, w:r.w, h:r.h });
+      if(r.resource_type==='video') d.midias.push({ type:'video', url:r.url, publicId:r.publicId });
+      else d.midias.push({ type:'image', url:r.url, publicId:r.publicId, w:r.w, h:r.h });
       ok++;
     }catch(e){ console.error(e); showToast('Falha ao enviar '+f.name); }
   }
   agendarSaveDesign(); renderDesignCard(id);
   if(ok) showToast(`✓ ${ok} arquivo(s) enviado(s)`);
 };
-window.removeDesignImg=function(id,i){ const d=ensureDesign(id); d.imagens.splice(i,1); agendarSaveDesign(); renderDesignCard(id); };
-window.removeDesignVideo=function(id){ const d=ensureDesign(id); d.video=null; agendarSaveDesign(); renderDesignCard(id); };
+window.removeDesignMidia=function(id,i){ const d=ensureDesign(id); (d.midias||[]).splice(i,1); agendarSaveDesign(); renderDesignCard(id); };
+window.moveDesignMidia=function(id,i,dir){ const d=ensureDesign(id); const m=d.midias||[]; const j=i+dir; if(j<0||j>=m.length) return; [m[i],m[j]]=[m[j],m[i]]; carouselIdx[carKey(id,'ig')]=0; carouselIdx[carKey(id,'li')]=0; agendarSaveDesign(); renderDesignCard(id); };
 window.setDesignStatus=function(id,val){ const d=ensureDesign(id); d.statusDesign=(d.statusDesign===val?'':val); agendarSaveDesign(); renderDesignCard(id); };
 window.updateDesignComment=function(id,el){ const d=ensureDesign(id); d.comentarioDesign=el.value; agendarSaveDesign(); };
 window.enviarDesign=function(id){
   const d=ensureDesign(id);
-  if(!(d.imagens||[]).length && !d.video){ showToast('Suba ao menos uma arte antes de enviar.'); return; }
+  if(!desMidias(d).length){ showToast('Suba ao menos uma arte antes de enviar.'); return; }
   d.enviadoEm=new Date().toISOString(); d.enviadoPor=USER_EMAIL||ROLE;
   if(!d.statusDesign) d.statusDesign='em_analise';
   agendarSaveDesign(); renderDesignCard(id);
@@ -3034,7 +3073,7 @@ function zaQuery(id){
   if(id==='met-evolucao') return zaBot(zaEvolucao());
   if(id==='copy-ler'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cp=c.copy[it.id]; if(cp&&(cp.legenda||cp.reels||(cp.slides&&cp.slides.some(s=>s.texto)))) p.push({c,it}); })); return zaBot(p.length?'📖 Escolha o texto para abrir:':'Nenhum texto de copy preenchido ainda.', p.length?p.slice(0,14).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':copy'})):null); }
   if(id==='copy-comentarios'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const n=((c.copy[it.id]||{}).comentarios||[]).filter(x=>!x.resolvido).length; if(n) out.push({c,it,n}); })); return zaBot(out.length?'💬 Textos com comentário seu — toque para abrir:':'💬 Você não tem comentários abertos nos textos.', out.length?out.slice(0,14).map(m=>({lbl:`${m.it.titulo} (${m.n})`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':copy'})):null); }
-  if(id==='des-ver'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]; if(d&&((d.imagens&&d.imagens.length)||d.video||d.enviadoEm)) p.push({c,it}); })); return zaBot(p.length?'📖 Escolha a arte para ver:':'Nenhuma arte enviada ainda.', p.length?p.slice(0,14).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':design'})):null); }
+  if(id==='des-ver'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]; if(d&&(desMidias(d).length||d.enviadoEm)) p.push({c,it}); })); return zaBot(p.length?'📖 Escolha a arte para ver:':'Nenhuma arte enviada ainda.', p.length?p.slice(0,14).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':design'})):null); }
   if(id==='des-comentarios'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cm=((c.design[it.id]||{}).comentarioDesign||'').trim(); if(cm) out.push({c,it}); })); return zaBot(out.length?'💬 Artes com comentário seu — toque para abrir:':'💬 Você não deixou comentários nas artes.', out.length?out.slice(0,14).map(m=>({lbl:`${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':design'})):null); }
   if(id==='db-posicionamento') return zaBot(`📍 **Posicionamento**\n${v(E.identidade.posicionamento)}`);
   if(id==='db-publico')        return zaBot(`👥 **Público-alvo**\n${v(E.publicoAlvo.descricao)}`);
@@ -3056,7 +3095,7 @@ function zaQuery(id){
   if(id==='des-prontas'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]||{}; if(d.enviadoEm&&d.statusDesign!=='aprovado') out.push(`• ${it.data||''} ${it.titulo} — ${c.periodo}`); })); return zaBot(out.length?'🖼️ **Artes enviadas aguardando validação:**\n'+out.join('\n'):'Nenhuma arte enviada aguardando validação.'); }
   if(id==='des-falta') return zaFalta();
   if(id==='des-ajuste'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ if((c.design[it.id]||{}).statusDesign==='ajustes_necessarios') out.push(`• ${it.data||''} ${it.titulo} — ${c.periodo}`); })); return zaBot(out.length?'✏️ **Artes que você pediu ajuste:**\n'+out.join('\n'):'Nenhuma arte marcada como "ajustes necessários".'); }
-  if(id==='des-validar'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]||{}; if((d.enviadoEm||(d.imagens&&d.imagens.length)||d.video)&&d.statusDesign!=='aprovado') p.push({c,it}); })); return zaBot(p.length?'👍 Escolha a arte para validar:':'✅ Nenhuma arte pendente de validação.', p.length?p.slice(0,12).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'valdesign:'+m.c.idx+':'+m.it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
+  if(id==='des-validar'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]||{}; if((d.enviadoEm||desMidias(d).length)&&d.statusDesign!=='aprovado') p.push({c,it}); })); return zaBot(p.length?'👍 Escolha a arte para validar:':'✅ Nenhuma arte pendente de validação.', p.length?p.slice(0,12).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'valdesign:'+m.c.idx+':'+m.it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
 
   if(id==='met-resumo')    return zaBot(zaResumoMetricas(null));
   if(id==='met-instagram') return zaBot(zaResumoMetricas('instagram'));
