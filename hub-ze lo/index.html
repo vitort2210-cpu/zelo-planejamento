@@ -542,6 +542,8 @@ mark.cmt:hover{background:#f6d9c4}
 .enviar-btn{font-size:12px;font-weight:700;padding:9px 16px;border-radius:8px;border:none;background:var(--z-teal);color:#fff;cursor:pointer;font-family:inherit;transition:background .15s}
 .enviar-btn:hover{background:#0A6870}
 .enviado-tag{font-size:11px;font-weight:600;color:#1B6B3A}
+.avisar-btn{margin-left:auto;font-size:12px;font-weight:700;padding:9px 15px;border-radius:8px;border:none;background:var(--z-terra);color:#fff;cursor:pointer;font-family:inherit;transition:filter .15s;white-space:nowrap}
+.avisar-btn:hover{filter:brightness(1.06)}
 .gd-chip.on.em_analise{background:var(--z-teal-light);border-color:var(--z-teal);color:var(--z-teal)}
 .gd-chip.on.ajustes_necessarios{background:#FBF6E8;border-color:var(--z-ocre-dark);color:var(--z-ocre-dark)}
 
@@ -1176,10 +1178,17 @@ function renderPlanIframe() {
         <span class="cycle-open-nome">${esc(p.periodo || '')}</span>
         <span class="cycle-open-modo">${modoLbl}</span>
       </div>
+      ${planOpen.mode === 'edit' ? `<button class="avisar-btn" onclick="avisarPlanCiclo(${planOpen.idx})">🔔 Avisar a Gabi</button>` : ''}
       <a class="plan-newtab" href="${esc(src)}" target="_blank" title="Abrir em nova aba">↗</a>
     </div>
     <div class="plan-iframe-wrap"><iframe class="plan-iframe" src="${esc(src)}" title="Planejamento — ${esc(p.periodo || '')}"></iframe></div>`;
 }
+// Planejamento: avisa a Gabi que a grade do ciclo está pronta para validação (um aviso).
+window.avisarPlanCiclo = function(idx) {
+  const p = (estado.planejamentos || [])[idx] || {};
+  notificarNovidades('Planejamento', ['Grade do ciclo pronta para validação'], p.periodo || '');
+  showToast('🔔 A Gabi foi avisada sobre o planejamento deste ciclo.');
+};
 window.abrirPlan = function(idx, mode) { planOpen = { idx, mode }; renderTabContent(); window.scrollTo(0, 0); };
 window.voltarPlan = function() { planOpen = null; renderTabContent(); window.scrollTo(0, 0); };
 
@@ -1824,7 +1833,7 @@ function defaultCopy(id) {
   return {
     isVideo: !!(it && /reels/i.test(it.formato || '')),
     direcionamento:'', materiais:'', slides:[{texto:''}], reels:'',
-    legenda:'', blog:'', statusCopy:'', statusArte:'', statusGabi:'', comentarios:[]
+    legenda:'', blog:'', statusCopy:'', statusArte:'', statusGabi:'', comentarios:[], notificadoEm:''
   };
 }
 function normalizeCopy(c) {
@@ -1952,13 +1961,15 @@ function buildCopyTab() {
   const modoLbl = copyMode === 'edit' ? '✏ Edição' : (ehCliente() ? '👁 Validação' : '👁 Visualização');
   const impBtn = (copyMode === 'edit' && ROLE === 'editor')
     ? `<button class="copy-imp-btn" onclick="abrirImportCopy()">⬆ Importar copy (JSON)</button>` : '';
+  const avisarBtn = (copyMode === 'edit' && ROLE === 'editor')
+    ? `<button class="avisar-btn" onclick="avisarCopyCiclo()">🔔 Avisar a Gabi das novidades</button>` : '';
   const bar = `<div class="cycle-open-bar">
       <button class="back-ciclos" onclick="voltarCiclosCopy()">← Voltar aos ciclos</button>
       <div class="cycle-open-info">
         <span class="cycle-open-nome">${esc(cur.periodo||'')}</span>
         <span class="cycle-open-modo">${modoLbl}</span>
       </div>
-      ${impBtn}
+      ${impBtn}${avisarBtn}
     </div>`;
   const hint = (copyMode === 'valida' && ehCliente())
     ? `<div class="copy-hint"><strong>Selecione qualquer trecho</strong> de um texto para comentar exatamente o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`
@@ -1970,6 +1981,23 @@ function buildCopyTab() {
   cont.innerHTML = `${bar}${hint}<div id="copy-cards"></div>`;
   renderCopyCards();
 }
+// Copy: avisa a Gabi de uma vez sobre os textos novos (com conteúdo, não aprovados
+// e ainda não avisados). Uma notificação só.
+window.avisarCopyCiclo = function() {
+  const novos=[];
+  (gradeItems||[]).forEach(it=>{
+    const c=copyData.itens[it.id]; if(!c) return;
+    const temTexto = c.legenda||c.reels||c.blog||(Array.isArray(c.slides)&&c.slides.some(s=>s.texto));
+    if(temTexto && c.statusGabi!=='aprovado' && !c.notificadoEm){
+      c.notificadoEm=new Date().toISOString();
+      novos.push(`${it.data||''} — ${it.titulo||'(sem título)'}`);
+    }
+  });
+  if(!novos.length){ showToast('Nenhum texto novo para avisar (tudo já avisado ou aprovado).'); return; }
+  agendarSaveCopy();
+  notificarNovidades('Copy', novos);
+  showToast(`🔔 ${novos.length} texto(s) — a Gabi foi avisada uma vez.`);
+};
 
 function renderCopyCards() {
   const cont = document.getElementById('copy-cards');
@@ -2232,7 +2260,7 @@ document.addEventListener('mousedown', (e) => {
 // ══════════════════════════════════════════════════════════════════════════════
 // ABA DESIGN — upload (Cloudinary) + preview IG/LinkedIn + validação + notificação
 // ══════════════════════════════════════════════════════════════════════════════
-function defaultDesign(){ return { midias:[], statusDesign:'', comentarioDesign:'', enviadoEm:'', enviadoPor:'' }; }
+function defaultDesign(){ return { midias:[], statusDesign:'', comentarioDesign:'', enviadoEm:'', enviadoPor:'', notificadoEm:'' }; }
 // Mídias ordenadas: [{type:'image'|'video', url, publicId, w?, h?}]. Lê o formato
 // antigo ({imagens:[], video:{}}) sem mutar — imagens na ordem + vídeo ao final.
 function desMidias(d){
@@ -2313,15 +2341,18 @@ function buildDesignTab(){
   const plist=estado.planejamentos||[];
   const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
   const modoLbl = designMode==='edit' ? '✏ Subir / Editar' : (ehCliente()?'👁 Validação':'👁 Visualização');
+  const avisarBtn = (designMode==='edit' && podeSubirDesign())
+    ? `<button class="avisar-btn" onclick="enviarDesignCiclo()">🔔 Avisar a Gabi das novidades</button>` : '';
   const bar = `<div class="cycle-open-bar">
       <button class="back-ciclos" onclick="voltarCiclosDesign()">← Voltar aos ciclos</button>
       <div class="cycle-open-info">
         <span class="cycle-open-nome">${esc(cur.periodo||'')}</span>
         <span class="cycle-open-modo">${modoLbl}</span>
       </div>
+      ${avisarBtn}
     </div>`;
   const hint = designMode==='edit'
-    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 Suba as artes de cada conteúdo. Ao terminar um material, clique <strong>Enviar para validação</strong> — Vitor e Gabi são avisados.</div>`
+    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 Suba as artes de cada conteúdo (salvam sozinhas). Quando terminar, clique <strong>🔔 Avisar a Gabi das novidades</strong> uma vez — ela recebe <strong>um</strong> aviso com tudo, não um por arte.</div>`
     : `<div class="copy-hint">Acompanhe e valide as artes enviadas pela equipe de design.</div>`;
   cont.innerHTML=`${bar}${hint}<div id="design-cards"></div>`;
   renderDesignCards();
@@ -2400,7 +2431,7 @@ function designCardInner(it,d){
   const previews=`<div class="prev-grid">${carouselHTML(it.id,'ig',d)}${carouselHTML(it.id,'li',d)}</div>`;
   if(designMode==='edit'){
     const upload=uploadAreaHTML(it.id,d);
-    const enviar=`<div class="enviar-row"><button class="enviar-btn" onclick="enviarDesign(${it.id})">✅ Enviar para validação</button>${d.enviadoEm?`<span class="enviado-tag">✓ enviado</span>`:''}</div>`;
+    const enviar = d.enviadoEm ? `<div class="enviar-row"><span class="enviado-tag">✓ enviado para validação</span></div>` : '';
     return header+upload+previews+enviar;
   }
   const validacao=podeValidarDesign()
@@ -2448,6 +2479,7 @@ window.onDesignFiles=async function(id,input){
       const r=await uploadCloudinary(f);
       if(r.resource_type==='video') d.midias.push({ type:'video', url:r.url, publicId:r.publicId });
       else d.midias.push({ type:'image', url:r.url, publicId:r.publicId, w:r.w, h:r.h });
+      d.notificadoEm=''; // arte nova/alterada volta a contar como novidade
       ok++;
     }catch(e){ console.error(e); showToast('Falha ao enviar '+f.name); }
   }
@@ -2458,21 +2490,13 @@ window.removeDesignMidia=function(id,i){ const d=ensureDesign(id); (d.midias||[]
 window.moveDesignMidia=function(id,i,dir){ const d=ensureDesign(id); const m=d.midias||[]; const j=i+dir; if(j<0||j>=m.length) return; [m[i],m[j]]=[m[j],m[i]]; carouselIdx[carKey(id,'ig')]=0; carouselIdx[carKey(id,'li')]=0; agendarSaveDesign(); renderDesignCard(id); };
 window.setDesignStatus=function(id,val){ const d=ensureDesign(id); d.statusDesign=(d.statusDesign===val?'':val); agendarSaveDesign(); renderDesignCard(id); };
 window.updateDesignComment=function(id,el){ const d=ensureDesign(id); d.comentarioDesign=el.value; agendarSaveDesign(); };
-window.enviarDesign=function(id){
-  const d=ensureDesign(id);
-  if(!desMidias(d).length){ showToast('Suba ao menos uma arte antes de enviar.'); return; }
-  d.enviadoEm=new Date().toISOString(); d.enviadoPor=USER_EMAIL||ROLE;
-  if(!d.statusDesign) d.statusDesign='em_analise';
-  agendarSaveDesign(); renderDesignCard(id);
-  const it=gradeItems.find(x=>x.id===id)||{};
-  notificarDesign(it);
-  showToast('Enviado para validação! Vitor e Gabi serão avisados.');
-};
-async function notificarDesign(it){
-  const ciclo=(estado.planejamentos||[]).find(p=>cicloDocId(p)===copyCiclo)?.periodo || copyCiclo || '';
-  const quem=USER_EMAIL||'equipe de design';
-  const item=`${it.data||''} — ${it.titulo||'(sem título)'}`;
+// Envia UM email consolidado com a lista (não mais um por item). Reusado por
+// Conteúdos, Copy e Planejamento. area = rótulo; lista = array de strings.
+async function notificarNovidades(area, lista, cicloPeriodo){
+  const ciclo = cicloPeriodo || (estado.planejamentos||[]).find(p=>cicloDocId(p)===copyCiclo)?.periodo || copyCiclo || '';
+  const quem=USER_EMAIL||ROLE||'equipe';
   const link=location.href.split('?')[0];
+  const item=`${area} — ${lista.length} item(ns) para validação:\n`+lista.map(s=>'• '+s).join('\n');
   try{
     if(window.emailjs && EMAILJS_SERVICE && EMAILJS_TEMPLATE && EMAILJS_PUBLIC){
       for(const to of NOTIFY_EMAILS){
@@ -2480,15 +2504,30 @@ async function notificarDesign(it){
       }
     }
   }catch(e){ console.warn('Falha ao notificar por email', e); }
-  const msg=`Nova arte para validação%0A${item}%0ACiclo: ${ciclo}%0APor: ${quem}%0A${link}`;
+  const msg=`Novidades para validação (${area})%0ACiclo: ${ciclo}%0A${lista.map(s=>'• '+s).join('%0A')}%0A${link}`;
   for(const a of WHATSAPP_ALVOS){
-    try{
-      if(a.phone && a.apikey){
-        await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(a.phone)}&text=${msg}&apikey=${encodeURIComponent(a.apikey)}`, { mode:'no-cors' });
-      }
-    }catch(e){ console.warn('Falha ao notificar por WhatsApp', e); }
+    try{ if(a.phone && a.apikey){ await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(a.phone)}&text=${msg}&apikey=${encodeURIComponent(a.apikey)}`, { mode:'no-cors' }); } }catch(e){}
   }
 }
+// Conteúdos: envia de uma vez todas as artes novas (com mídia, não aprovadas e
+// ainda não avisadas). Uma notificação só, não uma por arte.
+window.enviarDesignCiclo=function(){
+  const novos=[];
+  (gradeItems||[]).forEach(it=>{
+    const d=ensureDesign(it.id);
+    if(desMidias(d).length && d.statusDesign!=='aprovado' && !d.notificadoEm){
+      if(!d.enviadoEm) d.enviadoEm=new Date().toISOString();
+      d.enviadoPor=USER_EMAIL||ROLE;
+      if(!d.statusDesign) d.statusDesign='em_analise';
+      d.notificadoEm=new Date().toISOString();
+      novos.push(`${it.data||''} — ${it.titulo||'(sem título)'}`);
+    }
+  });
+  if(!novos.length){ showToast('Nenhuma novidade — tudo já foi enviado ou aprovado.'); return; }
+  agendarSaveDesign(); renderDesignCards();
+  notificarNovidades('Conteúdos', novos);
+  showToast(`🔔 ${novos.length} conteúdo(s) enviado(s). A Gabi foi avisada uma vez.`);
+};
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ABA MÉTRICAS — dashboard manual (números-destaque + evolução por plataforma)
