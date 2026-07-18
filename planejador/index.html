@@ -729,9 +729,9 @@ function buildChecklist() {
   document.getElementById('d-bars-fmt').innerHTML = hf;
   const quadros = [
     {label:"O que a Zelo pensa sobre", ok:items.some(c=>c.pilar==="Quadro Mensal"&&c.formato==="Blog Post")},
-    {label:"Aprendendo com o brincar", ok:items.some(c=>c.titulo.toLowerCase().includes("brincar")&&c.formato==="Reels")},
-    {label:"TBT da Zelo", ok:items.some(c=>c.pilar==="Quadro Mensal"&&c.formato==="Story")},
-    {label:"Mentes da PI", ok:items.some(c=>c.titulo.toLowerCase().includes("mentes"))},
+    {label:"Aprendendo com o brincar", ok:items.some(c=>c.pilar==="Aprendendo com o Brincar"||(c.titulo.toLowerCase().includes("brincar")&&c.formato==="Reels"))},
+    {label:"TBT da Zelo", ok:items.some(c=>c.pilar==="TBT da Zelo"||(c.pilar==="Quadro Mensal"&&c.formato==="Story"))},
+    {label:"Mentes da PI", ok:items.some(c=>c.pilar==="Mentes da Primeira Infância"||c.titulo.toLowerCase().includes("mentes"))},
     {label:"Collab (mín. 1)", ok:items.filter(c=>c.pilar==="Collab").length>=1},
     {label:"Blog Post (mín. 1)", ok:items.filter(c=>c.formato==="Blog Post").length>=1}
   ];
