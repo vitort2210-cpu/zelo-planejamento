@@ -6,6 +6,16 @@
 // Falha graciosamente (exit 0) se os segredos ainda não estiverem configurados,
 // para não deixar o workflow vermelho antes do setup.
 import admin from 'firebase-admin';
+import fs from 'node:fs';
+
+// Escreve um resumo visível na página do run (Actions → run → Summary), para dar
+// para conferir o que aconteceu sem abrir os logs.
+const sum = (t) => {
+  console.log(t);
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    try { fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, t + '\n'); } catch {}
+  }
+};
 
 const CLIENT_ID   = 'ze lo';
 const DIAS_AVISO  = parseInt(process.env.DIAS_AVISO || '14', 10); // 2 semanas
@@ -20,7 +30,7 @@ const EMAILJS = {
   privateKey: process.env.EMAILJS_PRIVATE_KEY || '',
 };
 
-const fim = (msg) => { console.log(msg); process.exit(0); };
+const fim = (msg) => { sum(msg); process.exit(0); };
 
 const saJson = process.env.FIREBASE_SERVICE_ACCOUNT;
 if (!saJson) fim('FIREBASE_SERVICE_ACCOUNT ausente — configure o segredo para ativar o lembrete.');
@@ -84,9 +94,9 @@ async function run() {
     corpo += `⚠️ Atrasados (data já passou, arte não aprovada):\n`
       + atrasados.map((x) => `• ${x.linha} — há ${-x.dias} dia(s)`).join('\n');
 
-  console.log('--- Resumo ---\n' + corpo);
+  sum(`### Lembrete de prazo\n${proximos.length} próximo(s), ${atrasados.length} atrasado(s).\n\n\`\`\`\n${corpo}\n\`\`\``);
 
-  if (!EMAILJS.privateKey) fim('EMAILJS_PRIVATE_KEY ausente — resumo gerado, mas email não enviado.');
+  if (!EMAILJS.privateKey) fim('⚠️ EMAILJS_PRIVATE_KEY ausente — resumo gerado, mas email NÃO enviado.');
 
   for (const destino of DESTINOS) {
     const res = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
@@ -106,8 +116,8 @@ async function run() {
         },
       }),
     });
-    console.log(`Email -> ${destino}: HTTP ${res.status}`);
-    if (!res.ok) console.log(await res.text());
+    const txt = res.ok ? '' : ' — ' + (await res.text());
+    sum(`📧 Email → ${destino}: HTTP ${res.status}${res.ok ? ' ✅' : ' ❌' + txt}`);
   }
 }
 
