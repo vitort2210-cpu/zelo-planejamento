@@ -2560,6 +2560,10 @@ async function salvarMetricas(){
 }
 // helpers
 function snapsSorted(){ return (metricasData.snapshots||[]).slice().sort((a,b)=>(a.mesRef||'').localeCompare(b.mesRef||'')); }
+// Ano de um snapshot vem do mesRef ("2026-07" → 2026). Métricas mensais são
+// agrupadas pelo ano ativo (seletor no topo da aba), como Planejamento/Copy/Conteúdos.
+function anoDoMes(ref){ const y=parseInt(String(ref||'').slice(0,4),10); return isNaN(y)?null:y; }
+function snapsAno(){ return snapsSorted().filter(s=>anoDoMes(s.mesRef)===anoAtivo); }
 function mesLabel(ref){ if(!ref) return ''; const [y,m]=ref.split('-'); return (MESES_ABR[(+m)-1]||'')+'/'+(y||'').slice(2); }
 function shortNum(v){ v=Number(v)||0; if(Math.abs(v)>=1000) return (v/1000).toLocaleString('pt-BR',{maximumFractionDigits:1})+'k'; return String(v); }
 function fmtMetric(v, fmt){
@@ -2586,7 +2590,7 @@ function valorMetrica(snap, plat, field){
   return (po[field.k]===undefined)?'':po[field.k];
 }
 function heroCards(plat){
-  const cfg=METRICAS_CONFIG[plat]; const snaps=snapsSorted();
+  const cfg=METRICAS_CONFIG[plat]; const snaps=snapsAno();
   const cur=snaps[snaps.length-1]||null; const prev=snaps[snaps.length-2]||null;
   return allCampos(plat).map(f=>{
     const cv=cur?valorMetrica(cur,plat,f):''; const pv=prev?valorMetrica(prev,plat,f):'';
@@ -2599,8 +2603,8 @@ function heroCards(plat){
 }
 function chartSVG(plat){
   const cfg=METRICAS_CONFIG[plat]; const key=metricaChartKey(plat); const field=allCampos(plat).find(f=>f.k===key)||allCampos(plat)[0];
-  const snaps=snapsSorted(); const data=snaps.map(s=>({ label:mesLabel(s.mesRef), value:Number(valorMetrica(s,plat,field))||0 }));
-  if(!data.length) return '<div class="mx-empty">Sem dados para exibir. Adicione um mês em "Dados".</div>';
+  const snaps=snapsAno(); const data=snaps.map(s=>({ label:mesLabel(s.mesRef), value:Number(valorMetrica(s,plat,field))||0 }));
+  if(!data.length) return `<div class="mx-empty">Sem dados de ${anoAtivo} para exibir. Adicione um mês em "Dados".</div>`;
   const W=360,H=180,padX=14,top=16,bottom=24; const max=Math.max(1,...data.map(d=>d.value));
   const n=data.length, gap=n>1?8:0; const bw=Math.max(6,(W-padX*2-gap*(n-1))/n);
   let out='';
@@ -2613,7 +2617,7 @@ function chartSVG(plat){
   return `<svg viewBox="0 0 ${W} ${H}" class="mx-chart" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Evolução de ${esc(field.lbl)}">${out}</svg>`;
 }
 function tabelaDados(plat){
-  const cfg=METRICAS_CONFIG[plat]; const snaps=snapsSorted();
+  const cfg=METRICAS_CONFIG[plat]; const snaps=snapsAno();
   const header=`<tr><th>Mês</th>${cfg.campos.map(f=>`<th>${f.lbl}</th>`).join('')}<th></th></tr>`;
   const rows=snaps.map(s=>`<tr>
       <td><input type="month" value="${esc(s.mesRef||'')}" onchange="updateMesRef('${s.id}',this.value)"></td>
@@ -2630,7 +2634,15 @@ function buildMetricasTab(){
     <button class="mx-gbtn${metricaGranularity==='mensal'?' on':''}" onclick="setGran('mensal')">📈 Mensal (contas)</button>
     <button class="mx-gbtn${metricaGranularity==='posts'?' on':''}" onclick="setGran('posts')">📄 Por conteúdo</button></div>`;
   if(metricaGranularity==='posts'){
-    cont.innerHTML=`${gran}<div id="metricas-body">${postsMetricasHTML()}</div>`;
+    // O ciclo carregado precisa ser do ano ativo; se não for, carrega o 1º do ano.
+    const lista=ciclosDoAno();
+    if(lista.length && !lista.some(({p})=>cicloDocId(p)===copyCiclo)){
+      const docId=cicloDocId(lista[0].p);
+      carregarCiclo(docId).then(()=>{ if(tabAtivo==='metricas'&&metricaGranularity==='posts') buildMetricasTab(); });
+      cont.innerHTML=`${anoBarHTML()}${gran}<div id="metricas-body"><p style="font-size:13px;color:var(--z-text-sec)">Carregando conteúdos de ${anoAtivo}…</p></div>`;
+      return;
+    }
+    cont.innerHTML=`${anoBarHTML()}${gran}<div id="metricas-body">${postsMetricasHTML()}</div>`;
     return;
   }
   const platBar=Object.keys(METRICAS_CONFIG).map(p=>`<button class="sub-btn${metricaPlat===p?' active':''}" onclick="setMetricaPlat('${p}')">${METRICAS_CONFIG[p].nome}</button>`).join('');
@@ -2641,8 +2653,8 @@ function buildMetricasTab(){
   if(metricaView==='dados' && podeEditarMetricas()){
     body=tabelaDados(metricaPlat);
   } else {
-    const snaps=snapsSorted(); const cur=snaps[snaps.length-1];
-    const ultima=cur?`Última atualização: <strong>${mesLabel(cur.mesRef)}</strong>`:'Nenhum dado ainda'+(podeEditarMetricas()?' — clique em "Dados" para adicionar.':'.');
+    const snaps=snapsAno(); const cur=snaps[snaps.length-1];
+    const ultima=cur?`Última atualização: <strong>${mesLabel(cur.mesRef)}</strong>`:`Nenhum dado de ${anoAtivo} ainda`+(podeEditarMetricas()?' — clique em "Dados" para adicionar.':'.');
     const chips=allCampos(metricaPlat).map(f=>`<button class="mx-mchip${metricaChartKey(metricaPlat)===f.k?' on':''}" onclick="setMetricaChart('${metricaPlat}','${f.k}')">${f.lbl}</button>`).join('');
     body=`<div class="mx-updated">${ultima}</div>
       <div class="mx-cards">${heroCards(metricaPlat)}</div>
@@ -2651,7 +2663,7 @@ function buildMetricasTab(){
         ${chartSVG(metricaPlat)}
       </div>`;
   }
-  cont.innerHTML=`${gran}<div class="sub-bar mx-platbar">${platBar}</div>${viewToggle}<div id="metricas-body">${body}</div>`;
+  cont.innerHTML=`${anoBarHTML()}${gran}<div class="sub-bar mx-platbar">${platBar}</div>${viewToggle}<div id="metricas-body">${body}</div>`;
 }
 
 // ── Métricas por conteúdo (puxadas da grade) ──────────────────────────────────
@@ -2662,7 +2674,7 @@ function calcEngPost(p){ const alc=Number(p.alcance); const inter=calcInteracoes
 function agendarSavePosts(){ const el=document.getElementById('save-status'); if(el){el.textContent='● Salvando...';el.classList.add('saving');} clearTimeout(postsSaveTimer); postsSaveTimer=setTimeout(salvarPosts,1000); }
 async function salvarPosts(){ if(!copyCiclo) return; try{ await setDoc(postsRef(copyCiclo),{itens:postsData.itens,updatedAt:new Date().toISOString()}); const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
 function postsMetricasHTML(){
-  const plist=estado.planejamentos||[];
+  const plist=ciclosDoAno().map(x=>x.p);
   const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
   const sel=plist.length>1
     ? `<select class="copy-cycle-sel" onchange="setPostsCiclo(this.value)">${plist.map(p=>`<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
@@ -2705,7 +2717,7 @@ function atualizaPostCalc(id){
 
 // handlers
 function newSnapId(){ return 's'+Date.now()+Math.floor(Math.random()*1000); }
-function defaultSnapshot(){ const s={ id:newSnapId(), mesRef:new Date().toISOString().slice(0,7) }; for(const p of Object.keys(METRICAS_CONFIG)) s[p]={}; return s; }
+function defaultSnapshot(){ const nowMes=new Date().toISOString().slice(0,7); const mesRef=(anoDoMes(nowMes)===anoAtivo)?nowMes:(anoAtivo+'-01'); const s={ id:newSnapId(), mesRef }; for(const p of Object.keys(METRICAS_CONFIG)) s[p]={}; return s; }
 window.addSnapshot=function(){ metricasData.snapshots.push(defaultSnapshot()); agendarSaveMetricas(); buildMetricasTab(); };
 window.removeSnapshot=function(id){ metricasData.snapshots=(metricasData.snapshots||[]).filter(s=>s.id!==id); agendarSaveMetricas(); buildMetricasTab(); };
 window.updateMesRef=function(id,val){ const s=(metricasData.snapshots||[]).find(x=>x.id===id); if(s)s.mesRef=val; agendarSaveMetricas(); };
@@ -2717,9 +2729,13 @@ window.updatePostMetrica=function(id,k,el){ const p=ensurePost(id); const v=el.v
 window.setPostsCiclo=function(docId){ carregarCiclo(docId).then(()=>{ if(tabAtivo==='metricas'&&metricaGranularity==='posts') buildMetricasTab(); }); };
 window.setGran=function(g){
   metricaGranularity=g;
-  if(g==='posts' && !gradeItems.length){
-    const docId=copyCiclo||cicloDocId((estado.planejamentos||[])[0]);
-    if(docId){ carregarCiclo(docId).then(()=>{ if(tabAtivo==='metricas') buildMetricasTab(); }); return; }
+  if(g==='posts'){
+    const lista=ciclosDoAno();
+    const jaOk = gradeItems.length && lista.some(({p})=>cicloDocId(p)===copyCiclo);
+    if(!jaOk && lista.length){
+      carregarCiclo(cicloDocId(lista[0].p)).then(()=>{ if(tabAtivo==='metricas') buildMetricasTab(); });
+      return;
+    }
   }
   buildMetricasTab();
 };
@@ -2729,6 +2745,14 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
       { id:'m1', mesRef:'2027-03', instagram:{seguidores:1820,alcance:9500,interacoes:640}, linkedin:{seguidores:410,impressoes:5200,interacoes:180}, site:{visitantes:1200,sessoes:1650,paginasSessao:2.3,duracaoMedia:'1m52s'} },
       { id:'m2', mesRef:'2027-04', instagram:{seguidores:1990,alcance:11200,interacoes:780}, linkedin:{seguidores:470,impressoes:6100,interacoes:220}, site:{visitantes:1450,sessoes:1980,paginasSessao:2.5,duracaoMedia:'2m05s'} },
       { id:'m3', mesRef:'2027-05', instagram:{seguidores:2240,alcance:13800,interacoes:960}, linkedin:{seguidores:520,impressoes:7300,interacoes:270}, site:{visitantes:1720,sessoes:2350,paginasSessao:2.7,duracaoMedia:'2m18s'} },
+    ]};
+    buildMetricasTab();
+  };
+  window.__seedMetricasAnos = () => {
+    metricasData = { snapshots:[
+      { id:'a26', mesRef:'2026-06', instagram:{seguidores:900,alcance:4000,interacoes:200} },
+      { id:'b26', mesRef:'2026-07', instagram:{seguidores:1100,alcance:5200,interacoes:260} },
+      { id:'a27', mesRef:'2027-05', instagram:{seguidores:2240,alcance:13800,interacoes:960} },
     ]};
     buildMetricasTab();
   };
