@@ -482,6 +482,15 @@ mark.cmt:hover{background:#f6d9c4}
 .copy-hint{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:10px;padding:10px 13px;margin-bottom:1.1rem;font-size:12px;color:var(--z-text);line-height:1.5}
 .copy-imp-btn{margin-left:auto;padding:8px 13px;font-size:12px;border-radius:8px;border:1px solid var(--z-terra);background:#fff;color:var(--z-terra);font-family:inherit;font-weight:600;cursor:pointer}
 .copy-imp-btn:hover{background:var(--z-terra-light)}
+/* Barra de formatação do copy (Unicode + emoji) */
+.fmtbar{position:sticky;top:8px;z-index:20;display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:#fff;border:1px solid var(--z-border);border-radius:10px;padding:7px 9px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.fmtb{min-width:30px;height:30px;padding:0 9px;border:1px solid var(--z-border);background:var(--z-bg);border-radius:7px;cursor:pointer;font-size:14px;font-family:inherit;color:var(--z-text);display:inline-flex;align-items:center;justify-content:center}
+.fmtb:hover{background:var(--z-teal-light);border-color:var(--z-teal)}
+.fmt-hint{font-size:11px;color:var(--z-text-sec);margin-left:auto}
+.fmt-emojis{flex-basis:100%;display:flex;flex-wrap:wrap;gap:2px;margin-top:6px;border-top:1px solid var(--z-border);padding-top:6px}
+.fmt-emo{width:32px;height:30px;border:none;background:none;cursor:pointer;font-size:18px;border-radius:6px;line-height:1}
+.fmt-emo:hover{background:var(--z-teal-light)}
+@media(max-width:620px){.fmt-hint{display:none}}
 .impc-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center;padding:16px}
 .impc-box{background:#fff;border-radius:12px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)}
 .impc-box h3{font-size:15px;color:var(--z-teal);margin:0 0 4px}
@@ -1978,7 +1987,8 @@ function buildCopyTab() {
     : (copyMode === 'valida')
     ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Pré-visualização da validação do cliente — somente leitura.</div>`
     : '';
-  cont.innerHTML = `${bar}${hint}<div id="copy-cards"></div>`;
+  const fmtbar = (copyMode === 'edit') ? copyFmtbarHTML() : '';
+  cont.innerHTML = `${bar}${hint}${fmtbar}<div id="copy-cards"></div>`;
   renderCopyCards();
 }
 // Copy: avisa a Gabi de uma vez sobre os textos novos (com conteúdo, não aprovados
@@ -1998,6 +2008,58 @@ window.avisarCopyCiclo = function() {
   notificarNovidades('Copy', novos);
   showToast(`🔔 ${novos.length} texto(s) — a Gabi foi avisada uma vez.`);
 };
+
+// ── Formatação do copy (Unicode + emoji) ──────────────────────────────────────
+// Negrito/itálico viram caracteres Unicode que sobrevivem ao colar no Instagram/
+// LinkedIn (legendas são texto puro). Mantém tudo como texto → não quebra os
+// comentários por posição da Gabi.
+const _cA=0x41,_cZ=0x5A,_ca=0x61,_cz=0x7A,_c0=0x30,_c9=0x39;
+function _toBold(ch){ const c=ch.codePointAt(0);
+  if(c>=_cA&&c<=_cZ) return String.fromCodePoint(0x1D5D4+(c-_cA));
+  if(c>=_ca&&c<=_cz) return String.fromCodePoint(0x1D5EE+(c-_ca));
+  if(c>=_c0&&c<=_c9) return String.fromCodePoint(0x1D7EC+(c-_c0));
+  return ch; }
+function _toItal(ch){ const c=ch.codePointAt(0);
+  if(c>=_cA&&c<=_cZ) return String.fromCodePoint(0x1D608+(c-_cA));
+  if(c>=_ca&&c<=_cz) return String.fromCodePoint(0x1D622+(c-_ca));
+  return ch; }
+function _unstyle(ch){ const c=ch.codePointAt(0);
+  if(c>=0x1D5D4&&c<=0x1D5ED) return String.fromCharCode(_cA+(c-0x1D5D4));
+  if(c>=0x1D5EE&&c<=0x1D607) return String.fromCharCode(_ca+(c-0x1D5EE));
+  if(c>=0x1D7EC&&c<=0x1D7F5) return String.fromCharCode(_c0+(c-0x1D7EC));
+  if(c>=0x1D608&&c<=0x1D621) return String.fromCharCode(_cA+(c-0x1D608));
+  if(c>=0x1D622&&c<=0x1D63B) return String.fromCharCode(_ca+(c-0x1D622));
+  return ch; }
+function _isBold(ch){ const c=ch.codePointAt(0); return (c>=0x1D5D4&&c<=0x1D607)||(c>=0x1D7EC&&c<=0x1D7F5); }
+function _isItal(ch){ const c=ch.codePointAt(0); return (c>=0x1D608&&c<=0x1D63B); }
+function copyFmtTarget(){ const ta=document.activeElement; return (ta&&ta.tagName==='TEXTAREA'&&ta.closest&&ta.closest('#copy-cards'))?ta:null; }
+function copyFmtCommit(ta,val,selA,selB){ ta.value=val; ta.focus(); ta.setSelectionRange(selA,selB); ta.dispatchEvent(new Event('input',{bubbles:true})); }
+window.fmtCopy=function(ev,kind){
+  ev.preventDefault();
+  const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; }
+  const s=ta.selectionStart, e=ta.selectionEnd, v=ta.value;
+  if(kind==='bullet'){ const ins=(s>0&&v[s-1]!=='\n')?'\n• ':'• '; copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+ins.length, s+ins.length); return; }
+  if(kind==='link'){ const url=(prompt('Cole o link (entra como texto — em legenda de rede social o link não fica clicável):')||'').trim(); if(!url) return; const pre=(s!==e)?v.slice(s,e)+' ':''; const ins=pre+url; copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+ins.length, s+ins.length); return; }
+  if(s===e){ showToast('Selecione o texto para aplicar negrito/itálico.'); return; }
+  const sel=[...v.slice(s,e)];
+  const jaTem = kind==='bold' ? sel.some(_isBold) : sel.some(_isItal);
+  const out = sel.map(ch=>{ const base=_unstyle(ch); return jaTem?base:(kind==='bold'?_toBold(base):_toItal(base)); }).join('');
+  copyFmtCommit(ta, v.slice(0,s)+out+v.slice(e), s, s+out.length);
+};
+window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'flex':'none'); };
+window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; } const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value; copyFmtCommit(ta, v.slice(0,s)+emo+v.slice(e), s+emo.length, s+emo.length); };
+const FMT_EMOJIS=['😀','🙂','😍','🥰','👍','👏','🙌','🎉','✨','🔥','💡','📌','📎','✅','⚠️','❤️','🧠','🧸','🎨','📚','🌱','👶','🤱','🏫','📈','📊','🗣️','👀','💬','🤝','🌍','♻️','➡️','⭐','📅','🙏'];
+function copyFmtbarHTML(){
+  return `<div class="fmtbar">
+    <button class="fmtb" title="Negrito (funciona ao colar no Instagram/LinkedIn)" onmousedown="fmtCopy(event,'bold')"><strong>N</strong></button>
+    <button class="fmtb" title="Itálico" onmousedown="fmtCopy(event,'italic')"><em style="font-family:Georgia,serif">I</em></button>
+    <button class="fmtb" title="Marcador (•)" onmousedown="fmtCopy(event,'bullet')">•</button>
+    <button class="fmtb" title="Inserir link (como texto)" onmousedown="fmtCopy(event,'link')">🔗</button>
+    <button class="fmtb" title="Emojis" onmousedown="fmtEmojiToggle(event)">😀</button>
+    <span class="fmt-hint">selecione o texto e clique em N / I</span>
+    <div class="fmt-emojis" id="fmt-emojis" style="display:none">${FMT_EMOJIS.map(e=>`<button type="button" class="fmt-emo" onmousedown="fmtEmoji(event,'${e}')">${e}</button>`).join('')}</div>
+  </div>`;
+}
 
 function renderCopyCards() {
   const cont = document.getElementById('copy-cards');
