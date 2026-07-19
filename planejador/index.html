@@ -447,6 +447,10 @@ function agendarSalvamento() {
 }
 
 async function salvarNoFirebase() {
+  // A coleção `planejamentos` tem escrita pública (o planejador standalone salva sem
+  // login). Por isso, NUNCA gravar a partir de localhost — senão testes locais
+  // sobrescrevem a grade real em produção.
+  if (['localhost','127.0.0.1'].includes(location.hostname)) { showToast('🔧 Modo local — não salva em produção'); return; }
   try {
     const contexto = {};
     for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); contexto[k] = el ? el.value : ''; }
