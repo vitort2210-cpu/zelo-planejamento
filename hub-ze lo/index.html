@@ -606,6 +606,19 @@ mark.cmt:hover{background:#f6d9c4}
 .pm-calc-card{background:var(--z-teal-light);border:1px solid rgba(17,128,140,.25);border-radius:10px;padding:9px 12px}
 .pm-calc-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--z-teal)}
 .pm-calc-val{font-size:20px;font-weight:800;color:var(--z-teal);letter-spacing:-.01em;margin-top:2px}
+.pm-calc-sub{font-size:10px;color:var(--z-text-sec);margin-top:2px}
+/* Resumo do ciclo */
+.rc-best{margin-top:.9rem;background:var(--z-ocre-light);border:1px solid var(--z-ocre);border-radius:10px;padding:11px 14px}
+.rc-best-lbl{font-size:11px;font-weight:700;color:var(--z-ocre-dark);margin-bottom:3px}
+.rc-best-body{display:flex;flex-direction:column;gap:2px}
+.rc-best-body strong{font-size:14px;color:var(--z-text)}
+.rc-best-body span{font-size:12px;color:var(--z-text-sec)}
+.rc-manual{margin-top:1rem;border:1px solid var(--z-border);border-radius:10px;padding:12px 14px}
+.rc-manual-title{font-size:12px;font-weight:700;color:var(--z-teal);margin-bottom:8px}
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rc-field label{display:block;font-size:11px;font-weight:600;color:var(--z-text-sec);margin-bottom:4px}
+.rc-field input{width:100%;padding:8px 10px;border:1px solid var(--z-border);border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box}
+@media(max-width:520px){.rc-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -717,15 +730,18 @@ function allCampos(plat){ const c=METRICAS_CONFIG[plat]; return c.campos.concat(
 // Métricas por conteúdo (por formato)
 const POST_METRICAS = {
   social: [ {k:'alcance',lbl:'Alcance / Views',fmt:'int'}, {k:'curtidas',lbl:'Curtidas',fmt:'int'}, {k:'comentarios',lbl:'Comentários',fmt:'int'}, {k:'salvamentos',lbl:'Salvamentos',fmt:'int'}, {k:'compartilhamentos',lbl:'Compart.',fmt:'int'} ],
+  story:  [ {k:'visualizacoes',lbl:'Visualizações',fmt:'int'}, {k:'interacoes',lbl:'Interações',fmt:'int'}, {k:'atividadePerfil',lbl:'Atividade do perfil',fmt:'int'} ],
   blog:   [ {k:'visualizacoes',lbl:'Visualizações',fmt:'int'}, {k:'tempoLeitura',lbl:'Tempo médio',fmt:'text'}, {k:'origem',lbl:'Origem principal',fmt:'text'} ],
 };
-function tipoPost(it){ return /blog/i.test((it&&it.formato)||'') ? 'blog' : 'social'; }
+// Story tem métricas próprias (views/interações/atividade do perfil); blog tem as de
+// artigo; o resto é social (alcance + curtidas/coment./salv./compart.).
+function tipoPost(it){ const f=(it&&it.formato)||''; if(/story/i.test(f)) return 'story'; if(/blog/i.test(f)) return 'blog'; return 'social'; }
 const MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
 // Estado de métricas por post (por ciclo)
-let postsData = { itens:{} };
+let postsData = { itens:{}, ciclo:{} };
 let postsUnsub = null;
 let postsSaveTimer = null;
-let metricaGranularity = 'mensal'; // 'mensal' | 'posts'
+let metricaGranularity = 'resumo'; // 'resumo' (resumo do ciclo) | 'posts' (por conteúdo)
 function postsRef(docId){ return doc(db, 'metricasPosts', CLIENT_ID + '__' + docId); }
 function cicloDocId(p){
   if(!p) return '';
@@ -1802,10 +1818,10 @@ async function carregarCiclo(docId) {
     const dsnap = await getDoc(designRef(docId));
     if (dsnap.exists()) designData = { itens: dsnap.data().itens || {} };
   } catch(e){ console.warn('Falha ao carregar design', e); }
-  postsData = { itens:{} };
+  postsData = { itens:{}, ciclo:{} };
   try {
     const psnap = await getDoc(postsRef(docId));
-    if (psnap.exists()) postsData = { itens: psnap.data().itens || {} };
+    if (psnap.exists()) postsData = { itens: psnap.data().itens || {}, ciclo: psnap.data().ciclo || {} };
   } catch(e){ console.warn('Falha ao carregar métricas por post', e); }
   if (copyUnsub) { copyUnsub(); copyUnsub = null; }
   copyUnsub = onSnapshot(copyRef(docId), (snap) => {
@@ -1828,8 +1844,8 @@ async function carregarCiclo(docId) {
   if (postsUnsub) { postsUnsub(); postsUnsub = null; }
   postsUnsub = onSnapshot(postsRef(docId), (snap) => {
     if (!snap.exists()) return;
-    postsData = { itens: snap.data().itens || {} };
-    if (tabAtivo === 'metricas' && metricaGranularity === 'posts' && document.getElementById('metricas-body')) {
+    postsData = { itens: snap.data().itens || {}, ciclo: snap.data().ciclo || {} };
+    if (tabAtivo === 'metricas' && document.getElementById('metricas-body')) {
       const ae = document.activeElement;
       if (!ae || !ae.closest || !ae.closest('#metricas-body')) buildMetricasTab();
     }
@@ -2693,39 +2709,18 @@ function tabelaDados(plat){
 function buildMetricasTab(){
   const cont=document.getElementById('tab-content'); if(!cont) return;
   const gran=`<div class="mx-granbar">
-    <button class="mx-gbtn${metricaGranularity==='mensal'?' on':''}" onclick="setGran('mensal')">📈 Mensal (contas)</button>
+    <button class="mx-gbtn${metricaGranularity==='resumo'?' on':''}" onclick="setGran('resumo')">📊 Resumo do ciclo</button>
     <button class="mx-gbtn${metricaGranularity==='posts'?' on':''}" onclick="setGran('posts')">📄 Por conteúdo</button></div>`;
-  if(metricaGranularity==='posts'){
-    // O ciclo carregado precisa ser do ano ativo; se não for, carrega o 1º do ano.
-    const lista=ciclosDoAno();
-    if(lista.length && !lista.some(({p})=>cicloDocId(p)===copyCiclo)){
-      const docId=cicloDocId(lista[0].p);
-      carregarCiclo(docId).then(()=>{ if(tabAtivo==='metricas'&&metricaGranularity==='posts') buildMetricasTab(); });
-      cont.innerHTML=`${anoBarHTML()}${gran}<div id="metricas-body"><p style="font-size:13px;color:var(--z-text-sec)">Carregando conteúdos de ${anoAtivo}…</p></div>`;
-      return;
-    }
-    cont.innerHTML=`${anoBarHTML()}${gran}<div id="metricas-body">${postsMetricasHTML()}</div>`;
+  // Os dois modos são por ciclo — garante um ciclo do ano ativo carregado.
+  const lista=ciclosDoAno();
+  if(lista.length && !lista.some(({p})=>cicloDocId(p)===copyCiclo)){
+    const docId=cicloDocId(lista[0].p);
+    carregarCiclo(docId).then(()=>{ if(tabAtivo==='metricas') buildMetricasTab(); });
+    cont.innerHTML=`${anoBarHTML()}${gran}<div id="metricas-body"><p style="font-size:13px;color:var(--z-text-sec)">Carregando ${anoAtivo}…</p></div>`;
     return;
   }
-  const platBar=Object.keys(METRICAS_CONFIG).map(p=>`<button class="sub-btn${metricaPlat===p?' active':''}" onclick="setMetricaPlat('${p}')">${METRICAS_CONFIG[p].nome}</button>`).join('');
-  const viewToggle=podeEditarMetricas()
-    ? `<div class="mx-viewtoggle"><button class="mx-vbtn${metricaView==='dash'?' on':''}" onclick="setMetricaView('dash')">📊 Dashboard</button><button class="mx-vbtn${metricaView==='dados'?' on':''}" onclick="setMetricaView('dados')">✏ Dados</button></div>`
-    : '';
-  let body;
-  if(metricaView==='dados' && podeEditarMetricas()){
-    body=tabelaDados(metricaPlat);
-  } else {
-    const snaps=snapsAno(); const cur=snaps[snaps.length-1];
-    const ultima=cur?`Última atualização: <strong>${mesLabel(cur.mesRef)}</strong>`:`Nenhum dado de ${anoAtivo} ainda`+(podeEditarMetricas()?' — clique em "Dados" para adicionar.':'.');
-    const chips=allCampos(metricaPlat).map(f=>`<button class="mx-mchip${metricaChartKey(metricaPlat)===f.k?' on':''}" onclick="setMetricaChart('${metricaPlat}','${f.k}')">${f.lbl}</button>`).join('');
-    body=`<div class="mx-updated">${ultima}</div>
-      <div class="mx-cards">${heroCards(metricaPlat)}</div>
-      <div class="mx-chartwrap">
-        <div class="mx-chart-head"><span class="mx-chart-title">Evolução mensal</span><div class="mx-mchips">${chips}</div></div>
-        ${chartSVG(metricaPlat)}
-      </div>`;
-  }
-  cont.innerHTML=`${anoBarHTML()}${gran}<div class="sub-bar mx-platbar">${platBar}</div>${viewToggle}<div id="metricas-body">${body}</div>`;
+  const body = (metricaGranularity==='posts') ? postsMetricasHTML() : resumoCicloHTML();
+  cont.innerHTML=`${anoBarHTML()}${gran}<div id="metricas-body">${body}</div>`;
 }
 
 // ── Métricas por conteúdo (puxadas da grade) ──────────────────────────────────
@@ -2733,8 +2728,26 @@ function getPost(id){ return postsData.itens[id] || {}; }
 function ensurePost(id){ if(!postsData.itens[id]) postsData.itens[id]={}; return postsData.itens[id]; }
 function calcInteracoes(p){ return ['curtidas','comentarios','salvamentos','compartilhamentos'].reduce((a,k)=>a+(Number(p[k])||0),0); }
 function calcEngPost(p){ const alc=Number(p.alcance); const inter=calcInteracoes(p); return alc>0?(inter/alc*100):null; }
+// Alcance/interações/engajamento cientes do tipo (social/story/blog).
+function postTipoById(id){ return tipoPost((gradeItems||[]).find(x=>x.id===id)); }
+function postAlcance(p,tipo){ return tipo==='social' ? (Number(p.alcance)||0) : (Number(p.visualizacoes)||0); }
+function postInteracoes(p,tipo){ if(tipo==='story') return Number(p.interacoes)||0; if(tipo==='blog') return 0; return calcInteracoes(p); }
+function postEng(p,tipo){ const a=postAlcance(p,tipo), i=postInteracoes(p,tipo); return a>0?(i/a*100):null; }
+// Agrega o desempenho dos conteúdos de um ciclo (base do "Resumo do ciclo").
+function agregarPosts(items, posts){
+  let alcance=0, inter=0, n=0, best=null;
+  (items||[]).forEach(it=>{
+    const p=(posts||{})[it.id]; if(!p) return;
+    const tipo=tipoPost(it); const a=postAlcance(p,tipo), i=postInteracoes(p,tipo);
+    if(!a && !i) return;
+    alcance+=a; inter+=i; n++;
+    const eng=a>0?(i/a*100):0;
+    if(!best || eng>best.eng) best={it,eng,alcance:a,inter:i};
+  });
+  return { alcance, inter, n, engMedio:(alcance>0?(inter/alcance*100):null), best };
+}
 function agendarSavePosts(){ const el=document.getElementById('save-status'); if(el){el.textContent='● Salvando...';el.classList.add('saving');} clearTimeout(postsSaveTimer); postsSaveTimer=setTimeout(salvarPosts,1000); }
-async function salvarPosts(){ if(!copyCiclo) return; try{ await setDoc(postsRef(copyCiclo),{itens:postsData.itens,updatedAt:new Date().toISOString()}); const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
+async function salvarPosts(){ if(!copyCiclo) return; try{ await setDoc(postsRef(copyCiclo),{itens:postsData.itens,ciclo:postsData.ciclo||{},updatedAt:new Date().toISOString()}); const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
 function postsMetricasHTML(){
   const plist=ciclosDoAno().map(x=>x.p);
   const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
@@ -2747,6 +2760,36 @@ function postsMetricasHTML(){
     : `<div class="mx-hint">Desempenho de cada conteúdo do ciclo.</div>`;
   return `<div class="copy-cycle-bar">${sel}</div>${hint}<div>${gradeItems.map(it=>postMetricaCard(it,getPost(it.id))).join('')}</div>`;
 }
+// Resumo do ciclo: totais/médias calculados do "Por conteúdo" + seguidores manuais.
+function resumoCicloHTML(){
+  const plist=ciclosDoAno().map(x=>x.p);
+  const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
+  const sel=plist.length>1
+    ? `<select class="copy-cycle-sel" onchange="setPostsCiclo(this.value)">${plist.map(p=>`<option value="${esc(cicloDocId(p))}"${cicloDocId(p)===copyCiclo?' selected':''}>${esc(p.periodo)}</option>`).join('')}</select>`
+    : `<span style="font-size:13px;font-weight:600;color:var(--z-teal)">${esc(cur.periodo||'')}</span>`;
+  const ag=agregarPosts(gradeItems, postsData.itens);
+  const cic=postsData.ciclo||{};
+  const podeEd=podeEditarMetricas();
+  const card=(lbl,val,auto)=>`<div class="mx-card${auto?' mx-card-calc':''}" style="border-top-color:var(--z-teal)"><div class="mx-card-lbl">${lbl}${auto?' <span class="mx-calc-tag">auto</span>':''}</div><div class="mx-card-val">${val}</div></div>`;
+  const cards=card('Alcance / Visualizações',fmtMetric(ag.alcance,'int'),true)
+    +card('Interações totais',fmtMetric(ag.inter,'int'),true)
+    +card('Engajamento médio',ag.engMedio==null?'—':fmtMetric(ag.engMedio,'pct'),true)
+    +card('Conteúdos com dados',String(ag.n),true);
+  const best=ag.best
+    ? `<div class="rc-best"><div class="rc-best-lbl">🏆 Melhor conteúdo (engajamento)</div><div class="rc-best-body"><strong>${esc(ag.best.it.data||'')} — ${esc(ag.best.it.titulo||'(sem título)')}</strong><span>${fmtMetric(ag.best.eng,'pct')} · ${fmtMetric(ag.best.alcance,'int')} alcance · ${fmtMetric(ag.best.inter,'int')} interações</span></div></div>`
+    : '';
+  const segField=(k,lbl,ph)=> podeEd
+    ? `<div class="rc-field"><label>${lbl}</label><input type="number" step="any" value="${esc(cic[k]??'')}" placeholder="${ph}" oninput="updateCicloMetrica('${k}',this)"></div>`
+    : `<div class="rc-field"><label>${lbl}</label><div class="pm-ro">${fmtMetric(cic[k],'int')}</div></div>`;
+  const hint=podeEd
+    ? `<div class="mx-hint">Calculado <strong>automaticamente</strong> a partir do que você preenche em <strong>Por conteúdo</strong>. Só os <strong>seguidores</strong> são informados à mão (não dá para deduzir dos posts).</div>`
+    : `<div class="mx-hint">Resumo do ciclo, a partir do desempenho de cada conteúdo.</div>`;
+  return `<div class="copy-cycle-bar">${sel}</div>${hint}
+    <div class="mx-cards">${cards}</div>
+    ${best}
+    <div class="rc-manual"><div class="rc-manual-title">👥 Seguidores</div><div class="rc-grid">${segField('seguidoresGanhos','Ganhos no ciclo','ex.: 120')}${segField('seguidoresTotal','Total no fim do ciclo','ex.: 1.320')}</div></div>`;
+}
+window.updateCicloMetrica=function(k,el){ if(!postsData.ciclo) postsData.ciclo={}; const v=el.value; postsData.ciclo[k]=(v===''?'':Number(v)); agendarSavePosts(); };
 function postMetricaCard(it,p){
   const tipo=tipoPost(it); const campos=POST_METRICAS[tipo];
   const cabec=`<div class="cc-head"><div class="cc-meta">
@@ -2763,18 +2806,23 @@ function postMetricaCard(it,p){
   }).join('');
   let calc='';
   if(tipo==='social'){
-    const inter=calcInteracoes(p); const eng=calcEngPost(p);
+    const inter=calcInteracoes(p); const eng=postEng(p,tipo);
     calc=`<div class="pm-calc">
       <div class="pm-calc-card"><div class="pm-calc-lbl">Interações</div><div class="pm-calc-val" id="pm-inter-${it.id}">${fmtMetric(inter,'int')}</div></div>
       <div class="pm-calc-card"><div class="pm-calc-lbl">Taxa de engajamento</div><div class="pm-calc-val" id="pm-eng-${it.id}">${eng==null?'—':fmtMetric(eng,'pct')}</div></div>
+    </div>`;
+  } else if(tipo==='story'){
+    const eng=postEng(p,tipo);
+    calc=`<div class="pm-calc">
+      <div class="pm-calc-card"><div class="pm-calc-lbl">Taxa de engajamento</div><div class="pm-calc-val" id="pm-eng-${it.id}">${eng==null?'—':fmtMetric(eng,'pct')}</div><div class="pm-calc-sub">interações ÷ visualizações</div></div>
     </div>`;
   }
   return `<div class="copy-card pm-card" id="pm-card-${it.id}">${cabec}<div class="pm-grid">${inputs}</div>${calc}</div>`;
 }
 function atualizaPostCalc(id){
-  const p=getPost(id); const inter=calcInteracoes(p); const eng=calcEngPost(p);
-  const ei=document.getElementById('pm-inter-'+id); if(ei) ei.textContent=fmtMetric(inter,'int');
-  const ee=document.getElementById('pm-eng-'+id); if(ee) ee.textContent=(eng==null?'—':fmtMetric(eng,'pct'));
+  const p=getPost(id); const tipo=postTipoById(id);
+  const ei=document.getElementById('pm-inter-'+id); if(ei) ei.textContent=fmtMetric(calcInteracoes(p),'int');
+  const eng=postEng(p,tipo); const ee=document.getElementById('pm-eng-'+id); if(ee) ee.textContent=(eng==null?'—':fmtMetric(eng,'pct'));
 }
 
 // handlers
@@ -2788,19 +2836,8 @@ window.setMetricaPlat=function(p){ metricaPlat=p; buildMetricasTab(); };
 window.setMetricaView=function(v){ metricaView=v; buildMetricasTab(); };
 window.setMetricaChart=function(plat,k){ metricaChart[plat]=k; buildMetricasTab(); };
 window.updatePostMetrica=function(id,k,el){ const p=ensurePost(id); const v=el.value; p[k]=(v===''?'':(el.type==='number'?Number(v):v)); agendarSavePosts(); atualizaPostCalc(id); };
-window.setPostsCiclo=function(docId){ carregarCiclo(docId).then(()=>{ if(tabAtivo==='metricas'&&metricaGranularity==='posts') buildMetricasTab(); }); };
-window.setGran=function(g){
-  metricaGranularity=g;
-  if(g==='posts'){
-    const lista=ciclosDoAno();
-    const jaOk = gradeItems.length && lista.some(({p})=>cicloDocId(p)===copyCiclo);
-    if(!jaOk && lista.length){
-      carregarCiclo(cicloDocId(lista[0].p)).then(()=>{ if(tabAtivo==='metricas') buildMetricasTab(); });
-      return;
-    }
-  }
-  buildMetricasTab();
-};
+window.setPostsCiclo=function(docId){ carregarCiclo(docId).then(()=>{ if(tabAtivo==='metricas') buildMetricasTab(); }); };
+window.setGran=function(g){ metricaGranularity=g; buildMetricasTab(); };
 if (['localhost','127.0.0.1'].includes(location.hostname)) {
   window.__seedMetricas = () => {
     metricasData = { snapshots:[
@@ -2822,8 +2859,8 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
     postsData = { itens:{
       1:{alcance:8200,curtidas:410,comentarios:38,salvamentos:120,compartilhamentos:64},
       2:{alcance:5400,curtidas:260,comentarios:19,salvamentos:70,compartilhamentos:31},
-      3:{alcance:12100,curtidas:640,comentarios:52,salvamentos:210,compartilhamentos:95},
-    }};
+      5:{visualizacoes:3400,interacoes:210,atividadePerfil:48},  // Story
+    }, ciclo:{ seguidoresGanhos:130, seguidoresTotal:1450 } };
     buildMetricasTab();
   };
 }
@@ -2861,7 +2898,7 @@ async function carregarTudoAssistente(){
     try{ const g=await getDoc(doc(db,'planejamentos',docId)); if(g.exists()){ const d=g.data(); c.items=Array.isArray(d.items)?d.items:[]; c.estados=d.estados||{}; } }catch(e){}
     try{ const cp=await getDoc(copyRef(docId)); if(cp.exists()) c.copy=cp.data().itens||{}; }catch(e){}
     try{ const dz=await getDoc(designRef(docId)); if(dz.exists()) c.design=dz.data().itens||{}; }catch(e){}
-    try{ const pp=await getDoc(postsRef(docId)); if(pp.exists()) c.posts=pp.data().itens||{}; }catch(e){}
+    try{ const pp=await getDoc(postsRef(docId)); if(pp.exists()){ c.posts=pp.data().itens||{}; c.metCiclo=pp.data().ciclo||{}; } }catch(e){}
     cycles.push(c);
   }
   try{ const ms=await getDoc(metricasRef); if(ms.exists()&&Array.isArray(ms.data().snapshots)) metricasData={ snapshots:ms.data().snapshots }; }catch(e){}
@@ -3004,22 +3041,16 @@ function zaFalta(){
   if(!linhas.length) return zaBot('Não há ciclos com conteúdos cadastrados ainda.');
   return zaBot('🗂️ Pendentes de aprovação (aba Conteúdos):\n\n'+linhas.join('\n'));
 }
-function zaResumoMetricas(plat){
-  const snaps=snapsSorted();
-  if(!snaps.length) return '📊 Ainda não há dados de métricas cadastrados. Peça ao Vitor para preencher a aba Métricas.';
-  const cur=snaps[snaps.length-1], prev=snaps[snaps.length-2]||null;
-  const plats = plat?[plat]:['instagram','linkedin','site'];
-  let out=`📊 Métricas — ${mesLabel(cur.mesRef)}${prev?` (vs. ${mesLabel(prev.mesRef)})`:''}:`;
-  plats.forEach(pl=>{
-    const cfg=METRICAS_CONFIG[pl]; const linhas=[];
-    allCampos(pl).forEach(f=>{
-      const cv=valorMetrica(cur,pl,f); if(cv===''||cv==null) return;
-      let s=`• ${f.lbl}: ${fmtMetric(cv,f.fmt)}`;
-      if(prev){ const pv=valorMetrica(prev,pl,f); if(pv!==''&&pv!=null&&!isNaN(pv)&&Number(pv)!==0){ const d=(Number(cv)-Number(pv))/Number(pv)*100; s+=` ${d>=0?'▲':'▼'} ${Math.abs(d).toLocaleString('pt-BR',{maximumFractionDigits:1})}%`; } }
-      linhas.push(s);
-    });
-    if(linhas.length) out+=`\n\n**${cfg.nome}**\n${linhas.join('\n')}`;
-  });
+// Resumo de métricas agregado do desempenho por conteúdo (do ano ativo). Substituiu
+// o resumo mensal por plataforma (agora é por ciclo/conteúdo).
+function zaResumoMetricas(){
+  const cy=zaCy(); let alcance=0, inter=0, n=0, segG=0, temSeg=false;
+  cy.forEach(c=>{ const ag=agregarPosts(c.items, c.posts); alcance+=ag.alcance; inter+=ag.inter; n+=ag.n;
+    const mc=c.metCiclo||{}; if(mc.seguidoresGanhos!=='' && mc.seguidoresGanhos!=null && !isNaN(Number(mc.seguidoresGanhos))){ segG+=Number(mc.seguidoresGanhos); temSeg=true; } });
+  if(!n && !temSeg) return `📊 Ainda não há métricas por conteúdo preenchidas em ${anoAtivo}. Preencha na aba **Métricas → Por conteúdo**.`;
+  const eng = alcance>0 ? (inter/alcance*100) : null;
+  let out=`📊 **Resumo de ${anoAtivo}** (dos conteúdos com dados):\n• Alcance / visualizações: **${fmtMetric(alcance,'int')}**\n• Interações: **${fmtMetric(inter,'int')}**\n• Engajamento médio: **${eng==null?'—':fmtMetric(eng,'pct')}**\n• Conteúdos medidos: **${n}**`;
+  if(temSeg) out+=`\n• Seguidores ganhos: **${fmtMetric(segG,'int')}**`;
   return out;
 }
 function zaAjuda(prefix){
@@ -3155,11 +3186,7 @@ function zaRenderMenu(){
       zaMb('💬 Meus comentários nas artes','q:des-comentarios'),
       zaMb('↗ Abrir a aba Conteúdos','nav:design') ]; break;
     case 'metricas': b=[
-      zaMb('📈 Resumo geral do mês','q:met-resumo'),
-      zaMb('📷 Instagram','q:met-instagram'),
-      zaMb('💼 LinkedIn','q:met-linkedin'),
-      zaMb('🌐 Site','q:met-site'),
-      zaMb('📈 Evolução (seguidores/alcance)','q:met-evolucao'),
+      zaMb('📊 Resumo do ano','q:met-resumo'),
       zaMb('🏆 Melhor desempenho','q:met-melhor'),
       zaMb('❓ O que significa cada métrica?','q:met-glossario'),
       zaMb('↗ Abrir a aba Métricas','nav:metricas') ]; break;
@@ -3198,7 +3225,6 @@ function zaQuery(id){
   if(id==='db-resumo') return zaBot(`🧭 **Resumo da marca**\n📍 ${v(E.identidade.posicionamento)}\n🏁 "${v(E.identidade.slogan)}"\n👥 Público: ${v(E.publicoAlvo.descricao)}\n🗣️ Tom: ${v(E.identidade.adjetivos)}`);
   if(id==='db-referencias'){ const r=(E.referencias||[]).filter(x=>x.nome); return zaBot(r.length?'⭐ **Referências de marca:**\n'+r.map(x=>`• ${x.nome}${x.oQueGosta?` — ${x.oQueGosta}`:''}${x.link?` (${x.link})`:''}`).join('\n'):'Nenhuma referência de marca cadastrada.'); }
   if(id==='met-glossario') return zaBot('📖 **Glossário de métricas:**\n• **Alcance** — pessoas diferentes que viram o conteúdo.\n• **Impressões** — quantas vezes apareceu (a mesma pessoa conta mais de uma vez).\n• **Interações** — curtidas + comentários + salvamentos + compartilhamentos.\n• **Taxa de engajamento** — interações ÷ alcance (%). Mostra o quanto quem viu se envolveu.\n• **Seguidores** — contas que seguem o perfil.\n• **Visitantes / Sessões** — pessoas e visitas ao site.');
-  if(id==='met-evolucao') return zaBot(zaEvolucao());
   if(id==='copy-ler'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const cp=c.copy[it.id]; if(cp&&(cp.legenda||cp.reels||(cp.slides&&cp.slides.some(s=>s.texto)))) p.push({c,it}); })); return zaBot(p.length?'📖 Escolha o texto para abrir:':'Nenhum texto de copy preenchido ainda.', p.length?p.slice(0,14).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':copy'})):null); }
   if(id==='copy-comentarios'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const n=((c.copy[it.id]||{}).comentarios||[]).filter(x=>!x.resolvido).length; if(n) out.push({c,it,n}); })); return zaBot(out.length?'💬 Textos com comentário seu — toque para abrir:':'💬 Você não tem comentários abertos nos textos.', out.length?out.slice(0,14).map(m=>({lbl:`${m.it.titulo} (${m.n})`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':copy'})):null); }
   if(id==='des-ver'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]; if(d&&(desMidias(d).length||d.enviadoEm)) p.push({c,it}); })); return zaBot(p.length?'📖 Escolha a arte para ver:':'Nenhuma arte enviada ainda.', p.length?p.slice(0,14).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'go:'+m.c.idx+':'+m.it.id+':design'})):null); }
@@ -3225,10 +3251,7 @@ function zaQuery(id){
   if(id==='des-ajuste'){ const out=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ if((c.design[it.id]||{}).statusDesign==='ajustes_necessarios') out.push(`• ${it.data||''} ${it.titulo} — ${c.periodo}`); })); return zaBot(out.length?'✏️ **Artes que você pediu ajuste:**\n'+out.join('\n'):'Nenhuma arte marcada como "ajustes necessários".'); }
   if(id==='des-validar'){ const p=[]; cy.forEach(c=>(c.items||[]).forEach(it=>{ const d=c.design[it.id]||{}; if((d.enviadoEm||desMidias(d).length)&&d.statusDesign!=='aprovado') p.push({c,it}); })); return zaBot(p.length?'👍 Escolha a arte para validar:':'✅ Nenhuma arte pendente de validação.', p.length?p.slice(0,12).map(m=>({lbl:`${m.it.data||''} · ${m.it.titulo}`.slice(0,42),act:'valdesign:'+m.c.idx+':'+m.it.id})).concat([{lbl:'Cancelar',act:'cancel'}]):null); }
 
-  if(id==='met-resumo')    return zaBot(zaResumoMetricas(null));
-  if(id==='met-instagram') return zaBot(zaResumoMetricas('instagram'));
-  if(id==='met-linkedin')  return zaBot(zaResumoMetricas('linkedin'));
-  if(id==='met-site')      return zaBot(zaResumoMetricas('site'));
+  if(id==='met-resumo'||id==='met-instagram'||id==='met-linkedin'||id==='met-site'||id==='met-evolucao') return zaBot(zaResumoMetricas());
   if(id==='met-melhor')    return zaBot(zaTopConteudos(cy, null));
 
   if(id.slice(0,6)==='ciclo-'){
