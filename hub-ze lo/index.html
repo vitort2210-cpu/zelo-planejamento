@@ -184,6 +184,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .plan-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 .plan-period{font-size:14px;font-weight:600;color:var(--z-teal)}
 .plan-cycle{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--z-teal);color:#fff;font-weight:600}
+.plan-cycle-wrap{display:flex;align-items:center;gap:6px}
+.ciclo-del{border:none;background:none;cursor:pointer;font-size:13px;padding:2px 4px;border-radius:6px;line-height:1;opacity:.55;transition:opacity .15s,background .15s}
+.ciclo-del:hover{opacity:1;background:var(--z-terra-light)}
 .plan-links{display:grid;grid-template-columns:1fr 1fr;gap:6px}
 .plan-link{display:flex;align-items:center;justify-content:center;gap:4px;padding:8px;border-radius:7px;font-size:12px;font-weight:500;text-decoration:none;font-family:inherit;border:none;cursor:pointer;transition:opacity .15s}
 .plan-link:hover{opacity:.85}
@@ -642,7 +645,7 @@ mark.cmt:hover{background:#f6d9c4}
 <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -1161,11 +1164,13 @@ function renderSecM() {
       ? `<button class="plan-link plan-vitor" onclick="abrirPlan(${i},'edit')">✏ Editar</button>
          <button class="plan-link plan-gabi" onclick="abrirPlan(${i},'valida')">👁 Visualizar</button>`
       : `<button class="plan-link plan-gabi" onclick="abrirPlan(${i},'valida')" style="grid-column:1/-1">👁 Visualizar</button>`;
+    const delBtn = (ROLE === 'editor' && !cicloEhBase(cicloDocId(p)))
+      ? `<button class="ciclo-del" title="Excluir este ciclo" onclick="removerCiclo('${esc(cicloDocId(p))}')">🗑</button>` : '';
     return `
     <div class="plan-card">
       <div class="plan-card-head">
         <div class="plan-period">${esc(p.periodo)}</div>
-        <div class="plan-cycle">${esc(p.ciclo)}</div>
+        <div class="plan-cycle-wrap"><div class="plan-cycle">${esc(p.ciclo)}</div>${delBtn}</div>
       </div>
       <div class="plan-links">${links}</div>
     </div>`;
@@ -1370,6 +1375,19 @@ window.salvarNovoCiclo = function() {
   addCicloOpen = false;
   renderSecM();
   showToast('Ciclo adicionado ✓');
+};
+// Só os ciclos criados à mão podem ser excluídos (os padrão fazem parte da estrutura).
+function cicloEhBase(docId) { return [...CICLOS_2026, ...CICLOS_2027].some(c => c.docId === docId); }
+window.removerCiclo = async function(docId) {
+  const p = (estado.planejamentos || []).find(x => cicloDocId(x) === docId);
+  if (!p) return;
+  if (!confirm(`Excluir o ciclo "${p.periodo}"${p.ciclo ? ` (${p.ciclo})` : ''}?\n\nRemove o ciclo do HUB e apaga a grade dele. Não dá para desfazer.`)) return;
+  estado.planejamentos = (estado.planejamentos || []).filter(x => cicloDocId(x) !== docId);
+  if (planOpen) planOpen = null;
+  agendarSalvamento();
+  try { await deleteDoc(doc(db, 'planejamentos', docId)); } catch (e) { console.warn('Falha ao apagar a grade do ciclo', e); }
+  renderSecM();
+  showToast('Ciclo excluído ✓');
 };
 
 // Os 6 ciclos temáticos de 2027 (base do cadastro; grade de cada um vive em Firestore)
