@@ -337,6 +337,7 @@ select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDCenC4zYJi9X6MEe1z4hOnWQ2KP14FsWQ",
@@ -349,6 +350,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+// Mesma origem do HUB → compartilha a sessão de login (Firebase Auth persistida).
+// Assim o planejador acessa o Firestore autenticado quando aberto dentro do HUB logado.
+const auth = getAuth(app);
 
 // ─── MODO DE ACESSO ───────────────────────────────────────────────────────────
 const isValidacao = new URLSearchParams(window.location.search).get('view') === 'validacao';
@@ -901,7 +905,12 @@ window.exportarWhatsApp = function() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
-carregarDoFirebase();
+// Espera a sessão de login resolver (compartilhada com o HUB) antes de ler a grade,
+// para o Firestore autenticar a leitura. Carrega uma única vez.
+let _carregou = false;
+onAuthStateChanged(auth, () => { if (!_carregou) { _carregou = true; carregarDoFirebase(); } });
+// Rede de segurança: se o Auth demorar/não inicializar, carrega mesmo assim.
+setTimeout(() => { if (!_carregou) { _carregou = true; carregarDoFirebase(); } }, 3500);
 
 </script>
 </body>
