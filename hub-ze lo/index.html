@@ -2592,15 +2592,25 @@ async function notificarNovidades(area, lista, cicloPeriodo){
   const ciclo = cicloPeriodo || (estado.planejamentos||[]).find(p=>cicloDocId(p)===copyCiclo)?.periodo || copyCiclo || '';
   const quem=USER_EMAIL||ROLE||'equipe';
   const link=location.href.split('?')[0];
-  const item=`${area} — ${lista.length} item(ns) para validação:\n`+lista.map(s=>'• '+s).join('\n');
+  const n=lista.length;
+  const ehPlan = area==='Planejamento';
+  // Mensagem clara e concisa, com campos SEPARADOS (assunto curto, resumo, lista) —
+  // o template do EmailJS diagrama cada um. Nada de despejar a lista no assunto.
+  const resumo = ehPlan
+    ? 'O planejamento deste ciclo está pronto para a sua validação.'
+    : `${n} ${area==='Copy'?'texto(s)':'conteúdo(s)'} ${n===1?'aguarda':'aguardam'} a sua validação.`;
+  const listaTxt = ehPlan ? 'A grade do ciclo está montada — abra para revisar e validar.' : lista.map(s=>'• '+s).join('\n');
+  const titulo = ehPlan ? 'Planejamento pronto para validar' : `Novidades em ${area}`;
+  const assunto = `🔔 ${area} · ${ciclo}`;
+  const base = { assunto, area, titulo, ciclo, resumo, lista:listaTxt, quem, link, item:resumo };
   try{
     if(window.emailjs && EMAILJS_SERVICE && EMAILJS_TEMPLATE && EMAILJS_PUBLIC){
       for(const to of NOTIFY_EMAILS){
-        await window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { item, ciclo, quem, link, destino:to }, { publicKey:EMAILJS_PUBLIC });
+        await window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { ...base, destino:to }, { publicKey:EMAILJS_PUBLIC });
       }
     }
   }catch(e){ console.warn('Falha ao notificar por email', e); }
-  const msg=`Novidades para validação (${area})%0ACiclo: ${ciclo}%0A${lista.map(s=>'• '+s).join('%0A')}%0A${link}`;
+  const msg=`${assunto}%0A${resumo}%0A${ehPlan?'':lista.map(s=>'• '+s).join('%0A')}%0A${link}`;
   for(const a of WHATSAPP_ALVOS){
     try{ if(a.phone && a.apikey){ await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(a.phone)}&text=${msg}&apikey=${encodeURIComponent(a.apikey)}`, { mode:'no-cors' }); } }catch(e){}
   }
