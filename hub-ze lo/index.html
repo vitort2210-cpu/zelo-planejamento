@@ -421,6 +421,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .copy-gabi-btn.copied{background:#d7f0e0;border-color:#1B6B3A;color:#1B6B3A}
 .copy-card{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:1.1rem 1.15rem;margin-bottom:12px;border-left:3px solid var(--z-teal);box-shadow:0 1px 3px rgba(0,0,0,.04)}
 .cc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:.5rem}
+.cc-toggle{cursor:pointer;margin:-1.1rem -1.15rem 0;padding:1.1rem 1.15rem;border-radius:11px 11px 0 0;transition:background .12s}
+.cc-toggle:hover{background:var(--z-bg)}
+.cc-head-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cc-chevron{font-size:11px;color:var(--z-text-sec);transition:transform .18s;line-height:1}
+.copy-card.open .cc-chevron{transform:rotate(180deg)}
+.cc-mini{font-size:10px!important;padding:3px 9px!important;cursor:default!important}
+.cc-body{display:none;margin-top:.9rem}
+.copy-card.open .cc-body{display:block}
+.copy-card.open .cc-toggle{margin-bottom:0}
+.vid-toggle-row{display:flex;justify-content:flex-end;margin-bottom:.6rem}
 .cc-meta{min-width:0}
 .cc-date{font-size:11px;font-weight:700;color:var(--z-terra)}
 .cc-title{font-size:14px;font-weight:600;color:var(--z-text);line-height:1.25;margin:2px 0 5px}
@@ -684,6 +694,7 @@ const ehVisualizador = () => ROLE === 'visualizador';
 // Capabilities da aba Design
 const podeSubirDesign   = () => ROLE === 'editor' || ROLE === 'visualizador';
 const podeValidarDesign = () => ROLE === 'editor' || ROLE === 'cliente';
+const podeValidarCopy   = () => ROLE === 'editor' || ROLE === 'cliente';
 
 // ── SERVIÇOS EXTERNOS (preencher quando as contas estiverem prontas) ───────────
 const CLOUDINARY_CLOUD  = "ozg85i01";
@@ -699,6 +710,7 @@ let gradeItems = [];          // itens da grade vindos de planejamentos/{docId}
 let copyData   = { itens:{} };// conteúdo de copy de copies/{CLIENT_ID}__{docId}
 let copyCiclo  = null;        // docId do ciclo selecionado (compartilhado copy/design)
 let copyMode   = null;        // null = lista de ciclos | 'edit' | 'valida'
+let copyExpanded = new Set(); // ids dos conteúdos de copy abertos (sanfona)
 let copyUnsub  = null;        // unsubscribe do onSnapshot
 let copySaveTimer = null;
 let pendingSel = null;        // seleção pendente para comentário da Gabi
@@ -2014,14 +2026,13 @@ function buildCopyTab() {
       </div>
       ${impBtn}${avisarBtn}
     </div>`;
-  const hint = (copyMode === 'valida' && ehCliente())
-    ? `<div class="copy-hint"><strong>Selecione qualquer trecho</strong> de um texto para comentar exatamente o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`
-    : (copyMode === 'valida' && ehVisualizador())
-    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Visualização da equipe de design — somente leitura.</div>`
+  const hint = (copyMode === 'valida' && podeValidarCopy())
+    ? `<div class="copy-hint"><strong>Toque num conteúdo</strong> para abrir. <strong>Selecione qualquer trecho</strong> do texto para comentar o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`
     : (copyMode === 'valida')
-    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Pré-visualização da validação do cliente — somente leitura.</div>`
+    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Visualização — somente leitura. Toque num conteúdo para abrir.</div>`
     : '';
   const fmtbar = (copyMode === 'edit') ? copyFmtbarHTML() : '';
+  copyExpanded.clear();
   cont.innerHTML = `${bar}${hint}${fmtbar}<div id="copy-cards"></div>`;
   renderCopyCards();
 }
@@ -2102,33 +2113,39 @@ function renderCopyCards() {
     cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">A grade deste ciclo ainda não tem conteúdos. Adicione conteúdos na ferramenta de Planejamento.</p>`;
     return;
   }
-  cont.innerHTML = gradeItems.map(it => `<div class="copy-card" id="copy-card-${it.id}">${cardInnerHTML(it, getCopy(it.id))}</div>`).join('');
+  cont.innerHTML = gradeItems.map(it => `<div class="copy-card${copyExpanded.has(it.id)?' open':''}" id="copy-card-${it.id}">${cardInnerHTML(it, getCopy(it.id))}</div>`).join('');
 }
 function renderOneCard(id) {
   const it = gradeItems.find(x => x.id === id);
   const el = document.getElementById('copy-card-' + id);
-  if (it && el) el.innerHTML = cardInnerHTML(it, getCopy(id));
+  if (it && el) { el.innerHTML = cardInnerHTML(it, getCopy(id)); el.classList.toggle('open', copyExpanded.has(id)); }
 }
 function cardInnerHTML(it, c) {
-  return cardHeader(it, c) + (copyMode === 'edit' ? cardEdit(it, c) : cardValidacao(it, c));
-}
-
-function cardHeader(it, c) {
-  const vt = (copyMode === 'edit')
-    ? `<div class="vid-toggle${c.isVideo?' on':''}" onclick="toggleVideo(${it.id})">🎬 ${c.isVideo?'Vídeo (Reels)':'Vídeo?'}</div>`
-    : '';
-  return `<div class="cc-head">
-    <div class="cc-meta">
-      <div class="cc-date">📅 ${esc(it.data||'--')}</div>
-      <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
-      <div class="cc-tags">
-        ${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}
-        ${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}
+  const body = (copyMode === 'edit' ? cardEdit(it, c) : cardValidacao(it, c));
+  return `<div class="cc-head cc-toggle" onclick="toggleCopyCard(${it.id})" role="button" tabindex="0">
+      <div class="cc-meta">
+        <div class="cc-date">📅 ${esc(it.data||'--')}</div>
+        <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
+        <div class="cc-tags">
+          ${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}
+          ${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}
+        </div>
       </div>
+      <div class="cc-head-right">${miniStatus(c)}<span class="cc-chevron">▾</span></div>
     </div>
-    ${vt}
-  </div>`;
+    <div class="cc-body">${body}</div>`;
 }
+// Selo compacto (visível com o card fechado): mostra a decisão da Gabi ou o status do copy.
+function miniStatus(c) {
+  if (c.statusGabi) return `<span class="gd-chip on ${c.statusGabi} cc-mini">${gabiLabel(c.statusGabi)}</span>`;
+  const m = { andamento:['Em andamento','andamento'], finalizado:['Finalizado','finalizado'], bloqueado:['Bloqueado','bloqueado'] }[c.statusCopy];
+  return m ? `<span class="st-chip on ${m[1]} cc-mini">${m[0]}</span>` : '';
+}
+window.toggleCopyCard = function(id) {
+  if (copyExpanded.has(id)) copyExpanded.delete(id); else copyExpanded.add(id);
+  const el = document.getElementById('copy-card-' + id);
+  if (el) el.classList.toggle('open', copyExpanded.has(id));
+};
 
 // ── Modo edição (Vitor) ───────────────────────────────────────────────────────
 function statusRowEdit(it, c) {
@@ -2166,6 +2183,7 @@ function cardEdit(it, c) {
         <div id="slides-${it.id}">${slidesHTML(it.id, c)}</div>
         <button class="add-btn" onclick="addSlide(${it.id})">+ Adicionar slide</button></div>`;
   return `
+    <div class="vid-toggle-row"><div class="vid-toggle${c.isVideo?' on':''}" onclick="toggleVideo(${it.id})">🎬 ${c.isVideo?'Vídeo (Reels)':'Marcar como Vídeo (Reels)?'}</div></div>
     ${statusRowEdit(it, c)}
     <div class="cf"><label class="cf-lbl">Direcionamento / Referência</label>
       <input type="text" value="${esc(c.direcionamento)}" placeholder="TAG, referência visual, link..." oninput="updateCopyField(${it.id},'direcionamento',this)"></div>
@@ -2222,7 +2240,7 @@ function cardValidacao(it, c) {
   }
   blocks.push(vblockHTML(it.id, c, 'legenda', 'Texto da legenda', c.legenda));
   if (c.blog) blocks.push(vblockHTML(it.id, c, 'blog', 'Texto de blog', c.blog));
-  const decisao = ehCliente() ? gabiDecisionRow(it, c) : decisionBadgeRO(c);
+  const decisao = podeValidarCopy() ? gabiDecisionRow(it, c) : decisionBadgeRO(c);
   return `${statusSummaryRO(c)}${decisao}
     ${c.direcionamento?`<div class="cf"><label class="cf-lbl">Direcionamento</label><div style="font-size:12px;color:var(--z-text-sec)">${esc(c.direcionamento)}</div></div>`:''}
     ${blocks.join('')}`;
