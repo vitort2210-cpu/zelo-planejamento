@@ -423,8 +423,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .cc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:.5rem}
 .cc-toggle{cursor:pointer;margin:-1.1rem -1.15rem 0;padding:1.1rem 1.15rem;border-radius:11px 11px 0 0;transition:background .12s}
 .cc-toggle:hover{background:var(--z-bg)}
-.cc-head-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.cc-chevron{font-size:11px;color:var(--z-text-sec);transition:transform .18s;line-height:1}
+.cc-head-right{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.cc-openhint{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:#fff;background:var(--z-teal);padding:6px 12px;border-radius:20px;white-space:nowrap}
+.cc-toggle:hover .cc-openhint{background:#0a6870}
+.oh-close{display:none}
+.copy-card.open .oh-open{display:none}
+.copy-card.open .oh-close{display:inline}
+.cc-chevron{font-size:10px;line-height:1;transition:transform .18s}
 .copy-card.open .cc-chevron{transform:rotate(180deg)}
 .cc-mini{font-size:10px!important;padding:3px 9px!important;cursor:default!important}
 .cc-body{display:none;margin-top:.9rem}
@@ -717,6 +722,7 @@ let pendingSel = null;        // seleção pendente para comentário da Gabi
 // Estado da aba Design
 let designData = { itens:{} };
 let designMode = null;        // null = lista de ciclos | 'edit' | 'valida'
+let designExpanded = new Set(); // ids dos conteúdos de design abertos (sanfona)
 let designUnsub = null;
 let designSaveTimer = null;
 let carouselIdx = {};         // índice do slide por "itemId-plataforma"
@@ -2131,9 +2137,13 @@ function cardInnerHTML(it, c) {
           ${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}
         </div>
       </div>
-      <div class="cc-head-right">${miniStatus(c)}<span class="cc-chevron">▾</span></div>
+      <div class="cc-head-right">${miniStatus(c)}${openHint('Ler conteúdo completo')}</div>
     </div>
     <div class="cc-body">${body}</div>`;
+}
+// Indicação clara de "clique para abrir" (troca para "Fechar" quando aberto via CSS).
+function openHint(txt) {
+  return `<span class="cc-openhint"><span class="oh-open">${txt}</span><span class="oh-close">Fechar</span><span class="cc-chevron">▾</span></span>`;
 }
 // Selo compacto (visível com o card fechado): mostra a decisão da Gabi ou o status do copy.
 function miniStatus(c) {
@@ -2466,20 +2476,21 @@ function buildDesignTab(){
       ${avisarBtn}
     </div>`;
   const hint = designMode==='edit'
-    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 Suba as artes de cada conteúdo (salvam sozinhas). Quando terminar, clique <strong>🔔 Avisar a Gabi das novidades</strong> uma vez — ela recebe <strong>um</strong> aviso com tudo, não um por arte.</div>`
-    : `<div class="copy-hint">Acompanhe e valide as artes enviadas pela equipe de design.</div>`;
+    ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 <strong>Toque num conteúdo</strong> para abrir e subir as artes (salvam sozinhas). Ao terminar, clique <strong>🔔 Avisar a Gabi das novidades</strong> uma vez — ela recebe <strong>um</strong> aviso com tudo, não um por arte.</div>`
+    : `<div class="copy-hint"><strong>Toque num conteúdo</strong> para abrir, ver a arte e validar.</div>`;
+  designExpanded.clear();
   cont.innerHTML=`${bar}${hint}<div id="design-cards"></div>`;
   renderDesignCards();
 }
 function renderDesignCards(){
   const cont=document.getElementById('design-cards'); if(!cont) return;
   if(!gradeItems.length){ cont.innerHTML=`<p style="font-size:13px;color:var(--z-text-sec)">A grade deste ciclo ainda não tem conteúdos.</p>`; return; }
-  cont.innerHTML=gradeItems.map(it=>`<div class="copy-card" id="design-card-${it.id}">${designCardInner(it,getDesign(it.id))}</div>`).join('');
+  cont.innerHTML=gradeItems.map(it=>`<div class="copy-card${designExpanded.has(it.id)?' open':''}" id="design-card-${it.id}">${designCardInner(it,getDesign(it.id))}</div>`).join('');
   gradeItems.forEach(it=>{ updateCarousel(it.id,'ig'); updateCarousel(it.id,'li'); });
 }
 function renderDesignCard(id){
   const it=gradeItems.find(x=>x.id===id); const el=document.getElementById('design-card-'+id);
-  if(it&&el){ el.innerHTML=designCardInner(it,getDesign(id)); updateCarousel(id,'ig'); updateCarousel(id,'li'); }
+  if(it&&el){ el.innerHTML=designCardInner(it,getDesign(id)); el.classList.toggle('open', designExpanded.has(id)); updateCarousel(id,'ig'); updateCarousel(id,'li'); }
 }
 function statusDesignBadge(d){
   if(!d.statusDesign) return '';
@@ -2536,22 +2547,41 @@ function carouselHTML(id,plat,d){
     <div class="car-frame ${plat==='ig'?'frame-ig':'frame-li'}" id="car-${id}-${plat}">${head}<div class="car-stage">${body}</div>${foot}</div>
   </div>`;
 }
+// Legenda compacta do card fechado: status do design, ou nº de arquivos / "sem arte".
+function miniDesignStatus(d){
+  if(d.statusDesign) return `<span class="gd-chip on ${d.statusDesign} cc-mini">${designLabel(d.statusDesign)}</span>`;
+  const n=desMidias(d).length;
+  return n
+    ? `<span class="cc-mini" style="background:var(--z-teal-light);color:var(--z-teal)">${n} arquivo${n>1?'s':''}</span>`
+    : `<span class="cc-mini" style="background:var(--z-bg);color:var(--z-text-sec)">sem arte ainda</span>`;
+}
+window.toggleDesignCard = function(id){
+  if(designExpanded.has(id)) designExpanded.delete(id); else designExpanded.add(id);
+  const el=document.getElementById('design-card-'+id);
+  if(el) el.classList.toggle('open', designExpanded.has(id));
+};
 function designCardInner(it,d){
-  const header=`<div class="cc-head"><div class="cc-meta">
-      <div class="cc-date">📅 ${esc(it.data||'--')}</div>
-      <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
-      <div class="cc-tags">${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}</div>
-    </div>${statusDesignBadge(d)}</div>`;
+  const header=`<div class="cc-head cc-toggle" onclick="toggleDesignCard(${it.id})" role="button" tabindex="0">
+      <div class="cc-meta">
+        <div class="cc-date">📅 ${esc(it.data||'--')}</div>
+        <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
+        <div class="cc-tags">${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}</div>
+      </div>
+      <div class="cc-head-right">${miniDesignStatus(d)}${openHint('Ver a arte')}</div>
+    </div>`;
   const previews=`<div class="prev-grid">${carouselHTML(it.id,'ig',d)}${carouselHTML(it.id,'li',d)}</div>`;
+  let corpo;
   if(designMode==='edit'){
     const upload=uploadAreaHTML(it.id,d);
     const enviar = d.enviadoEm ? `<div class="enviar-row"><span class="enviado-tag">✓ enviado para validação</span></div>` : '';
-    return header+upload+previews+enviar;
+    corpo = upload+previews+enviar;
+  } else {
+    const validacao=podeValidarDesign()
+      ? `<div class="cf-lbl" style="margin-top:.7rem">Validação do design</div>${designStatusRow(it.id,d)}`
+      : (d.comentarioDesign?`<div class="cf"><div class="cf-lbl">Comentário do validador</div><div style="font-size:12px;color:var(--z-text-sec)">${esc(d.comentarioDesign)}</div></div>`:'');
+    corpo = previews+validacao;
   }
-  const validacao=podeValidarDesign()
-    ? `<div class="cf-lbl" style="margin-top:.7rem">Validação do design</div>${designStatusRow(it.id,d)}`
-    : (d.comentarioDesign?`<div class="cf"><div class="cf-lbl">Comentário do validador</div><div style="font-size:12px;color:var(--z-text-sec)">${esc(d.comentarioDesign)}</div></div>`:'');
-  return header+previews+validacao;
+  return header+`<div class="cc-body">${corpo}</div>`;
 }
 
 // ── Carrossel ─────────────────────────────────────────────────────────────────
