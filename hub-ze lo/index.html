@@ -1425,13 +1425,13 @@ const CICLOS_2027 = [
 // ciclos 1 e 2 ficam sem tema de propósito — serão nomeados ao montar cada grade.
 const CICLOS_2026 = [
   { periodo:'Junho — Agosto 2026',      ciclo:'Ciclo 1 · Brincar é direito, não concessão', docId:'junho-agosto-2026', ano:2026 },
-  { periodo:'Setembro — Outubro 2026',  ciclo:'Ciclo 2',                          docId:'setembro-outubro-2026', ano:2026 },
+  { periodo:'Setembro — Outubro 2026',  ciclo:'Ciclo 2 · Infâncias no Plural',    docId:'setembro-outubro-2026', ano:2026 },
   { periodo:'Novembro — Dezembro 2026', ciclo:'Ciclo 3 · Do balanço ao recomeço', docId:'novembro-dezembro-2026', ano:2026 },
 ];
 // Cadastra os ciclos de 2026 + 2027 uma única vez, preservando status, a grade de
 // cada ciclo (docId inalterado) e quaisquer ciclos extras criados à mão.
 function migrarCiclos() {
-  if (estado.planVersion === '2026-2027b') return false;
+  if (estado.planVersion === '2026-2027c') return false;
   const antigos = estado.planejamentos || [];
   const base = [...CICLOS_2026, ...CICLOS_2027];
   const previstos = base.map(c => c.docId);
@@ -1443,7 +1443,7 @@ function migrarCiclos() {
     .filter(p => !previstos.includes(cicloDocId(p)))
     .map(p => ({ ...p, ano: anoCiclo(p) }));
   estado.planejamentos = [...cadastrados, ...extras];
-  estado.planVersion = '2026-2027b';
+  estado.planVersion = '2026-2027c';
   return true;
 }
 
