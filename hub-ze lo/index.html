@@ -582,7 +582,8 @@ mark.cmt:hover{background:#f6d9c4}
 .mx-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1.25rem}
 @media(max-width:640px){.mx-cards{grid-template-columns:repeat(2,1fr)}}
 .mx-card{background:#fff;border:0.5px solid var(--z-border);border-top:3px solid var(--z-teal);border-radius:12px;padding:.9rem 1rem;box-shadow:0 1px 3px rgba(0,0,0,.04)}
-.mx-card-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--z-text-sec)}
+.mx-card-lbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--z-text-sec);min-height:2.4em}
+.mx-card-auto{margin-top:3px}
 .mx-card-val{font-size:24px;font-weight:800;color:var(--z-text);line-height:1.1;margin:6px 0 4px;letter-spacing:-.02em}
 .mx-card-foot{display:flex;align-items:center;gap:6px;min-height:16px}
 .mx-delta{font-size:11px;font-weight:700}
@@ -628,6 +629,9 @@ mark.cmt:hover{background:#f6d9c4}
 /* Resumo do ciclo */
 .rc-best{margin-top:.9rem;background:var(--z-ocre-light);border:1px solid var(--z-ocre);border-radius:10px;padding:11px 14px}
 .rc-best-lbl{font-size:11px;font-weight:700;color:var(--z-ocre-dark);margin-bottom:3px}
+.rc-rank-item{display:flex;gap:10px;align-items:flex-start;margin-top:8px;padding-top:8px;border-top:1px solid rgba(154,122,31,.25)}
+.rc-rank-item:first-of-type{margin-top:6px;padding-top:0;border-top:none}
+.rc-rank{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--z-ocre);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .rc-best-body{display:flex;flex-direction:column;gap:2px}
 .rc-best-body strong{font-size:14px;color:var(--z-text)}
 .rc-best-body span{font-size:12px;color:var(--z-text-sec)}
@@ -2811,16 +2815,16 @@ function postInteracoes(p,tipo){ if(tipo==='story') return Number(p.interacoes)|
 function postEng(p,tipo){ const a=postAlcance(p,tipo), i=postInteracoes(p,tipo); return a>0?(i/a*100):null; }
 // Agrega o desempenho dos conteúdos de um ciclo (base do "Resumo do ciclo").
 function agregarPosts(items, posts){
-  let alcance=0, inter=0, n=0, best=null;
+  let alcance=0, inter=0, n=0; const scored=[];
   (items||[]).forEach(it=>{
     const p=(posts||{})[it.id]; if(!p) return;
     const tipo=tipoPost(it); const a=postAlcance(p,tipo), i=postInteracoes(p,tipo);
     if(!a && !i) return;
     alcance+=a; inter+=i; n++;
-    const eng=a>0?(i/a*100):0;
-    if(!best || eng>best.eng) best={it,eng,alcance:a,inter:i};
+    scored.push({ it, eng:(a>0?(i/a*100):0), alcance:a, inter:i });
   });
-  return { alcance, inter, n, engMedio:(alcance>0?(inter/alcance*100):null), best };
+  scored.sort((x,y)=>y.eng-x.eng);
+  return { alcance, inter, n, engMedio:(alcance>0?(inter/alcance*100):null), best:scored[0]||null, top:scored.slice(0,3) };
 }
 function agendarSavePosts(){ const el=document.getElementById('save-status'); if(el){el.textContent='● Salvando...';el.classList.add('saving');} clearTimeout(postsSaveTimer); postsSaveTimer=setTimeout(salvarPosts,1000); }
 async function salvarPosts(){ if(!copyCiclo) return; try{ await setDoc(postsRef(copyCiclo),{itens:postsData.itens,ciclo:postsData.ciclo||{},updatedAt:new Date().toISOString()}); const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
@@ -2846,13 +2850,15 @@ function resumoCicloHTML(){
   const ag=agregarPosts(gradeItems, postsData.itens);
   const cic=postsData.ciclo||{};
   const podeEd=podeEditarMetricas();
-  const card=(lbl,val,auto)=>`<div class="mx-card${auto?' mx-card-calc':''}" style="border-top-color:var(--z-teal)"><div class="mx-card-lbl">${lbl}${auto?' <span class="mx-calc-tag">auto</span>':''}</div><div class="mx-card-val">${val}</div></div>`;
-  const cards=card('Alcance / Visualizações',fmtMetric(ag.alcance,'int'),true)
-    +card('Interações totais',fmtMetric(ag.inter,'int'),true)
-    +card('Engajamento médio',ag.engMedio==null?'—':fmtMetric(ag.engMedio,'pct'),true)
-    +card('Conteúdos com dados',String(ag.n),true);
-  const best=ag.best
-    ? `<div class="rc-best"><div class="rc-best-lbl">🏆 Melhor conteúdo (engajamento)</div><div class="rc-best-body"><strong>${esc(ag.best.it.data||'')} — ${esc(ag.best.it.titulo||'(sem título)')}</strong><span>${fmtMetric(ag.best.eng,'pct')} · ${fmtMetric(ag.best.alcance,'int')} alcance · ${fmtMetric(ag.best.inter,'int')} interações</span></div></div>`
+  const card=(lbl,val)=>`<div class="mx-card mx-card-calc" style="border-top-color:var(--z-teal)"><div class="mx-card-lbl">${lbl}</div><div class="mx-card-auto"><span class="mx-calc-tag">auto</span></div><div class="mx-card-val">${val}</div></div>`;
+  const cards=card('Alcance / Visualizações',fmtMetric(ag.alcance,'int'))
+    +card('Interações totais',fmtMetric(ag.inter,'int'))
+    +card('Engajamento médio',ag.engMedio==null?'—':fmtMetric(ag.engMedio,'pct'))
+    +card('Conteúdos com dados',String(ag.n));
+  const best=ag.top.length
+    ? `<div class="rc-best"><div class="rc-best-lbl">🏆 Top ${ag.top.length} — melhor engajamento</div>`
+      + ag.top.map((b,i)=>`<div class="rc-rank-item"><span class="rc-rank">${i+1}</span><div class="rc-best-body"><strong>${esc(b.it.data||'')} — ${esc(b.it.titulo||'(sem título)')}</strong><span>${fmtMetric(b.eng,'pct')} · ${fmtMetric(b.alcance,'int')} alcance · ${fmtMetric(b.inter,'int')} interações</span></div></div>`).join('')
+      + `</div>`
     : '';
   const segField=(k,lbl,ph)=> podeEd
     ? `<div class="rc-field"><label>${lbl}</label><input type="number" step="any" value="${esc(cic[k]??'')}" placeholder="${ph}" oninput="updateCicloMetrica('${k}',this)"></div>`
