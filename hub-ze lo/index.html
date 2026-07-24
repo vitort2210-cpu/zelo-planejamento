@@ -1983,12 +1983,18 @@ window.importarCopyJSON = async function() {
     : ((data && typeof data === 'object' && !Array.isArray(data)) ? data : null);
   if (!itens) { showToast('JSON de copy sem "itens".'); return; }
   const n = Object.keys(itens).length;
-  if (!confirm('Isso vai SUBSTITUIR os textos deste ciclo por ' + n + ' itens de copy. Continuar?')) return;
-  copyData = { itens };
+  const existentes = Object.keys(copyData.itens || {}).length;
+  // Mescla: adiciona os itens novos e atualiza os de mesmo id, mantendo os demais.
+  // Assim dá para subir um conteúdo por vez (a skill de redação escreve um a um).
+  const msg = existentes
+    ? `Adicionar/atualizar ${n} conteúdo(s) de copy neste ciclo, mantendo os ${existentes} já existentes? (itens com o mesmo id são substituídos)`
+    : `Importar ${n} conteúdo(s) de copy para este ciclo?`;
+  if (!confirm(msg)) return;
+  copyData = { itens: { ...(copyData.itens || {}), ...itens } };
   await salvarCopy();
   renderCopyCards();
   fecharImportCopy();
-  showToast('✓ Copy importado: ' + n + ' itens');
+  showToast('✓ Copy importado: ' + n + ' conteúdo(s)');
 }
 
 // ── Lista de ciclos (boxes) ────────────────────────────────────────────────────
