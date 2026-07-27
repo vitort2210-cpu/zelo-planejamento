@@ -1,11 +1,13 @@
 name: Lembrete de prazo (Zelo HUB)
 
-# Resumo diário: avisa a Gabi de conteúdos chegando ao prazo sem validação.
-# Roda sozinho (não precisa do HUB aberto). Sem custo — GitHub Actions.
+# DESATIVADO (a pedido do Vitor): o lembrete automático diário foi desligado.
+# A validação passa a ser avisada MANUALMENTE, pelo botão "Avisar a Gabi das
+# novidades" dentro do HUB (Planejamento / Copy / Conteúdos).
+# Para reativar o resumo automático, descomente o bloco `schedule` abaixo.
 on:
-  schedule:
-    - cron: '0 12 * * *'   # 12:00 UTC = 09:00 (horário de Brasília), todo dia
-  workflow_dispatch:        # permite rodar manualmente pela aba Actions
+  # schedule:
+  #   - cron: '0 12 * * *'   # 12:00 UTC = 09:00 (Brasília), todo dia
+  workflow_dispatch:          # só roda se disparado manualmente pela aba Actions
 
 permissions:
   contents: read
