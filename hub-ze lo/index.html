@@ -2828,12 +2828,14 @@ function postAlcance(p,tipo){ return tipo==='social' ? (Number(p.alcance)||0) : 
 function postInteracoes(p,tipo){ if(tipo==='story') return Number(p.interacoes)||0; if(tipo==='blog') return 0; return calcInteracoes(p); }
 function postEng(p,tipo){ const a=postAlcance(p,tipo), i=postInteracoes(p,tipo); return a>0?(i/a*100):null; }
 // Agrega o desempenho dos conteúdos de um ciclo (base do "Resumo do ciclo").
+// "Postado" = tem qualquer métrica preenchida. É assim que o Vitor marca que o
+// conteúdo saiu — então o resumo/gráfico só considera os que já têm dado lançado.
+function postComDados(p){ if(!p) return false; return Object.keys(p).some(k=>{ const v=p[k]; return v!=='' && v!=null && !isNaN(Number(v)); }); }
 function agregarPosts(items, posts){
   let alcance=0, inter=0, n=0; const scored=[];
   (items||[]).forEach(it=>{
-    const p=(posts||{})[it.id]; if(!p) return;
+    const p=(posts||{})[it.id]; if(!postComDados(p)) return;
     const tipo=tipoPost(it); const a=postAlcance(p,tipo), i=postInteracoes(p,tipo);
-    if(!a && !i) return;
     alcance+=a; inter+=i; n++;
     scored.push({ it, eng:(a>0?(i/a*100):0), alcance:a, inter:i });
   });
@@ -2844,7 +2846,7 @@ function agregarPosts(items, posts){
 // cada uma na sua escala, + linha do Engajamento (%) com tracejado da média.
 function resumoChartHTML(items, posts, engMedio){
   const data=[];
-  (items||[]).forEach(it=>{ const p=(posts||{})[it.id]; if(!p) return; const tp=tipoPost(it); const a=postAlcance(p,tp), i=postInteracoes(p,tp); if(!a&&!i) return; data.push({it,a,i,eng:(a>0?(i/a*100):0)}); });
+  (items||[]).forEach(it=>{ const p=(posts||{})[it.id]; if(!postComDados(p)) return; const tp=tipoPost(it); const a=postAlcance(p,tp), i=postInteracoes(p,tp); data.push({it,a,i,eng:(a>0?(i/a*100):0)}); });
   if(!data.length) return '';
   const n=data.length, H=250, mT=30, mB=44, mL=8, mR=8;
   const W=Math.max(500, n*48 + mL + mR), pw=W-mL-mR, ph=H-mT-mB, x0=mL, y0=H-mB;
