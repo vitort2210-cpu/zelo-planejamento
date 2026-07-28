@@ -2868,7 +2868,10 @@ function resumoChartHTML(items, posts, engMedio){
   const path=pts.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
   const dots=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${roxo}"><title>${esc(p[2].it.data||'')} — Engajamento: ${fmtMetric(p[2].eng,'pct')}</title></circle>`).join('');
   const yAvg=(engMedio!=null)?(y0-(engMedio/maxE*ph)):null;
-  const avg=yAvg!=null?`<line x1="${x0}" y1="${yAvg.toFixed(1)}" x2="${(x0+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="${roxo}" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/><text x="${(x0+pw).toFixed(1)}" y="${(yAvg-4).toFixed(1)}" text-anchor="end" font-size="9" fill="${roxo}" font-weight="700">média ${fmtMetric(engMedio,'pct')}</text>`:'';
+  const avgTxt=`média ${fmtMetric(engMedio,'pct')}`;
+  const chipW=Math.round(avgTxt.length*5.4+8);
+  const chipY=(yAvg!=null)?((yAvg-14<mT+2)?(yAvg+2):(yAvg-14)):0; // fundinho acima da linha; se estiver muito no topo, abaixo
+  const avg=yAvg!=null?`<line x1="${x0}" y1="${yAvg.toFixed(1)}" x2="${(x0+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="${roxo}" stroke-width="1" stroke-dasharray="4 3" opacity=".55"/><rect x="${x0}" y="${chipY.toFixed(1)}" width="${chipW}" height="13" rx="3" fill="#ECEAFB"/><text x="${(x0+5).toFixed(1)}" y="${(chipY+9.5).toFixed(1)}" font-size="9" fill="${roxo}" font-weight="700">${avgTxt}</text>`:'';
   const axis=`<text x="${x0}" y="${(mT-9).toFixed(1)}" font-size="9" fill="${teal}" font-weight="700">Alcance · máx ${shortNum(maxA)}</text><text x="${(x0+pw).toFixed(1)}" y="${(mT-9).toFixed(1)}" text-anchor="end" font-size="9" fill="${terra}" font-weight="700">Interações · máx ${shortNum(maxI)}</text>`;
   const svg=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="mx-chart2" role="img" aria-label="Desempenho por conteúdo">${axis}<line x1="${x0}" y1="${y0}" x2="${(x0+pw).toFixed(1)}" y2="${y0}" stroke="#E0DACE" stroke-width="1"/>${bars}${avg}<path d="${path}" fill="none" stroke="${roxo}" stroke-width="2"/>${dots}${xlab}</svg>`;
   const legend=`<div class="mx-legend2"><span><i style="background:${teal}"></i>Alcance/Views</span><span><i style="background:${terra}"></i>Interações</span><span><i class="ln" style="background:${roxo}"></i>Engajamento</span></div>`;
