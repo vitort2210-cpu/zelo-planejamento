@@ -639,6 +639,7 @@ mark.cmt:hover{background:#f6d9c4}
 .mx-legend2 i{width:11px;height:11px;border-radius:3px;display:inline-block}
 .mx-legend2 i.ln{height:3px;width:16px;border-radius:2px}
 .rc-chart-scroll{overflow-x:auto;padding-bottom:4px}
+.mx-chart2{display:block;margin:0 auto}
 .rc-chart-note{font-size:10.5px;color:var(--z-text-sec);margin-top:6px;line-height:1.45}
 .rc-best-body{display:flex;flex-direction:column;gap:2px}
 .rc-best-body strong{font-size:14px;color:var(--z-text)}
@@ -2849,7 +2850,9 @@ function resumoChartHTML(items, posts, engMedio){
   (items||[]).forEach(it=>{ const p=(posts||{})[it.id]; if(!postComDados(p)) return; const tp=tipoPost(it); const a=postAlcance(p,tp), i=postInteracoes(p,tp); data.push({it,a,i,eng:(a>0?(i/a*100):0)}); });
   if(!data.length) return '';
   const n=data.length, H=250, mT=30, mB=44, mL=8, mR=8;
-  const W=Math.max(500, n*48 + mL + mR), pw=W-mL-mR, ph=H-mT-mB, x0=mL, y0=H-mB;
+  // Largura acompanha o nº de conteúdos (largura fixa por conteúdo). Com poucos
+  // posts o SVG fica estreito e centralizado; conforme entram dados, cresce e rola.
+  const W=n*72 + mL + mR, pw=W-mL-mR, ph=H-mT-mB, x0=mL, y0=H-mB;
   const maxA=Math.max(1,...data.map(d=>d.a)), maxI=Math.max(1,...data.map(d=>d.i));
   const maxE=Math.max(1,...data.map(d=>d.eng), engMedio||0)*1.12;
   const slot=pw/n, gW=Math.min(34,slot*0.62), bW=gW/2;
