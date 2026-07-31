@@ -495,6 +495,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ci-leg-ro{font-size:11px;color:var(--z-text-sec);margin-top:4px;font-style:italic}
 .ci-ins{width:100%;margin-top:4px;font-size:10.5px;font-weight:700;padding:5px;border:1px solid var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);border-radius:6px;cursor:pointer;font-family:inherit}
 .ci-ins:hover{background:#d3ebee}
+/* Editor de tabela */
+.tb-card{border:0.5px solid var(--z-border);border-radius:10px;padding:10px;margin-bottom:10px;background:#fff}
+.tb-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.tb-num{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--z-teal);white-space:nowrap}
+.tb-tit{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;color:var(--z-text);min-width:0}
+.tb-del{position:static!important;flex-shrink:0}
+.tb-scroll{overflow-x:auto}
+.tb-edit{border-collapse:collapse;width:100%}
+.tb-edit th,.tb-edit td{border:0.5px solid var(--z-border);padding:0;position:relative}
+.tb-edit th{background:var(--z-teal-light)}
+.tb-edit input{width:100%;min-width:90px;border:none;background:transparent;padding:7px 8px;font-family:inherit;font-size:12.5px;color:var(--z-text);box-sizing:border-box}
+.tb-edit th input{font-weight:700;color:var(--z-teal)}
+.tb-edit input:focus{outline:2px solid var(--z-teal);outline-offset:-2px;background:#fff}
+.tb-x{border:none;background:none;color:var(--z-text-sec);cursor:pointer;font-size:9px;padding:2px 4px;opacity:.5;line-height:1}
+.tb-x:hover{opacity:1;color:var(--z-terra)}
+.tb-edit th .tb-x{position:absolute;top:1px;right:1px}
+.tb-rowact{border:none!important;width:22px;text-align:center;background:none!important}
+.tb-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.tb-btn{font-size:11px;font-weight:600;padding:6px 11px;border:0.5px solid var(--z-border);background:var(--z-bg);color:var(--z-text-sec);border-radius:7px;cursor:pointer;font-family:inherit}
+.tb-btn:hover{border-color:var(--z-teal);color:var(--z-teal)}
+.tb-btn.tb-ins{border-color:var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);font-weight:700}
+.vtab-wrap{display:block;margin:8px 0}
+.vtab-cap{display:block;font-size:11px;font-weight:700;color:var(--z-teal);margin-bottom:4px}
 .vblock-empty{color:#bbb;font-size:12px}
 mark.cmt{background:#FBEEE4;border-bottom:2px solid var(--z-terra);color:inherit;cursor:pointer;border-radius:2px;padding:0 1px}
 mark.cmt:hover{background:#f6d9c4}
@@ -1926,13 +1949,21 @@ function defaultCopy(id) {
   return {
     isVideo: !!(it && /reels/i.test(it.formato || '')),
     direcionamento:'', materiais:'', slides:[{texto:''}], reels:'',
-    legenda:'', blog:'', imagens:[], statusCopy:'', statusArte:'', statusGabi:'', comentarios:[], notificadoEm:''
+    legenda:'', blog:'', imagens:[], tabelas:[], statusCopy:'', statusArte:'', statusGabi:'', comentarios:[], notificadoEm:''
   };
 }
 function normalizeCopy(c) {
   if (!Array.isArray(c.slides) || !c.slides.length) c.slides = [{texto:''}];
   if (!Array.isArray(c.comentarios)) c.comentarios = [];
   if (!Array.isArray(c.imagens)) c.imagens = [];
+  if (!Array.isArray(c.tabelas)) c.tabelas = [];
+  // O Firestore não aceita array dentro de array: cada linha é {cels:[...]}.
+  // Aceita também o formato simples (linha como array) vindo de JSON importado.
+  c.tabelas.forEach(t => {
+    if (!Array.isArray(t.cols)) t.cols = [];
+    if (!Array.isArray(t.rows)) t.rows = [];
+    t.rows = t.rows.map(r => Array.isArray(r) ? { cels: r.slice() } : (r && Array.isArray(r.cels) ? r : { cels: [] }));
+  });
   return c;
 }
 function getCopy(id) {
@@ -1968,6 +1999,8 @@ function agendarSaveCopy() {
 }
 async function salvarCopy() {
   if (!copyCiclo) return;
+  // Blindagem: o Firestore rejeita array dentro de array (linhas de tabela).
+  Object.values(copyData.itens || {}).forEach(it => { if (it && typeof it === 'object') normalizeCopy(it); });
   try {
     await setDoc(copyRef(copyCiclo), { itens: copyData.itens, updatedAt: new Date().toISOString() });
     const el = document.getElementById('save-status');
@@ -2019,6 +2052,7 @@ window.importarCopyJSON = async function() {
     ? `Adicionar/atualizar ${n} conteúdo(s) de copy neste ciclo, mantendo os ${existentes} já existentes? (itens com o mesmo id são substituídos)`
     : `Importar ${n} conteúdo(s) de copy para este ciclo?`;
   if (!confirm(msg)) return;
+  Object.values(itens).forEach(it => { if (it && typeof it === 'object') normalizeCopy(it); });
   copyData = { itens: { ...(copyData.itens || {}), ...itens } };
   await salvarCopy();
   renderCopyCards();
@@ -2154,44 +2188,21 @@ window.fmtCopy=function(ev,kind){
   const out = jaTem ? limpo : _styleStr(limpo,kind);
   copyFmtCommit(ta, v.slice(0,s)+out+v.slice(e), s, s+out.length);
 };
-// Tabela em texto (| col | col |): copia e cola em qualquer lugar, a Gabi continua
-// comentando trechos normalmente e, na validação, vira tabela de verdade.
-function alinharTabela(txt){
-  const linhas=txt.split('\n');
-  const grade=linhas.map(l=>{ const t=l.trim(); return t.includes('|') ? t.replace(/^\|/,'').replace(/\|$/,'').split('|').map(c=>c.trim()) : null; });
-  if(!grade.some(Boolean)) return null;
-  const nc=Math.max(...grade.filter(Boolean).map(g=>g.length));
-  const larg=[];
-  for(let i=0;i<nc;i++) larg[i]=Math.max(3,...grade.filter(Boolean).map(g=>{ const v=g[i]||''; return /^-*$/.test(v)?0:v.length; }));
-  return grade.map((g,idx)=>{
-    if(!g) return linhas[idx];
-    const cels=[];
-    for(let i=0;i<nc;i++){ const v=g[i]||''; cels.push(/^-*$/.test(v)&&v.length?'-'.repeat(larg[i]):v.padEnd(larg[i])); }
-    return '| '+cels.join(' | ')+' |';
-  }).join('\n');
-}
+// Cria uma tabela (dados) e já marca a posição dela no campo em que se está escrevendo.
 window.fmtTabela=function(ev){
   ev.preventDefault();
-  const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; }
-  const s=ta.selectionStart, e=ta.selectionEnd, v=ta.value;
-  if(s!==e){   // com texto selecionado: realinha as colunas
-    const al=alinharTabela(v.slice(s,e));
-    if(al){ copyFmtCommit(ta, v.slice(0,s)+al+v.slice(e), s, s+al.length); showToast('Tabela alinhada ✓'); }
-    else showToast('Selecione as linhas da tabela (com |) para alinhar.');
-    return;
-  }
-  const resp=(prompt('Tamanho da tabela — colunas x linhas (ex.: 3x4):','2x3')||'').trim();
-  const mm=resp.match(/(\d+)\s*[xX×]\s*(\d+)/); if(!mm) return;
-  const nc=Math.max(1,Math.min(8,+mm[1])), nl=Math.max(1,Math.min(30,+mm[2]));
-  const head=[],sep=[],vaz=[];
-  for(let i=0;i<nc;i++){ head.push('Coluna '+String.fromCharCode(65+i)); sep.push('---'); vaz.push(''); }
-  const linhas=['| '+head.join(' | ')+' |','| '+sep.join(' | ')+' |'];
-  for(let i=0;i<nl;i++) linhas.push('| '+vaz.join(' | ')+' |');
-  const bloco=alinharTabela(linhas.join('\n'))||linhas.join('\n');
-  const pre=(s>0&&v[s-1]!=='\n')?'\n':'';
-  const ins=pre+bloco+'\n';
-  copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+pre.length, s+pre.length+bloco.length);
-  showToast('Tabela inserida — preencha e clique em ⊞ com ela selecionada para realinhar.');
+  const ta=copyFmtTarget()||ultimoCampoCopy;
+  const card=ta&&ta.closest?ta.closest('.copy-card'):null;
+  if(!card){ showToast('Clique no campo de texto onde a tabela deve entrar.'); return; }
+  const id=+card.id.replace('copy-card-','');
+  const c=ensureCopy(id);
+  c.tabelas.push(tabelaVazia());
+  const ti=c.tabelas.length-1;
+  ultimoCampoCopy=ta;
+  inserirMarca(id, `[tabela ${ti+1}]`);
+  agendarSaveCopy();
+  renderOneCard(id);
+  showToast(`Tabela ${ti+1} criada — preencha as células no bloco 📊 Tabelas do conteúdo.`);
 };
 window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'flex':'none'); };
 window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; } const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value; copyFmtCommit(ta, v.slice(0,s)+emo+v.slice(e), s+emo.length, s+emo.length); };
@@ -2306,7 +2317,8 @@ function cardEdit(it, c) {
     <div class="cf"><label class="cf-lbl">Texto de blog (opcional)</label>
       <textarea id="blog-${it.id}" rows="3" placeholder="Texto do blog, se houver..." oninput="updateCopyField(${it.id},'blog',this)">${esc(c.blog)}</textarea>
       ${commentListHTML(it.id, c, 'blog')}</div>
-    ${copyImagensHTML(it.id, c)}`;
+    ${copyImagensHTML(it.id, c)}
+    ${copyTabelasHTML(it.id, c)}`;
 }
 
 // ── Modo validação (Gabi) ─────────────────────────────────────────────────────
@@ -2357,11 +2369,21 @@ function inlineTabelas(html){
     return `<span class="vsrc">${m}</span><table class="vtab vrender">${th}${tb}</table>`;
   });
 }
+// [tabela N] → a tabela de verdade, na posição marcada.
+function inlineTabelasRef(html, c){
+  const tabs=c.tabelas||[];
+  return html.replace(/\[tabela (\d+)\]/g, (m, n) => {
+    const t=tabs[+n-1]; if(!t) return m;
+    const cap=t.titulo?`<span class="vtab-cap">${esc(t.titulo)}</span>`:'';
+    return `<span class="vsrc">${m}</span><span class="vrender vtab-wrap">${cap}${tabelaRenderHTML(t)}</span>`;
+  });
+}
 function vblockHTML(id, c, block, label, text) {
   const comments = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
   let corpo = renderComentado(text||'', comments);
-  if (block === 'blog') corpo = inlineImagens(corpo, c);
-  corpo = inlineTabelas(corpo);
+  corpo = inlineImagens(corpo, c);      // imagens valem em qualquer campo (arte, legenda, blog)
+  corpo = inlineTabelasRef(corpo, c);
+  corpo = inlineTabelas(corpo);         // compatibilidade: tabela escrita em texto com |
   return `<div class="cf">
     ${label?`<label class="cf-lbl">${label}</label>`:''}
     <div class="vblock" data-item="${id}" data-block="${block}">${corpo}</div>
@@ -2381,7 +2403,8 @@ function cardValidacao(it, c) {
   return `${statusSummaryRO(c)}${decisao}
     ${c.direcionamento?`<div class="cf"><label class="cf-lbl">Direcionamento</label><div style="font-size:12px;color:var(--z-text-sec)">${esc(c.direcionamento)}</div></div>`:''}
     ${blocks.join('')}
-    ${copyImagensHTML(it.id, c)}`;
+    ${copyImagensHTML(it.id, c)}
+    ${copyTabelasHTML(it.id, c)}`;
 }
 
 // ── Comentários (lista + marcação por palavra) ────────────────────────────────
@@ -2499,19 +2522,39 @@ window.removeCopyImg = function(id,i){
   c.imagens.splice(i,1); agendarSaveCopy(); renderOneCard(id);
 };
 window.updateCopyImgLegenda = function(id,i,el){ const c=ensureCopy(id); if(c.imagens[i]) c.imagens[i].legenda=el.value; agendarSaveCopy(); };
-// Põe a marca [imagem N] na posição do cursor do texto de blog.
-window.inserirImgNoTexto = function(id,i){
-  const ta=document.getElementById('blog-'+id);
-  if(!ta){ showToast('Abra o campo de blog primeiro.'); return; }
-  const marca=`[imagem ${i+1}]`, v=ta.value;
-  const s=(ta.selectionStart!=null && document.activeElement===ta) ? ta.selectionStart : v.length;
+// Último campo de texto do copy em que se clicou — a marca de imagem/tabela entra
+// nele (serve para slides da arte, legenda, reels ou blog).
+let ultimoCampoCopy = null;
+document.addEventListener('focusin', (e) => {
+  const t = e.target;
+  if (t && t.tagName === 'TEXTAREA' && t.closest && t.closest('#copy-cards')) ultimoCampoCopy = t;
+});
+function campoAlvoCopy(id){
+  const card=document.getElementById('copy-card-'+id); if(!card) return null;
+  if(ultimoCampoCopy && card.contains(ultimoCampoCopy) && document.body.contains(ultimoCampoCopy)) return ultimoCampoCopy;
+  return document.getElementById('blog-'+id) || card.querySelector('textarea');
+}
+function nomeDoCampo(ta){
+  if(!ta) return 'texto';
+  if(ta.id && ta.id.startsWith('blog-')) return 'texto de blog';
+  const sc=ta.closest('.slide-card'); if(sc) return (sc.querySelector('.slide-num')?.textContent||'slide');
+  const lbl=ta.closest('.cf')?.querySelector('.cf-lbl')?.textContent;
+  return lbl ? lbl.toLowerCase() : 'texto';
+}
+// Insere a marca ([imagem N] / [tabela N]) na posição do cursor do campo escolhido.
+function inserirMarca(id, marca){
+  const ta=campoAlvoCopy(id);
+  if(!ta){ showToast('Abra o conteúdo e clique no campo de texto onde quer inserir.'); return; }
+  const v=ta.value, s=(ta.selectionStart!=null)?ta.selectionStart:v.length;
   const pre=(s>0 && v[s-1]!=='\n') ? '\n' : '';
   const ins=pre+marca+'\n';
   ta.value=v.slice(0,s)+ins+v.slice(s);
   ta.focus(); ta.setSelectionRange(s+ins.length, s+ins.length);
   ta.dispatchEvent(new Event('input',{bubbles:true}));
-  showToast(`${marca} inserida no texto de blog.`);
-};
+  showToast(`${marca} inserida em: ${nomeDoCampo(ta)}`);
+}
+window.inserirImgNoTexto = function(id,i){ inserirMarca(id, `[imagem ${i+1}]`); };
+window.inserirTabNoTexto = function(id,ti){ inserirMarca(id, `[tabela ${ti+1}]`); };
 function copyImagensHTML(id, c){
   const imgs=c.imagens||[];
   const pode = podeSubirImgCopy() && copyMode==='edit';
@@ -2521,15 +2564,75 @@ function copyImagensHTML(id, c){
       <div class="ci-thumb"><img src="${esc(im.url)}" alt="imagem ${i+1}">${pode?`<button class="dz-del" onclick="removeCopyImg(${id},${i})" title="Remover">✕</button>`:''}<span class="ci-num">imagem ${i+1}</span></div>
       ${pode
         ? `<input type="text" class="ci-leg" value="${esc(im.legenda||'')}" placeholder="Legenda (opcional)" oninput="updateCopyImgLegenda(${id},${i},this)">
-           <button class="ci-ins" onclick="inserirImgNoTexto(${id},${i})">↳ Inserir no texto do blog</button>`
+           <button class="ci-ins" onclick="inserirImgNoTexto(${id},${i})">↳ Inserir no texto</button>`
         : (im.legenda?`<div class="ci-leg-ro">${esc(im.legenda)}</div>`:'')}
     </div>`).join('');
   const up = pode
     ? `<label class="dz-btn">🖼 Adicionar imagem<input type="file" accept="image/*" multiple style="display:none" onchange="onCopyImgFiles(${id},this)"></label><span class="dz-progress" id="ci-prog-${id}"></span>`
     : '';
-  const dica = pode ? `<div class="dz-ordhint">Use <strong>↳ Inserir no texto do blog</strong> para posicionar a imagem no meio do artigo — na validação ela aparece exatamente ali.</div>` : '';
+  const dica = pode ? `<div class="dz-ordhint">Clique no campo onde quer a imagem (slide da arte, legenda ou blog) e use <strong>↳ Inserir no texto</strong> — na validação ela aparece exatamente ali.</div>` : '';
   return `<div class="cf"><label class="cf-lbl">🖼 Imagens do conteúdo</label>
     <div class="ci-grid">${thumbs}</div>${up}${dica}</div>`;
+}
+
+// ── Tabelas do copy (tabela de verdade, guardada como dados) ───────────────────
+function tabelaVazia(){ return { titulo:'', cols:['Coluna A','Coluna B'], rows:[{cels:['','']},{cels:['','']}] }; }
+function ensureTab(id, ti){ const c=ensureCopy(id); return c.tabelas[ti]; }
+function celsDa(r){ return (r && Array.isArray(r.cels)) ? r.cels : (Array.isArray(r) ? r : []); }
+window.addTabela = function(id){ const c=ensureCopy(id); c.tabelas.push(tabelaVazia()); agendarSaveCopy(); renderOneCard(id); showToast('Tabela criada — preencha e clique em ↳ Inserir no texto.'); };
+window.removeTabela = function(id, ti){
+  const c=ensureCopy(id);
+  if(!confirm(`Remover a tabela ${ti+1}? As marcas [tabela N] no texto são renumeradas.`)) return;
+  c.tabelas.splice(ti,1); agendarSaveCopy(); renderOneCard(id);
+};
+window.updateTabTitulo = function(id,ti,el){ const t=ensureTab(id,ti); if(t){ t.titulo=el.value; agendarSaveCopy(); } };
+window.updateTabCol = function(id,ti,ci,el){ const t=ensureTab(id,ti); if(t){ t.cols[ci]=el.value; agendarSaveCopy(); } };
+window.updateTabCel = function(id,ti,ri,ci,el){ const t=ensureTab(id,ti); if(t&&t.rows[ri]){ celsDa(t.rows[ri])[ci]=el.value; agendarSaveCopy(); } };
+window.addTabLinha = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.rows.push({cels:t.cols.map(()=>'')}); agendarSaveCopy(); renderOneCard(id); } };
+window.addTabCol = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.cols.push('Coluna '+String.fromCharCode(65+t.cols.length)); t.rows.forEach(r=>celsDa(r).push('')); agendarSaveCopy(); renderOneCard(id); } };
+window.removeTabLinha = function(id,ti,ri){ const t=ensureTab(id,ti); if(t&&t.rows.length>1){ t.rows.splice(ri,1); agendarSaveCopy(); renderOneCard(id); } else showToast('A tabela precisa de pelo menos uma linha.'); };
+window.removeTabCol = function(id,ti,ci){ const t=ensureTab(id,ti); if(t&&t.cols.length>1){ t.cols.splice(ci,1); t.rows.forEach(r=>celsDa(r).splice(ci,1)); agendarSaveCopy(); renderOneCard(id); } else showToast('A tabela precisa de pelo menos uma coluna.'); };
+window.copiarTabelaTexto = function(id,ti){
+  const t=ensureTab(id,ti); if(!t) return;
+  const linhas=[t.cols, ...t.rows.map(celsDa)].map(r=>r.join('\t')).join('\n');
+  navigator.clipboard.writeText((t.titulo?t.titulo+'\n':'')+linhas)
+    .then(()=>showToast('Tabela copiada — cole no Google Docs/Sheets que vira tabela.'))
+    .catch(()=>showToast('Não consegui copiar.'));
+};
+function tabelaEditorHTML(id, t, ti){
+  const cols=t.cols.map((cn,ci)=>`<th><input value="${esc(cn)}" oninput="updateTabCol(${id},${ti},${ci},this)" placeholder="Coluna"><button class="tb-x" title="Remover coluna" onclick="removeTabCol(${id},${ti},${ci})">✕</button></th>`).join('');
+  const rows=t.rows.map((r,ri)=>{ const cel=celsDa(r); return `<tr>${t.cols.map((_,ci)=>`<td><input value="${esc(cel[ci]||'')}" oninput="updateTabCel(${id},${ti},${ri},${ci},this)"></td>`).join('')}<td class="tb-rowact"><button class="tb-x" title="Remover linha" onclick="removeTabLinha(${id},${ti},${ri})">✕</button></td></tr>`; }).join('');
+  return `<div class="tb-card">
+    <div class="tb-head">
+      <span class="tb-num">Tabela ${ti+1}</span>
+      <input class="tb-tit" value="${esc(t.titulo||'')}" placeholder="Título da tabela (opcional)" oninput="updateTabTitulo(${id},${ti},this)">
+      <button class="dz-del tb-del" title="Remover tabela" onclick="removeTabela(${id},${ti})">✕</button>
+    </div>
+    <div class="tb-scroll"><table class="tb-edit"><tr>${cols}<th class="tb-rowact"></th></tr>${rows}</table></div>
+    <div class="tb-acts">
+      <button class="tb-btn" onclick="addTabLinha(${id},${ti})">+ linha</button>
+      <button class="tb-btn" onclick="addTabCol(${id},${ti})">+ coluna</button>
+      <button class="tb-btn tb-ins" onclick="inserirTabNoTexto(${id},${ti})">↳ Inserir no texto</button>
+      <button class="tb-btn" onclick="copiarTabelaTexto(${id},${ti})">⧉ Copiar</button>
+    </div>
+  </div>`;
+}
+function copyTabelasHTML(id, c){
+  const tabs=c.tabelas||[];
+  const pode = copyMode==='edit' && ROLE==='editor';
+  if(!tabs.length && !pode) return '';
+  const corpo = pode
+    ? tabs.map((t,ti)=>tabelaEditorHTML(id,t,ti)).join('')
+    : tabs.map((t,ti)=>`<div class="tb-card">${t.titulo?`<div class="tb-num">${esc(t.titulo)}</div>`:`<div class="tb-num">Tabela ${ti+1}</div>`}${tabelaRenderHTML(t)}</div>`).join('');
+  const add = pode ? `<button class="add-btn" onclick="addTabela(${id})">+ Nova tabela</button>` : '';
+  const dica = pode ? `<div class="dz-ordhint">Clique no campo onde a tabela deve entrar (slide da arte, legenda ou blog) e use <strong>↳ Inserir no texto</strong>.</div>` : '';
+  return `<div class="cf"><label class="cf-lbl">📊 Tabelas do conteúdo</label>${corpo}${add}${dica}</div>`;
+}
+// A mesma tabela renderizada (usada na validação e na visualização somente leitura)
+function tabelaRenderHTML(t){
+  const th='<tr>'+t.cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr>';
+  const tb=t.rows.map(r=>{ const cel=celsDa(r); return '<tr>'+t.cols.map((_,ci)=>`<td>${esc(cel[ci]||'')}</td>`).join('')+'</tr>'; }).join('');
+  return `<table class="vtab">${th}${tb}</table>`;
 }
 window.setCopyStatus = function(id, which, val) { const c = ensureCopy(id); c[which] = (c[which]===val?'':val); agendarSaveCopy(); renderOneCard(id); };
 window.setGabiStatus = function(id, val) { const c = ensureCopy(id); c.statusGabi = (c.statusGabi===val?'':val); agendarSaveCopy(); renderOneCard(id); };
