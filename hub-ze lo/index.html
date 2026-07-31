@@ -477,6 +477,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* bloco read-only (validação) */
 .vslide-num{font-size:10px;font-weight:700;color:var(--z-ocre-dark);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 3px}
 .vblock{font-size:13px;line-height:1.7;color:var(--z-text);white-space:pre-wrap;background:var(--z-bg);border:0.5px solid var(--z-border);border-radius:8px;padding:9px 11px;cursor:text}
+/* Texto-fonte escondido: some da tela mas continua contando na posição dos comentários */
+.vsrc{display:none}
+.vimg{display:block;margin:8px 0}
+.vimg img{max-width:100%;border-radius:8px;border:0.5px solid var(--z-border);display:block}
+.vimg-cap{display:block;font-size:11px;color:var(--z-text-sec);margin-top:4px;font-style:italic}
+.vtab{border-collapse:collapse;margin:8px 0;font-size:12.5px;background:#fff;border-radius:8px;overflow:hidden;display:block;max-width:100%;overflow-x:auto;white-space:normal}
+.vtab th,.vtab td{border:0.5px solid var(--z-border);padding:6px 10px;text-align:left;vertical-align:top}
+.vtab th{background:var(--z-teal-light);color:var(--z-teal);font-weight:700}
+/* Galeria de imagens do copy */
+.ci-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.ci-item{width:150px}
+.ci-thumb{position:relative;border-radius:8px;overflow:hidden;border:0.5px solid var(--z-border);background:var(--z-bg)}
+.ci-thumb img{width:100%;height:96px;object-fit:cover;display:block}
+.ci-num{position:absolute;left:4px;bottom:4px;background:rgba(0,0,0,.65);color:#fff;font-size:9px;font-weight:700;padding:2px 6px;border-radius:20px}
+.ci-leg{width:100%;margin-top:5px;font-size:11px;padding:5px 7px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;box-sizing:border-box;color:var(--z-text)}
+.ci-leg-ro{font-size:11px;color:var(--z-text-sec);margin-top:4px;font-style:italic}
+.ci-ins{width:100%;margin-top:4px;font-size:10.5px;font-weight:700;padding:5px;border:1px solid var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);border-radius:6px;cursor:pointer;font-family:inherit}
+.ci-ins:hover{background:#d3ebee}
 .vblock-empty{color:#bbb;font-size:12px}
 mark.cmt{background:#FBEEE4;border-bottom:2px solid var(--z-terra);color:inherit;cursor:pointer;border-radius:2px;padding:0 1px}
 mark.cmt:hover{background:#f6d9c4}
@@ -1908,12 +1926,13 @@ function defaultCopy(id) {
   return {
     isVideo: !!(it && /reels/i.test(it.formato || '')),
     direcionamento:'', materiais:'', slides:[{texto:''}], reels:'',
-    legenda:'', blog:'', statusCopy:'', statusArte:'', statusGabi:'', comentarios:[], notificadoEm:''
+    legenda:'', blog:'', imagens:[], statusCopy:'', statusArte:'', statusGabi:'', comentarios:[], notificadoEm:''
   };
 }
 function normalizeCopy(c) {
   if (!Array.isArray(c.slides) || !c.slides.length) c.slides = [{texto:''}];
   if (!Array.isArray(c.comentarios)) c.comentarios = [];
+  if (!Array.isArray(c.imagens)) c.imagens = [];
   return c;
 }
 function getCopy(id) {
@@ -2135,6 +2154,45 @@ window.fmtCopy=function(ev,kind){
   const out = jaTem ? limpo : _styleStr(limpo,kind);
   copyFmtCommit(ta, v.slice(0,s)+out+v.slice(e), s, s+out.length);
 };
+// Tabela em texto (| col | col |): copia e cola em qualquer lugar, a Gabi continua
+// comentando trechos normalmente e, na validação, vira tabela de verdade.
+function alinharTabela(txt){
+  const linhas=txt.split('\n');
+  const grade=linhas.map(l=>{ const t=l.trim(); return t.includes('|') ? t.replace(/^\|/,'').replace(/\|$/,'').split('|').map(c=>c.trim()) : null; });
+  if(!grade.some(Boolean)) return null;
+  const nc=Math.max(...grade.filter(Boolean).map(g=>g.length));
+  const larg=[];
+  for(let i=0;i<nc;i++) larg[i]=Math.max(3,...grade.filter(Boolean).map(g=>{ const v=g[i]||''; return /^-*$/.test(v)?0:v.length; }));
+  return grade.map((g,idx)=>{
+    if(!g) return linhas[idx];
+    const cels=[];
+    for(let i=0;i<nc;i++){ const v=g[i]||''; cels.push(/^-*$/.test(v)&&v.length?'-'.repeat(larg[i]):v.padEnd(larg[i])); }
+    return '| '+cels.join(' | ')+' |';
+  }).join('\n');
+}
+window.fmtTabela=function(ev){
+  ev.preventDefault();
+  const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; }
+  const s=ta.selectionStart, e=ta.selectionEnd, v=ta.value;
+  if(s!==e){   // com texto selecionado: realinha as colunas
+    const al=alinharTabela(v.slice(s,e));
+    if(al){ copyFmtCommit(ta, v.slice(0,s)+al+v.slice(e), s, s+al.length); showToast('Tabela alinhada ✓'); }
+    else showToast('Selecione as linhas da tabela (com |) para alinhar.');
+    return;
+  }
+  const resp=(prompt('Tamanho da tabela — colunas x linhas (ex.: 3x4):','2x3')||'').trim();
+  const mm=resp.match(/(\d+)\s*[xX×]\s*(\d+)/); if(!mm) return;
+  const nc=Math.max(1,Math.min(8,+mm[1])), nl=Math.max(1,Math.min(30,+mm[2]));
+  const head=[],sep=[],vaz=[];
+  for(let i=0;i<nc;i++){ head.push('Coluna '+String.fromCharCode(65+i)); sep.push('---'); vaz.push(''); }
+  const linhas=['| '+head.join(' | ')+' |','| '+sep.join(' | ')+' |'];
+  for(let i=0;i<nl;i++) linhas.push('| '+vaz.join(' | ')+' |');
+  const bloco=alinharTabela(linhas.join('\n'))||linhas.join('\n');
+  const pre=(s>0&&v[s-1]!=='\n')?'\n':'';
+  const ins=pre+bloco+'\n';
+  copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+pre.length, s+pre.length+bloco.length);
+  showToast('Tabela inserida — preencha e clique em ⊞ com ela selecionada para realinhar.');
+};
 window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'flex':'none'); };
 window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; } const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value; copyFmtCommit(ta, v.slice(0,s)+emo+v.slice(e), s+emo.length, s+emo.length); };
 const FMT_EMOJIS=['😀','🙂','😍','🥰','👍','👏','🙌','🎉','✨','🔥','💡','📌','📎','✅','⚠️','❤️','🧠','🧸','🎨','📚','🌱','👶','🤱','🏫','📈','📊','🗣️','👀','💬','🤝','🌍','♻️','➡️','⭐','📅','🙏'];
@@ -2143,6 +2201,7 @@ function copyFmtbarHTML(){
     <button class="fmtb" title="Negrito (funciona ao colar no Instagram/LinkedIn)" onmousedown="fmtCopy(event,'bold')"><strong>N</strong></button>
     <button class="fmtb" title="Itálico" onmousedown="fmtCopy(event,'italic')"><em style="font-family:Georgia,serif">I</em></button>
     <button class="fmtb" title="Marcador (•)" onmousedown="fmtCopy(event,'bullet')">•</button>
+    <button class="fmtb" title="Tabela — sem seleção insere; com a tabela selecionada, alinha as colunas" onmousedown="fmtTabela(event)">⊞</button>
     <button class="fmtb" title="Inserir link (como texto)" onmousedown="fmtCopy(event,'link')">🔗</button>
     <button class="fmtb" title="Emojis" onmousedown="fmtEmojiToggle(event)">😀</button>
     <span class="fmt-hint">selecione o texto e clique em N / I</span>
@@ -2245,8 +2304,9 @@ function cardEdit(it, c) {
       <textarea rows="4" placeholder="Legenda do post, com hashtags..." oninput="updateCopyField(${it.id},'legenda',this)">${esc(c.legenda)}</textarea>
       ${commentListHTML(it.id, c, 'legenda')}</div>
     <div class="cf"><label class="cf-lbl">Texto de blog (opcional)</label>
-      <textarea rows="3" placeholder="Texto do blog, se houver..." oninput="updateCopyField(${it.id},'blog',this)">${esc(c.blog)}</textarea>
-      ${commentListHTML(it.id, c, 'blog')}</div>`;
+      <textarea id="blog-${it.id}" rows="3" placeholder="Texto do blog, se houver..." oninput="updateCopyField(${it.id},'blog',this)">${esc(c.blog)}</textarea>
+      ${commentListHTML(it.id, c, 'blog')}</div>
+    ${copyImagensHTML(it.id, c)}`;
 }
 
 // ── Modo validação (Gabi) ─────────────────────────────────────────────────────
@@ -2274,11 +2334,37 @@ function decisionBadgeRO(c) {
   if (!c.statusGabi) return '';
   return `<div class="gabi-dec"><span class="gd-chip on ${c.statusGabi}" style="cursor:default">${gabiLabel(c.statusGabi)}</span></div>`;
 }
+// Na validação, [imagem N] vira a imagem e a tabela em texto vira tabela de verdade.
+// O texto-fonte fica num span escondido de propósito: offsetInBlock percorre os nós
+// de texto para posicionar os comentários da Gabi, então ele não pode sumir.
+function inlineImagens(html, c){
+  const imgs=c.imagens||[];
+  return html.replace(/\[imagem (\d+)\]/g, (m, n) => {
+    const im=imgs[+n-1]; if(!im) return m;
+    return `<span class="vsrc">${m}</span><span class="vimg vrender"><img src="${esc(im.url)}" alt="${esc(im.legenda||m)}">${im.legenda?`<span class="vimg-cap">${esc(im.legenda)}</span>`:''}</span>`;
+  });
+}
+function inlineTabelas(html){
+  return html.replace(/(?:\|[^\n]*\|\n?)+/g, (m) => {
+    const linhas=m.split('\n').filter(l=>l.trim());
+    if(linhas.length<2) return m;
+    const rows=linhas.map(l=>l.trim().replace(/^\|/,'').replace(/\|$/,'').split('|').map(x=>x.trim()));
+    const corpo=rows.filter(r=>!r.every(x=>/^-*$/.test(x)));
+    if(corpo.length<1) return m;
+    const [head,...resto]=corpo;
+    const th='<tr>'+head.map(x=>`<th>${x}</th>`).join('')+'</tr>';
+    const tb=resto.map(r=>'<tr>'+r.map(x=>`<td>${x}</td>`).join('')+'</tr>').join('');
+    return `<span class="vsrc">${m}</span><table class="vtab vrender">${th}${tb}</table>`;
+  });
+}
 function vblockHTML(id, c, block, label, text) {
   const comments = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
+  let corpo = renderComentado(text||'', comments);
+  if (block === 'blog') corpo = inlineImagens(corpo, c);
+  corpo = inlineTabelas(corpo);
   return `<div class="cf">
     ${label?`<label class="cf-lbl">${label}</label>`:''}
-    <div class="vblock" data-item="${id}" data-block="${block}">${renderComentado(text||'', comments)}</div>
+    <div class="vblock" data-item="${id}" data-block="${block}">${corpo}</div>
     ${commentListHTML(id, c, block)}
   </div>`;
 }
@@ -2294,7 +2380,8 @@ function cardValidacao(it, c) {
   const decisao = podeValidarCopy() ? gabiDecisionRow(it, c) : decisionBadgeRO(c);
   return `${statusSummaryRO(c)}${decisao}
     ${c.direcionamento?`<div class="cf"><label class="cf-lbl">Direcionamento</label><div style="font-size:12px;color:var(--z-text-sec)">${esc(c.direcionamento)}</div></div>`:''}
-    ${blocks.join('')}`;
+    ${blocks.join('')}
+    ${copyImagensHTML(it.id, c)}`;
 }
 
 // ── Comentários (lista + marcação por palavra) ────────────────────────────────
@@ -2323,9 +2410,17 @@ function renderComentado(text, comments) {
   if (pos < text.length) html += esc(text.slice(pos));
   return html;
 }
+// Imagem e tabela renderizadas duplicariam texto na contagem (legenda, células),
+// deslocando os comentários. Só o texto-fonte conta — o renderizado é ignorado.
+function ehRenderizado(node) {
+  const el = node.nodeType === 1 ? node : node.parentElement;
+  return !!(el && el.closest && el.closest('.vrender'));
+}
 function offsetInBlock(block, node, nodeOffset) {
   let offset = 0;
-  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, null);
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+    acceptNode(n){ return ehRenderizado(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+  });
   let n;
   while ((n = walker.nextNode())) {
     if (n === node) return offset + nodeOffset;
@@ -2381,6 +2476,61 @@ window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[f
 window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; autoGrow(el); agendarSaveCopy(); };
 window.addSlide = function(id) { const c = ensureCopy(id); c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
 window.removeSlide = function(id, i) { const c = ensureCopy(id); c.slides.splice(i, 1); if (!c.slides.length) c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
+
+// ── Imagens do copy (galeria + referência dentro do texto de blog) ─────────────
+const podeSubirImgCopy = () => ROLE === 'editor';
+window.onCopyImgFiles = async function(id, input){
+  const files=[...input.files]; input.value='';
+  if(!files.length) return;
+  if(!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET){ showToast('Upload ainda não configurado (Cloudinary).'); return; }
+  const c=ensureCopy(id); const prog=document.getElementById('ci-prog-'+id); let ok=0;
+  for(const f of files){
+    if(prog) prog.textContent=`Enviando ${ok+1}/${files.length}...`;
+    try{ const r=await uploadCloudinary(f); c.imagens.push({ url:r.url, publicId:r.publicId, legenda:'' }); ok++; }
+    catch(e){ console.error(e); showToast('Falha ao enviar '+f.name); }
+  }
+  if(prog) prog.textContent='';
+  agendarSaveCopy(); renderOneCard(id);
+  if(ok) showToast(`✓ ${ok} imagem(ns) adicionada(s)`);
+};
+window.removeCopyImg = function(id,i){
+  const c=ensureCopy(id);
+  if(!confirm(`Remover a imagem ${i+1}? As marcas [imagem N] no texto são renumeradas.`)) return;
+  c.imagens.splice(i,1); agendarSaveCopy(); renderOneCard(id);
+};
+window.updateCopyImgLegenda = function(id,i,el){ const c=ensureCopy(id); if(c.imagens[i]) c.imagens[i].legenda=el.value; agendarSaveCopy(); };
+// Põe a marca [imagem N] na posição do cursor do texto de blog.
+window.inserirImgNoTexto = function(id,i){
+  const ta=document.getElementById('blog-'+id);
+  if(!ta){ showToast('Abra o campo de blog primeiro.'); return; }
+  const marca=`[imagem ${i+1}]`, v=ta.value;
+  const s=(ta.selectionStart!=null && document.activeElement===ta) ? ta.selectionStart : v.length;
+  const pre=(s>0 && v[s-1]!=='\n') ? '\n' : '';
+  const ins=pre+marca+'\n';
+  ta.value=v.slice(0,s)+ins+v.slice(s);
+  ta.focus(); ta.setSelectionRange(s+ins.length, s+ins.length);
+  ta.dispatchEvent(new Event('input',{bubbles:true}));
+  showToast(`${marca} inserida no texto de blog.`);
+};
+function copyImagensHTML(id, c){
+  const imgs=c.imagens||[];
+  const pode = podeSubirImgCopy() && copyMode==='edit';
+  if(!imgs.length && !pode) return '';
+  const thumbs=imgs.map((im,i)=>`
+    <div class="ci-item">
+      <div class="ci-thumb"><img src="${esc(im.url)}" alt="imagem ${i+1}">${pode?`<button class="dz-del" onclick="removeCopyImg(${id},${i})" title="Remover">✕</button>`:''}<span class="ci-num">imagem ${i+1}</span></div>
+      ${pode
+        ? `<input type="text" class="ci-leg" value="${esc(im.legenda||'')}" placeholder="Legenda (opcional)" oninput="updateCopyImgLegenda(${id},${i},this)">
+           <button class="ci-ins" onclick="inserirImgNoTexto(${id},${i})">↳ Inserir no texto do blog</button>`
+        : (im.legenda?`<div class="ci-leg-ro">${esc(im.legenda)}</div>`:'')}
+    </div>`).join('');
+  const up = pode
+    ? `<label class="dz-btn">🖼 Adicionar imagem<input type="file" accept="image/*" multiple style="display:none" onchange="onCopyImgFiles(${id},this)"></label><span class="dz-progress" id="ci-prog-${id}"></span>`
+    : '';
+  const dica = pode ? `<div class="dz-ordhint">Use <strong>↳ Inserir no texto do blog</strong> para posicionar a imagem no meio do artigo — na validação ela aparece exatamente ali.</div>` : '';
+  return `<div class="cf"><label class="cf-lbl">🖼 Imagens do conteúdo</label>
+    <div class="ci-grid">${thumbs}</div>${up}${dica}</div>`;
+}
 window.setCopyStatus = function(id, which, val) { const c = ensureCopy(id); c[which] = (c[which]===val?'':val); agendarSaveCopy(); renderOneCard(id); };
 window.setGabiStatus = function(id, val) { const c = ensureCopy(id); c.statusGabi = (c.statusGabi===val?'':val); agendarSaveCopy(); renderOneCard(id); };
 window.resolverComentario = function(id, cid) { const c = ensureCopy(id); const cm = c.comentarios.find(x => x.id === cid); if (cm) cm.resolvido = true; agendarSaveCopy(); renderOneCard(id); };
@@ -2420,6 +2570,11 @@ document.addEventListener('mouseup', (e) => {
   if (!block) return;
   const range = sel.getRangeAt(0);
   if (!block.contains(range.startContainer) || !block.contains(range.endContainer)) return;
+  // Dentro da tabela/imagem renderizada não dá para mapear a posição no texto-fonte.
+  if (ehRenderizado(range.startContainer) || ehRenderizado(range.endContainer)) {
+    showToast('Para comentar a tabela ou a imagem, selecione o texto ao redor dela.');
+    return;
+  }
   const s = offsetInBlock(block, range.startContainer, range.startOffset);
   const en = offsetInBlock(block, range.endContainer, range.endOffset);
   const a = Math.min(s, en), b = Math.max(s, en);
