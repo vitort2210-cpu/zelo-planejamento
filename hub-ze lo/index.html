@@ -463,7 +463,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* campos de copy */
 .cf{margin-bottom:11px}
 .cf-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--z-teal);margin-bottom:4px;display:block}
-.cf textarea,.cf input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:0.5px solid var(--z-border);border-radius:8px;font-family:inherit;line-height:1.55;color:var(--z-text);background:#fff;resize:vertical}
+.cf textarea,.cf input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:0.5px solid var(--z-border);border-radius:8px;font-family:inherit;line-height:1.55;color:var(--z-text);background:#fff;resize:vertical;box-sizing:border-box}
+#copy-cards .cf textarea,#copy-cards .slide-card textarea{overflow-y:hidden;min-height:64px}
 .cf textarea:focus,.cf input:focus{outline:none;border-color:var(--z-teal);box-shadow:0 0 0 2px rgba(17,128,140,.08)}
 /* slides */
 .slide-card{background:var(--z-bg);border:0.5px solid var(--z-border);border-left:3px solid var(--z-ocre-dark);border-radius:8px;padding:9px 10px;margin-bottom:8px}
@@ -471,7 +472,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .slide-num{font-size:10px;font-weight:700;color:var(--z-ocre-dark);text-transform:uppercase;letter-spacing:.05em}
 .slide-del{font-size:11px;color:var(--z-terra);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px;border-radius:4px}
 .slide-del:hover{background:var(--z-terra-light)}
-.slide-card textarea{width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;line-height:1.55;background:#fff;color:var(--z-text);resize:vertical}
+.slide-card textarea{width:100%;font-size:13px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;line-height:1.55;background:#fff;color:var(--z-text);resize:vertical;box-sizing:border-box}
 .slide-card textarea:focus{outline:none;border-color:var(--z-ocre-dark)}
 /* bloco read-only (validação) */
 .vslide-num{font-size:10px;font-weight:700;color:var(--z-ocre-dark);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 3px}
@@ -2102,6 +2103,23 @@ function _unstyle(ch){ const c=ch.codePointAt(0);
   return ch; }
 function _isBold(ch){ const c=ch.codePointAt(0); return (c>=0x1D5D4&&c<=0x1D607)||(c>=0x1D7EC&&c<=0x1D7F5); }
 function _isItal(ch){ const c=ch.codePointAt(0); return (c>=0x1D608&&c<=0x1D63B); }
+// Acentuadas (ç, ã, é…) não têm versão negrito/itálico no Unicode. Solução: decompõe
+// (NFD) → estiliza a letra-base → recoloca o acento por cima. Assim "ação" fica todo
+// em negrito, não só o "a" e o "o". Pontuação não tem variante e passa igual.
+function _ehAcento(ch){ const c=ch.codePointAt(0); return c>=0x0300&&c<=0x036F; }
+function _styleStr(str,kind){
+  let out='';
+  for(const ch of str.normalize('NFD')){
+    if(_ehAcento(ch)){ out+=ch; continue; }
+    out += (kind==='bold') ? _toBold(ch) : _toItal(ch);
+  }
+  return out;
+}
+function _unstyleStr(str){
+  let out='';
+  for(const ch of str){ out += _ehAcento(ch) ? ch : _unstyle(ch); }
+  return out.normalize('NFC');   // recompõe "a"+til → "ã"
+}
 function copyFmtTarget(){ const ta=document.activeElement; return (ta&&ta.tagName==='TEXTAREA'&&ta.closest&&ta.closest('#copy-cards'))?ta:null; }
 function copyFmtCommit(ta,val,selA,selB){ ta.value=val; ta.focus(); ta.setSelectionRange(selA,selB); ta.dispatchEvent(new Event('input',{bubbles:true})); }
 window.fmtCopy=function(ev,kind){
@@ -2111,9 +2129,10 @@ window.fmtCopy=function(ev,kind){
   if(kind==='bullet'){ const ins=(s>0&&v[s-1]!=='\n')?'\n• ':'• '; copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+ins.length, s+ins.length); return; }
   if(kind==='link'){ const url=(prompt('Cole o link (entra como texto — em legenda de rede social o link não fica clicável):')||'').trim(); if(!url) return; const pre=(s!==e)?v.slice(s,e)+' ':''; const ins=pre+url; copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+ins.length, s+ins.length); return; }
   if(s===e){ showToast('Selecione o texto para aplicar negrito/itálico.'); return; }
-  const sel=[...v.slice(s,e)];
-  const jaTem = kind==='bold' ? sel.some(_isBold) : sel.some(_isItal);
-  const out = sel.map(ch=>{ const base=_unstyle(ch); return jaTem?base:(kind==='bold'?_toBold(base):_toItal(base)); }).join('');
+  const trecho=v.slice(s,e);
+  const jaTem = [...trecho].some(kind==='bold' ? _isBold : _isItal);
+  const limpo=_unstyleStr(trecho);              // tira o estilo atual (permite alternar N ↔ I)
+  const out = jaTem ? limpo : _styleStr(limpo,kind);
   copyFmtCommit(ta, v.slice(0,s)+out+v.slice(e), s, s+out.length);
 };
 window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'flex':'none'); };
@@ -2143,7 +2162,7 @@ function renderCopyCards() {
 function renderOneCard(id) {
   const it = gradeItems.find(x => x.id === id);
   const el = document.getElementById('copy-card-' + id);
-  if (it && el) { el.innerHTML = cardInnerHTML(it, getCopy(id)); el.classList.toggle('open', copyExpanded.has(id)); }
+  if (it && el) { el.innerHTML = cardInnerHTML(it, getCopy(id)); el.classList.toggle('open', copyExpanded.has(id)); if (copyExpanded.has(id)) autoGrowScope(el); }
 }
 function cardInnerHTML(it, c) {
   const body = (copyMode === 'edit' ? cardEdit(it, c) : cardValidacao(it, c));
@@ -2173,7 +2192,10 @@ function miniStatus(c) {
 window.toggleCopyCard = function(id) {
   if (copyExpanded.has(id)) copyExpanded.delete(id); else copyExpanded.add(id);
   const el = document.getElementById('copy-card-' + id);
-  if (el) el.classList.toggle('open', copyExpanded.has(id));
+  if (el) {
+    el.classList.toggle('open', copyExpanded.has(id));
+    if (copyExpanded.has(id)) autoGrowScope(el);   // só cresce depois de visível
+  }
 };
 
 // ── Modo edição (Vitor) ───────────────────────────────────────────────────────
@@ -2201,7 +2223,7 @@ function slidesHTML(id, c) {
 }
 function renderSlides(id) {
   const el = document.getElementById('slides-' + id);
-  if (el) el.innerHTML = slidesHTML(id, getCopy(id));
+  if (el) { el.innerHTML = slidesHTML(id, getCopy(id)); autoGrowScope(el); }
 }
 function cardEdit(it, c) {
   const arte = c.isVideo
@@ -2346,8 +2368,17 @@ window.copiarLinkGabiCopy = function() {
   });
 };
 window.toggleVideo = function(id) { const c = ensureCopy(id); c.isVideo = !c.isVideo; agendarSaveCopy(); renderOneCard(id); };
-window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[field] = el.value; agendarSaveCopy(); };
-window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; agendarSaveCopy(); };
+// As caixas de texto do copy acompanham o tamanho do texto (sem caixinha pequena
+// com texto longo). Elemento escondido tem scrollHeight 0 — por isso também roda
+// ao abrir o card (ver toggleCopyCard).
+window.autoGrow = function(el){
+  if(!el || el.tagName!=='TEXTAREA' || !el.offsetParent) return;
+  el.style.height='auto';
+  el.style.height=(el.scrollHeight+2)+'px';
+};
+function autoGrowScope(root){ if(root) root.querySelectorAll('textarea').forEach(el=>autoGrow(el)); }
+window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[field] = el.value; autoGrow(el); agendarSaveCopy(); };
+window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; autoGrow(el); agendarSaveCopy(); };
 window.addSlide = function(id) { const c = ensureCopy(id); c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
 window.removeSlide = function(id, i) { const c = ensureCopy(id); c.slides.splice(i, 1); if (!c.slides.length) c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
 window.setCopyStatus = function(id, which, val) { const c = ensureCopy(id); c[which] = (c[which]===val?'':val); agendarSaveCopy(); renderOneCard(id); };
