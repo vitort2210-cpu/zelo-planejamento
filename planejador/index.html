@@ -165,6 +165,17 @@ button.sbtn.is-redirecionado span{color:#5C2A0D !important}
 .imp-box p{font-size:12px;color:var(--z-text-sec);margin:0 0 12px}
 .imp-box textarea{width:100%;height:150px;font-family:ui-monospace,monospace;font-size:11px;border:1px solid var(--z-border);border-radius:8px;padding:8px;resize:vertical}
 .imp-file{display:block;font-size:12px;margin:8px 0 12px}
+/* Seleção rápida por mês */
+.mes-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.mes-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8A8378;margin-right:2px}
+.mes-chip{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:12px;font-weight:600;color:#5A5A5A;background:#fff;border:1px solid #E0DACE;border-radius:20px;padding:5px 12px;cursor:pointer;transition:all .15s}
+.mes-chip:hover{border-color:#11808C;color:#11808C}
+.mes-chip.on{background:#11808C;border-color:#11808C;color:#fff}
+.mes-n{font-size:10px;font-weight:700;background:#F5F2EC;color:#5A5A5A;border-radius:20px;padding:1px 6px}
+.mes-chip.on .mes-n{background:rgba(255,255,255,.24);color:#fff}
+.imp-modo{display:flex;flex-direction:column;gap:5px;background:var(--z-bg,#F5F2EC);border:1px solid var(--z-border,#E0DACE);border-radius:8px;padding:9px 11px;margin:10px 0 4px}
+.imp-modo label{display:flex;align-items:center;gap:7px;font-size:12px;color:#3A3A3A;cursor:pointer;line-height:1.4}
+.imp-modo input{margin:0}
 .imp-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
 .imp-actions button{padding:9px 16px;font-size:13px;border-radius:8px;font-family:inherit;font-weight:600;cursor:pointer;border:1px solid var(--z-border);background:#fff;color:var(--z-text-sec)}
 .imp-actions .imp-go{border-color:var(--z-teal);background:var(--z-teal);color:#fff}
@@ -207,7 +218,11 @@ select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
 <div class="imp-modal" id="imp-modal">
   <div class="imp-box">
     <h3>Importar planejamento (JSON)</h3>
-    <p>Selecione o arquivo <strong>planejamento-…json</strong> ou cole o conteúdo. Isso substitui a grade e o contexto deste ciclo.</p>
+    <p>Aceita a grade inteira (<strong>{"items":[…]}</strong>) ou <strong>um conteúdo só</strong> — cole o objeto do conteúdo direto. Conteúdo com <strong>id</strong> já existente é atualizado; sem id, entra como novo.</p>
+    <div class="imp-modo">
+      <label><input type="radio" name="imp-modo" value="merge" checked> <strong>Adicionar / atualizar</strong> — mantém o resto da grade</label>
+      <label><input type="radio" name="imp-modo" value="replace"> <strong>Substituir tudo</strong> — apaga a grade atual</label>
+    </div>
     <input type="file" class="imp-file" accept="application/json,.json" onchange="impFile(this)">
     <textarea id="imp-text" placeholder="… ou cole o JSON aqui"></textarea>
     <div class="imp-actions">
@@ -268,6 +283,7 @@ select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
 
   <div class="section">
     <div class="section-label">Grade de conteúdos</div>
+    <div id="mes-bar-edit"></div>
     <div id="items-list"></div>
     <button class="add-item-btn" onclick="addItem()">+ Adicionar conteúdo</button>
   </div>
@@ -324,6 +340,7 @@ select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
   <div class="section">
     <div class="section-label">Grade de conteúdos</div>
     <div class="stats-grid" id="d-stats"></div>
+    <div id="mes-bar-doc"></div>
     <div id="d-cards"></div>
     <button class="action-btn" onclick="exportarWhatsApp()" style="margin-top:1rem">
       ↓ Exportar resumo para WhatsApp
@@ -433,6 +450,7 @@ async function carregarDoFirebase() {
     for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); if (el) el.addEventListener('input', agendarSalvamento); }
   }
   document.getElementById("loading").classList.add("hidden");
+  ajustarMesInicial();   // abre já no mês de hoje, se ele fizer parte do ciclo
 
   if (isValidacao) {
     document.getElementById('gabi-banner').style.display = 'block';
@@ -512,13 +530,47 @@ function getMeses() {
   return [...s].sort((a,b) => a-b);
 }
 
+// ─── SELEÇÃO RÁPIDA POR MÊS ────────────────────────────────────────────────────
+// O ciclo tem 2–3 meses; abrir sempre no primeiro é pouco prático no fim do
+// bimestre. A barra de meses filtra a grade (edição e validação) e já começa no
+// mês de hoje quando ele faz parte do ciclo.
+let planMesFiltro = null;   // null = todos | 1..12
+const MES_ABR = {1:'Jan',2:'Fev',3:'Mar',4:'Abr',5:'Mai',6:'Jun',7:'Jul',8:'Ago',9:'Set',10:'Out',11:'Nov',12:'Dez'};
+// Conteúdo ainda sem data aparece em qualquer mês — senão um "+ Adicionar
+// conteúdo" com o filtro ligado criaria uma linha invisível.
+function itemsDoMes() {
+  if (!planMesFiltro) return items;
+  return items.filter(it => { const d = parseDate(it.data || ''); return !d || d.mes === planMesFiltro; });
+}
+function ajustarMesInicial() {
+  const ms = getMeses();
+  const hoje = new Date().getMonth() + 1;
+  planMesFiltro = ms.includes(hoje) ? hoje : null;
+}
+function renderMesBars() {
+  const ms = getMeses();
+  const html = ms.length < 2 ? '' : `<div class="mes-bar"><span class="mes-lbl">Ir para</span>${
+    [[0,'Todos',items.length]].concat(ms.map(m => [m, MES_ABR[m], items.filter(it => { const d=parseDate(it.data||''); return d && d.mes===m; }).length]))
+      .map(([m,lbl,n]) => `<button type="button" class="mes-chip${(m===0?!planMesFiltro:planMesFiltro===m)?' on':''}" onclick="setPlanMes(${m})">${lbl}<span class="mes-n">${n}</span></button>`).join('')
+  }</div>`;
+  ['mes-bar-edit','mes-bar-doc'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
+}
+window.setPlanMes = function(m) {
+  planMesFiltro = (m === 0 || m === planMesFiltro) ? null : m;
+  renderMesBars();
+  renderEditItems();
+  renderCards();
+};
+
 function diasNoMes(mes, ano) { return new Date(ano, mes, 0).getDate(); }
 function primeiroDia(mes, ano) { return new Date(ano, mes-1, 1).getDay(); }
 
 // ─── TELA DE EDIÇÃO ───────────────────────────────────────────────────────────
 window.renderEditItems = function() {
   let html = '';
-  items.forEach((it, i) => {
+  const lista = itemsDoMes();
+  lista.forEach((it) => {
+    const i = items.indexOf(it);
     html += `<div class="item-edit-row" id="er-${it.id}">
       <div class="item-row-top">
         <div class="item-row-title">Conteúdo ${i+1}</div>
@@ -560,8 +612,12 @@ window.renderEditItems = function() {
       </div>
     </div>`;
   });
+  if (!lista.length && items.length) {
+    html = `<div style="font-size:13px;color:#5A5A5A;padding:10px 2px">Nenhum conteúdo em ${MES_ABR[planMesFiltro]||''}. <a href="#" onclick="setPlanMes(0);return false">Ver todos</a>.</div>`;
+  }
   document.getElementById('items-list').innerHTML = html;
   document.getElementById('e-total').value = items.length;
+  renderMesBars();
 }
 
 window.updateItem = function(id, field, val) {
@@ -598,21 +654,67 @@ window.impFile = function(inp) {
   r.onload = () => { document.getElementById('imp-text').value = r.result; };
   r.readAsText(f);
 }
+// Aceita 3 formatos: {items:[…]} (grade inteira), [ … ] (lista solta) ou o objeto
+// de UM conteúdo — assim dá para subir/corrigir um conteúdo por vez.
+function itensDoImport(data) {
+  if (!data || typeof data !== 'object') return null;
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data.items)) return data.items;
+  if (data.titulo != null || data.data != null || data.id != null) return [data];
+  return null;
+}
+// Ordena por data (DD/MM). Sem data vai para o fim, mantendo a ordem relativa.
+function ordenarPorData(lista) {
+  return lista
+    .map((it, i) => ({ it, i, d: parseDate(it.data || '') }))
+    .sort((a, b) => {
+      if (!a.d && !b.d) return a.i - b.i;
+      if (!a.d) return 1;
+      if (!b.d) return -1;
+      return (a.d.mes - b.d.mes) || (a.d.dia - b.d.dia) || (a.i - b.i);
+    })
+    .map(x => x.it);
+}
 window.importarJSON = async function() {
   let data;
   try { data = JSON.parse(document.getElementById('imp-text').value); }
   catch(e) { showToast('⚠ JSON inválido'); return; }
-  if (!data || !Array.isArray(data.items)) { showToast('⚠ JSON sem a lista "items"'); return; }
-  if (!confirm('Isso vai SUBSTITUIR a grade atual (' + items.length + ' itens) por ' + data.items.length + ' conteúdos. Continuar?')) return;
-  items = data.items;
-  estados = data.estados || {};
-  observacoes = data.observacoes || {};
-  gabiEdits = data.gabiEdits || {};
-  nextId = data.nextId || (items.reduce((m, i) => Math.max(m, +i.id || 0), 0) + 1);
-  // redefine as tags customizadas conforme o JSON importado (evita resíduos de tags
-  // antigas): parte das tags do arquivo + as usadas pelos itens que não são base.
-  pilaresCustom = Array.isArray(data.pilaresCustom) ? data.pilaresCustom.slice() : [];
-  camadasCustom = Array.isArray(data.camadasCustom) ? data.camadasCustom.slice() : [];
+  const novos = itensDoImport(data);
+  if (!novos || !novos.length) { showToast('⚠ Não achei nenhum conteúdo no JSON'); return; }
+  const modoEl = document.querySelector('input[name="imp-modo"]:checked');
+  const substituir = modoEl && modoEl.value === 'replace';
+
+  if (substituir) {
+    if (!confirm('Isso vai SUBSTITUIR a grade atual (' + items.length + ' itens) por ' + novos.length + ' conteúdos. Continuar?')) return;
+    items = novos.slice();
+    estados = data.estados || {};
+    observacoes = data.observacoes || {};
+    gabiEdits = data.gabiEdits || {};
+    pilaresCustom = Array.isArray(data.pilaresCustom) ? data.pilaresCustom.slice() : [];
+    camadasCustom = Array.isArray(data.camadasCustom) ? data.camadasCustom.slice() : [];
+  } else {
+    // Mescla por id: id existente é atualizado; id novo (ou ausente) entra como
+    // conteúdo novo. Assim dá para subir um conteúdo por vez sem perder os outros.
+    // Monta a lista nova primeiro e só aplica depois do "ok" — se cancelar, nada muda.
+    const atuais = items.map(it => ({ ...it }));
+    let nid = nextId, atualizados = 0, criados = 0;
+    novos.forEach(novo => {
+      const alvo = (novo.id != null) ? atuais.find(x => String(x.id) === String(novo.id)) : null;
+      if (alvo) { Object.assign(alvo, novo); atualizados++; }
+      else { atuais.push({ ...novo, id: (novo.id != null ? novo.id : nid++) }); criados++; }
+    });
+    if (!confirm(`Adicionar ${criados} conteúdo(s) novo(s) e atualizar ${atualizados}, mantendo o resto da grade? (a grade fica com ${atuais.length})`)) return;
+    items = ordenarPorData(atuais);
+    nextId = nid;
+    if (data.estados)     estados     = { ...estados,     ...data.estados };
+    if (data.observacoes) observacoes = { ...observacoes, ...data.observacoes };
+    if (data.gabiEdits)   gabiEdits   = { ...gabiEdits,   ...data.gabiEdits };
+    (data.pilaresCustom || []).forEach(p => { if (!pilaresCustom.includes(p)) pilaresCustom.push(p); });
+    (data.camadasCustom || []).forEach(c => { if (!camadasCustom.includes(c)) camadasCustom.push(c); });
+  }
+
+  nextId = Math.max(Number(data.nextId) || 0, items.reduce((m, i) => Math.max(m, +i.id || 0), 0) + 1);
+  // Toda tag usada pelos itens que não é base vira tag customizada do ciclo.
   items.forEach(it => {
     if (it.pilar && !PILARES_BASE.includes(it.pilar) && !pilaresCustom.includes(it.pilar)) pilaresCustom.push(it.pilar);
     if (it.camada && !CAMADAS_BASE.includes(it.camada) && !camadasCustom.includes(it.camada)) camadasCustom.push(it.camada);
@@ -623,7 +725,8 @@ window.importarJSON = async function() {
   renderEditItems();
   await salvarNoFirebase();
   fecharImport();
-  showToast('✓ Importado: ' + items.length + ' conteúdos');
+  showToast(substituir ? ('✓ Grade substituída: ' + items.length + ' conteúdos')
+                       : ('✓ Importado — a grade agora tem ' + items.length + ' conteúdos'));
 }
 
 window.addItem = function() {
@@ -761,7 +864,8 @@ function atualizarStats() {
 
 function renderCards() {
   const meses = getMeses();
-  const mesesItems = meses.length > 0 ? meses : [5,6];
+  // Com um mês selecionado na barra, só ele é montado.
+  const mesesItems = planMesFiltro ? [planMesFiltro] : (meses.length > 0 ? meses : [5,6]);
   let hc = '';
   mesesItems.forEach(m => {
     hc += `<div class="msep">${nomeMes[m]||''}</div>`;
@@ -825,6 +929,7 @@ function renderCards() {
     });
   });
   document.getElementById('d-cards').innerHTML = hc;
+  renderMesBars();
 }
 
 function atualizarCardsValidacao() {

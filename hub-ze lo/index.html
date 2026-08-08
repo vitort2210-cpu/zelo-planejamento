@@ -71,10 +71,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 
 /* AUTH / LOGIN */
 .auth-screen{min-height:78vh;display:flex;align-items:center;justify-content:center;padding:2rem}
-.auth-card{background:#fff;border:0.5px solid var(--z-border);border-radius:18px;padding:2.4rem 2rem;box-shadow:0 6px 28px rgba(0,0,0,.07);text-align:center;max-width:340px;width:100%}
+/* largura pensada para o subtítulo padrão caber em UMA linha só */
+.auth-card{background:#fff;border:0.5px solid var(--z-border);border-radius:18px;padding:2.4rem 2.2rem;box-shadow:0 6px 28px rgba(0,0,0,.07);text-align:center;max-width:420px;width:100%}
 .auth-logo{width:132px;margin:0 auto 1.3rem;display:block}
 .auth-title{font-size:18px;font-weight:800;color:var(--z-text);margin-bottom:6px}
 .auth-sub{font-size:13px;color:var(--z-text-sec);line-height:1.55;margin-bottom:1.5rem}
+.auth-btn-wrap{max-width:280px;margin:0 auto}
+@media(max-width:460px){.auth-sub{font-size:12px}}
 .auth-btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:11px 16px;border-radius:10px;border:none;background:var(--z-teal);color:#fff;font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:background .15s}
 .auth-btn:hover{background:#0A6870}
 .g-badge{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:#fff;color:var(--z-teal);font-weight:800;font-size:13px}
@@ -323,12 +326,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .dv-mat-tipo{font-size:11px;color:var(--z-ocre-dark);font-weight:600}
 .dv-mat-arrow{font-size:15px;color:var(--z-teal)}
 .dv-empty{font-size:13px;color:var(--z-text-sec);padding:6px 0}
-.dv-refs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dv-tag-cli{font-size:9px;font-weight:700;color:#8A5A22;background:#FBF0DC;border:1px solid #E9D6AE;border-radius:20px;padding:2px 7px;margin-left:6px;vertical-align:middle;letter-spacing:.02em;text-transform:none}
+.dv-line{font-size:12.5px;color:var(--z-text-sec);line-height:1.6}
+.dv-mats-inline{display:flex;flex-wrap:wrap;gap:6px}
+.dv-mats-inline .dv-mat{padding:6px 10px}
+.dv-lastedit{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--z-text-sec);background:#fff;border:1px solid var(--z-border);border-radius:10px;padding:8px 12px;margin-bottom:14px}
+.dv-lastedit.cli{background:#FBF0DC;border-color:#E9D6AE;color:#7A5217}
+.dv-le-ico{font-size:13px}
+.dv-refs{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px}
 @media(max-width:640px){.dv-refs{grid-template-columns:1fr}}
-.dv-ref{border:1px solid var(--z-border);border-radius:10px;padding:11px 13px;background:#fff}
+.dv-ref{border:1px solid var(--z-border);border-radius:10px;padding:10px 12px;background:#fff}
 .dv-ref-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .dv-ref-nome{font-size:13px;font-weight:600}
-.dv-ref-link{font-size:11px;color:var(--z-teal);text-decoration:none;white-space:nowrap}
+.dv-ref-link{font-size:11px;font-weight:600;color:var(--z-teal);text-decoration:none;white-space:nowrap;background:var(--z-teal-light);border:1px solid var(--z-teal);border-radius:20px;padding:3px 10px;transition:background .15s,color .15s}
+.dv-ref-link:hover{background:var(--z-teal);color:#fff}
 .dv-ref-desc{font-size:12px;color:var(--z-text-sec);line-height:1.45;margin-top:5px}
 /* ── ASSISTENTE DO HUB (chat pop-up) ────────────────────────────────── */
 .za-fab{position:fixed;right:20px;bottom:20px;z-index:1200;width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,var(--z-teal),#0c5f68);color:#fff;font-size:24px;box-shadow:0 6px 20px rgba(17,128,140,.35);display:flex;align-items:center;justify-content:center;transition:transform .18s ease,box-shadow .18s ease}
@@ -476,6 +487,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .slide-card textarea:focus{outline:none;border-color:var(--z-ocre-dark)}
 /* bloco read-only (validação) */
 .vslide-num{font-size:10px;font-weight:700;color:var(--z-ocre-dark);text-transform:uppercase;letter-spacing:.05em;margin:8px 0 3px}
+/* Seleção rápida por mês (Copy / Conteúdos) */
+.mes-bar{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 1rem}
+.mes-lbl{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--z-text-sec);margin-right:2px}
+.mes-chip{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:12px;font-weight:600;color:var(--z-text-sec);background:#fff;border:1px solid var(--z-border);border-radius:20px;padding:5px 12px;cursor:pointer;transition:all .15s}
+.mes-chip:hover{border-color:var(--z-teal);color:var(--z-teal)}
+.mes-chip.on{background:var(--z-teal);border-color:var(--z-teal);color:#fff}
+.mes-n{font-size:10px;font-weight:700;background:var(--z-bg);color:var(--z-text-sec);border-radius:20px;padding:1px 6px}
+.mes-chip.on .mes-n{background:rgba(255,255,255,.24);color:#fff}
+.cf-cmt-dica{font-size:9.5px;font-weight:600;color:var(--z-terra);background:var(--z-terra-light);border-radius:20px;padding:2px 8px;margin-left:8px;text-transform:none;letter-spacing:0;white-space:nowrap}
 .vblock{font-size:13px;line-height:1.7;color:var(--z-text);white-space:pre-wrap;background:var(--z-bg);border:0.5px solid var(--z-border);border-radius:8px;padding:9px 11px;cursor:text}
 /* Texto-fonte escondido: some da tela mas continua contando na posição dos comentários */
 .vsrc{display:none}
@@ -532,6 +552,7 @@ mark.cmt:hover{background:#f6d9c4}
 .cmt-resolve{font-size:11px;color:var(--z-teal);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;font-weight:600}
 /* popover */
 .cmt-pop{position:absolute;z-index:500;background:#fff;border:1px solid var(--z-border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.16);padding:10px;width:240px;display:none}
+.cmt-pop-t{font-size:11px;font-weight:800;color:var(--z-terra);margin-bottom:6px}
 .cmt-pop textarea{width:100%;font-size:12px;padding:6px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;resize:vertical;margin-bottom:6px;color:var(--z-text)}
 .cmt-pop textarea:focus{outline:none;border-color:var(--z-terra)}
 .pop-actions{display:flex;gap:6px;justify-content:flex-end}
@@ -540,6 +561,18 @@ mark.cmt:hover{background:#f6d9c4}
 .pop-cancel{background:var(--z-bg);color:var(--z-text-sec)}
 /* hint do modo validação (cliente) */
 .copy-hint{background:var(--z-terra-light);border:1px solid var(--z-terra);border-radius:10px;padding:10px 13px;margin-bottom:1.1rem;font-size:12px;color:var(--z-text);line-height:1.5}
+/* Instrução da Gabi: "selecione e escreva", em passos, para não passar batido */
+.copy-hint.howto{padding:13px 15px}
+.howto-t{font-size:13px;font-weight:800;color:var(--z-terra);margin-bottom:9px}
+.howto-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:9px}
+.howto-step{display:flex;gap:8px;align-items:flex-start;background:#fff;border:1px solid rgba(217,129,78,.35);border-radius:8px;padding:8px 10px;font-size:12px;line-height:1.45}
+.howto-n{flex:0 0 18px;height:18px;border-radius:50%;background:var(--z-terra);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.howto-ex{display:block;font-size:11px;color:var(--z-text-sec);margin-top:2px}
+.howto-mark{background:#FFE2CD;border-bottom:2px solid var(--z-terra);padding:0 3px;border-radius:2px}
+.howto-foot{font-size:11.5px;color:var(--z-text-sec);margin-top:9px;line-height:1.5}
+/* Deixa visível que o texto é "selecionável para comentar" */
+.vblock.vb-cmt:hover{background:#fff;border-color:var(--z-terra);box-shadow:inset 0 0 0 1px rgba(217,129,78,.18)}
+.vblock.vb-cmt::selection,.vblock.vb-cmt *::selection{background:#FFD9BE}
 .copy-imp-btn{margin-left:auto;padding:8px 13px;font-size:12px;border-radius:8px;border:1px solid var(--z-terra);background:#fff;color:var(--z-terra);font-family:inherit;font-weight:600;cursor:pointer}
 .copy-imp-btn:hover{background:var(--z-terra-light)}
 /* Barra de formatação do copy (Unicode + emoji) */
@@ -676,12 +709,13 @@ mark.cmt:hover{background:#f6d9c4}
 .rc-rank{flex-shrink:0;width:20px;height:20px;border-radius:50%;background:var(--z-ocre);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .rc-chart{margin-top:1rem;background:#fff;border:0.5px solid var(--z-border);border-radius:12px;padding:12px 14px}
 .rc-chart-title{font-size:12px;font-weight:700;color:var(--z-text);margin-bottom:6px}
+.rc-chart-n{font-size:10px;font-weight:700;color:var(--z-teal);background:var(--z-teal-light);border-radius:20px;padding:2px 8px;margin-left:6px}
 .mx-legend2{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:8px}
 .mx-legend2 span{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--z-text-sec)}
 .mx-legend2 i{width:11px;height:11px;border-radius:3px;display:inline-block}
 .mx-legend2 i.ln{height:3px;width:16px;border-radius:2px}
-.rc-chart-scroll{overflow-x:auto;padding-bottom:4px}
-.mx-chart2{display:block;margin:0 auto}
+.rc-chart-scroll{padding-bottom:4px}
+.mx-chart2{display:block;width:100%;height:auto;margin:0 auto}
 .rc-chart-note{font-size:10.5px;color:var(--z-text-sec);margin-top:6px;line-height:1.45}
 .rc-best-body{display:flex;flex-direction:column;gap:2px}
 .rc-best-body strong{font-size:14px;color:var(--z-text)}
@@ -701,11 +735,13 @@ mark.cmt:hover{background:#f6d9c4}
   <div id="auth-screen" class="auth-screen" style="display:none">
     <div class="auth-card">
       <img class="brand-logo auth-logo" src="logo.png" alt="Zelo Consultoria" onerror="this.onerror=null;this.src='logo.svg'">
-      <div class="auth-title">Hub do cliente</div>
-      <div class="auth-sub" id="auth-msg">Entre com sua conta Google para acessar o hub.</div>
-      <button class="auth-btn" id="auth-google" onclick="entrarGoogle()">
-        <span class="g-badge">G</span><span>Entrar com Google</span>
-      </button>
+      <div class="auth-title">HUB do Cliente</div>
+      <div class="auth-sub" id="auth-msg">Entre com sua conta Google para acessar o HUB.</div>
+      <div class="auth-btn-wrap">
+        <button class="auth-btn" id="auth-google" onclick="entrarGoogle()">
+          <span class="g-badge">G</span><span>Entrar com Google</span>
+        </button>
+      </div>
       <button class="auth-link" id="auth-signout" onclick="sairHub()" style="display:none">Sair e tentar outra conta</button>
     </div>
   </div>
@@ -830,6 +866,7 @@ function designRef(docId){ return doc(db, 'design', CLIENT_ID + '__' + docId); }
 // ── ESTADO PADRÃO (dados Zelo pré-populados do briefing) ─────────────────────
 const defaults = {
   planVersion: "",   // marca de migração dos ciclos (ver migrarCiclos)
+  meta: { ultimaEdicao: { por:"", em:"", role:"" } },  // quem mexeu por último na Base de Dados
   atas: [],          // atas de reunião { id, data, titulo, texto }
   dadosEmpresa: {
     razaoSocial: "Zelo Consultoria em Educação e Desenvolvimento Infantil Ltda.",
@@ -948,6 +985,15 @@ function showToast(msg) {
   t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+// Trava de segurança: rodando em localhost (teste), NADA é gravado em produção.
+// O planejador já tinha essa trava; o HUB não — e foi assim que a grade real foi
+// sobrescrita uma vez. Vale para hub, copy, design e métricas.
+function ehLocal() { return ['localhost','127.0.0.1'].includes(location.hostname); }
+function bloqueiaGravacaoLocal() {
+  if (!ehLocal()) return false;
+  console.warn('🔧 Modo local — gravação em produção bloqueada.');
+  return true;
+}
 let saveTimer = null;
 function agendarSalvamento() {
   const el = document.getElementById('save-status');
@@ -973,7 +1019,11 @@ async function carregarDoFirebase() {
   }
 }
 async function salvarNoFirebase() {
+  if (bloqueiaGravacaoLocal()) return;
   try {
+    // Registra quem salvou — a Visualização mostra isso numa faixa no topo, para
+    // dar para ver de relance quando o cliente acrescentou alguma coisa.
+    estado.meta = { ultimaEdicao: { por: USER_EMAIL || '', em: new Date().toISOString(), role: ROLE } };
     await setDoc(DOC_REF, { ...estado, updatedAt: new Date().toISOString() });
     const el = document.getElementById('save-status');
     if (el) { el.textContent = '✓ Salvo'; el.classList.remove('saving'); }
@@ -1545,8 +1595,8 @@ function brandLogo() { return `<img class="brand-logo" src="logo.png" alt="Zelo 
 function buildHub() {
   const m = TAB_META[tabAtivo] || TAB_META.plan;
   const navItem = (key) => `<button class="nav-item${tabAtivo===key?' active':''}" onclick="setTab('${key}')"><span class="nav-ico">${TAB_META[key].ico}</span> ${TAB_META[key].title}</button>`;
-  const brandSub = ehCliente() ? 'Área do cliente' : ehVisualizador() ? 'Equipe de design' : 'Hub do cliente';
-  const linkBtn = (ROLE === 'editor') ? `<button class="copy-row" id="btn-copiar" onclick="copiarLink()">📋 Link para o cliente</button>` : '';
+  const brandSub = ehCliente() ? 'Área do cliente' : ehVisualizador() ? 'Equipe de design' : 'HUB do Cliente';
+  const linkBtn = (ROLE === 'editor') ? `<button class="copy-row" id="btn-copiar" onclick="copiarLink()">🔗 Link de redirecionamento</button>` : '';
   document.getElementById('view-edit').innerHTML = `
     <div class="shell">
       <aside class="sidebar">
@@ -1667,6 +1717,21 @@ function buildEditSections() {
 }
 
 // ── VISUALIZAÇÃO (Base de Dados > Visualização) ───────────────────────────────
+// Selo nas seções que ficam na área do cliente (Tier 1) — deixa claro de onde
+// veio a informação sem precisar abrir a Edição.
+function dvTagCliente() { return '<span class="dv-tag-cli">área do cliente</span>'; }
+// Faixa "última atualização": quem mexeu por último na Base de Dados e quando.
+function dvUltimaEdicaoHTML() {
+  const u = (estado.meta && estado.meta.ultimaEdicao) || null;
+  if (!u || !u.em) return '';
+  const d = new Date(u.em);
+  const quando = isNaN(d) ? '' : d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+  const cli = u.role === 'cliente';
+  return `<div class="dv-lastedit${cli ? ' cli' : ''}">
+    <span class="dv-le-ico">${cli ? '🔔' : '✓'}</span>
+    <span>Última atualização ${cli ? '<strong>pelo cliente</strong>' : ''} — ${esc(u.por || '')}${quando ? ' · ' + quando : ''}</span>
+  </div>`;
+}
 function buildDocView() {
   function pillsCSV(str, cls) {
     if (!str) return '<span style="color:#bbb;font-size:12px">—</span>';
@@ -1680,6 +1745,11 @@ function buildDocView() {
   const voz = estado.guiaVoz;
   const refs = estado.referencias.filter(r => r.nome);
   const mats = (estado.materiais || []).filter(m => m.titulo || m.link || m.tipo);
+  const emp  = estado.dadosEmpresa || {};
+  const pres = estado.presencaDigital || {};
+  const rel  = estado.relacaoRedes || {};
+  const plats = (estado.plataformas || []).filter(p => p.ativa || p.url);
+  const conc = (estado.concorrentes || []).filter(c => c.nome);
 
   // SWOT interativa (2x2, hover/clique revela os itens)
   const swotMeta = [
@@ -1706,13 +1776,55 @@ function buildDocView() {
                   : `<div class="dv-mat dv-mat-nolink">${inner}</div>`;
   }).join('') : '<div class="dv-empty">Nenhum material adicionado ainda. Adicione em <strong>Edição → Materiais de apoio</strong>.</div>';
 
+  // Referências: direto ao ponto — só o nome e o link. A descrição ("o que gosta")
+  // continua no modo Edição, mas não polui a visualização.
   const refsHTML = refs.map(r => `
     <div class="dv-ref">
       <div class="dv-ref-top"><span class="dv-ref-nome">${esc(r.nome)}</span>${r.link ? `<a class="dv-ref-link" href="${esc(r.link)}" target="_blank" rel="noopener">↗ ver</a>` : ''}</div>
-      ${r.oQueGosta ? `<div class="dv-ref-desc">${esc(r.oQueGosta)}</div>` : ''}
     </div>`).join('');
 
+  // ── Blocos que a Visualização não mostrava ──────────────────────────────────
+  // O documento da Base de Dados é UM só (mesmo Firestore, ao vivo), então tudo o
+  // que a Gabi digita já ficava salvo — mas esta tela só renderizava as seções do
+  // briefing. Aqui entram as demais, e só aparecem quando têm conteúdo.
+  const blk = (l, v) => v ? `<div class="dv-blk"><div class="dv-blk-l">${l}</div><div class="dv-blk-v">${esc(v)}</div></div>` : '';
+  const empLinhas = [
+    emp.responsavel && `${emp.responsavel}${emp.cargo ? ' · ' + emp.cargo : ''}`,
+    emp.email, emp.whatsapp || emp.telefone, emp.site, emp.endereco, emp.cnpj && 'CNPJ ' + emp.cnpj
+  ].filter(Boolean);
+  const cardEmpresa = empLinhas.length ? `<div class="dv-card">
+      <div class="dv-card-t">🏢 Empresa e contato ${dvTagCliente()}</div>
+      <div class="dv-blk-v">${esc(emp.nomeFantasia || emp.razaoSocial || '')}</div>
+      ${empLinhas.map(l => `<div class="dv-line">${esc(l)}</div>`).join('')}
+    </div>` : '';
+  const cardPlats = plats.length ? `<div class="dv-card">
+      <div class="dv-card-t">🌐 Presença digital ${dvTagCliente()}</div>
+      <div class="dv-mats dv-mats-inline">${plats.map(p => p.url
+        ? `<a class="dv-mat" href="${esc(p.url)}" target="_blank" rel="noopener"><div class="dv-mat-txt"><div class="dv-mat-tit">${esc(p.nome)}</div></div><div class="dv-mat-arrow">↗</div></a>`
+        : `<div class="dv-mat dv-mat-nolink"><div class="dv-mat-txt"><div class="dv-mat-tit">${esc(p.nome)}</div></div></div>`).join('')}</div>
+      ${blk('Quem cuidava antes', pres.gestorAnterior)}
+      ${blk('Identidade visual', pres.temIdentidadeVisual)}
+    </div>` : '';
+  const relTem = rel.motivacao || rel.oQueJaTentou || rel.disponibilidade || rel.fontesInternas || rel.materiaisExistentes;
+  const cardRel = relTem ? `<div class="dv-card">
+      <div class="dv-card-t">💬 Relação com as redes ${dvTagCliente()}</div>
+      ${blk('Por que investir agora', rel.motivacao)}
+      ${blk('O que já tentou', rel.oQueJaTentou)}
+      ${blk('Disponibilidade', rel.disponibilidade)}
+      ${blk('Quem alimenta o conteúdo', rel.fontesInternas)}
+      ${blk('Materiais que já existem', rel.materiaisExistentes)}
+    </div>` : '';
+  const cardConc = conc.length ? `<div class="dv-card dv-card-full">
+      <div class="dv-card-t">🔎 Concorrentes</div>
+      <div class="dv-refs">${conc.map(c => `<div class="dv-ref">
+        <div class="dv-ref-top"><span class="dv-ref-nome">${esc(c.nome)}</span>${c.link ? `<a class="dv-ref-link" href="${esc(c.link)}" target="_blank" rel="noopener">↗ ver</a>` : ''}</div>
+        ${c.diferencial ? `<div class="dv-ref-desc">${esc(c.diferencial)}</div>` : ''}
+      </div>`).join('')}</div>
+    </div>` : '';
+  const extras = cardEmpresa + cardPlats + cardRel;
+
   document.getElementById('sub-content').innerHTML = `
+    ${dvUltimaEdicaoHTML()}
     <div class="dv-hero">
       ${id.slogan ? `<div class="dv-hero-slogan">“${esc(id.slogan)}”</div>` : ''}
       ${id.posicionamento ? `<div class="dv-hero-pos">${esc(id.posicionamento)}</div>` : ''}
@@ -1727,21 +1839,27 @@ function buildDocView() {
         <div class="dv-blk"><div class="dv-blk-l">Temas a evitar</div><div class="dv-pills">${pillsCSV(id.temasEvitar,'terra')}</div></div>
       </div>
       <div class="dv-card">
-        <div class="dv-card-t">👥 Público-alvo</div>
+        <div class="dv-card-t">👥 Público-Alvo</div>
         <div class="dv-blk-v">${esc(pub.descricao) || '—'}</div>
-        ${pub.perguntaChave ? `<div class="dv-blk"><div class="dv-blk-l">Pergunta que a marca responde</div><div class="dv-blk-v">${esc(pub.perguntaChave)}</div></div>` : ''}
+        ${blk('Pergunta que a marca responde', pub.perguntaChave)}
+        ${blk('O que esse público precisa saber', pub.oQuePrecisaSaber)}
+        ${blk('Jornada até virar cliente', pub.jornada)}
       </div>
       <div class="dv-card">
-        <div class="dv-card-t">🚩 Objetivos (6 meses)</div>
+        <div class="dv-card-t">🚩 Objetivos</div>
         <div class="dv-blk-v">${esc(obj.objetivo6m) || '—'}</div>
-        ${obj.metrica ? `<div class="dv-blk"><div class="dv-blk-l">Como medir o sucesso</div><div class="dv-blk-v">${esc(obj.metrica)}</div></div>` : ''}
+        ${blk('Como medir o sucesso', obj.metrica)}
+        ${blk('Eventos e datas à frente', obj.eventosProximos)}
+        ${blk('O que seria um fracasso', obj.fracasso)}
       </div>
       <div class="dv-card">
-        <div class="dv-card-t">🗣️ Guia de voz</div>
+        <div class="dv-card-t">🗣️ Guia de Voz</div>
         ${voz.tomFrase ? `<div class="dv-blk-v">${esc(voz.tomFrase)}</div>` : ''}
         <div class="dv-blk"><div class="dv-blk-l">Vocabulário positivo</div><div class="dv-pills">${pillsCSV(voz.palavrasOK)}</div></div>
         <div class="dv-blk"><div class="dv-blk-l">A evitar</div><div class="dv-pills">${pillsCSV(voz.palavrasEvitar,'terra')}</div></div>
+        ${blk('Regras de linguagem', voz.regras)}
       </div>
+      ${extras}
     </div>
 
     <div class="dv-card dv-card-full">
@@ -1749,13 +1867,15 @@ function buildDocView() {
       <div class="dv-swot">${swotHTML}</div>
     </div>
 
+    ${cardConc}
+
     <div class="dv-card dv-card-full">
-      <div class="dv-card-t">📎 Materiais de apoio</div>
+      <div class="dv-card-t">📎 Materiais de Apoio</div>
       <div class="dv-mats">${matsHTML}</div>
     </div>
 
     ${refs.length ? `<div class="dv-card dv-card-full">
-      <div class="dv-card-t">⭐ Referências de marca</div>
+      <div class="dv-card-t">⭐ Referências de Marca</div>
       <div class="dv-refs">${refsHTML}</div>
     </div>` : ''}`;
 }
@@ -1891,6 +2011,45 @@ window.setSubMode = function(m) {
 // ABA COPY — edição (Vitor) + validação (Gabi) com marcação por palavra
 // ══════════════════════════════════════════════════════════════════════════════
 
+// ── Seleção rápida por mês (Copy / Conteúdos) ─────────────────────────────────
+// Um ciclo tem 2–3 meses. Abrir sempre no primeiro é pouco prático quando já se
+// está no fim do bimestre — então filtra pelo mês e, ao abrir, já cai no mês de
+// hoje se ele estiver no ciclo.
+let mesFiltro = null;   // null = todos | 1..12
+function mesDoItem(it) { const m = String((it && it.data) || '').match(/^(\d{1,2})\/(\d{1,2})/); return m ? +m[2] : 0; }
+function mesesDoCiclo() {
+  const s = new Set();
+  (gradeItems || []).forEach(it => { const m = mesDoItem(it); if (m >= 1 && m <= 12) s.add(m); });
+  return [...s].sort((a, b) => a - b);
+}
+// Conteúdo sem data entra em qualquer mês — assim nada some do filtro.
+function itensDoMes() {
+  if (!mesFiltro) return gradeItems || [];
+  return (gradeItems || []).filter(it => { const m = mesDoItem(it); return !m || m === mesFiltro; });
+}
+// Ao abrir um ciclo: se o mês de hoje está no ciclo, começa nele; senão, "Todos".
+function ajustarMesFiltroInicial() {
+  const ms = mesesDoCiclo();
+  const hoje = new Date().getMonth() + 1;
+  mesFiltro = ms.includes(hoje) ? hoje : null;
+}
+function mesBarHTML() {
+  const ms = mesesDoCiclo();
+  if (ms.length < 2) return '';
+  const total = (gradeItems || []).length;
+  const chip = (m, lbl, n, on) => `<button class="mes-chip${on ? ' on' : ''}" onclick="setMesFiltro(${m})">${lbl}<span class="mes-n">${n}</span></button>`;
+  return `<div class="mes-bar"><span class="mes-lbl">Ir para</span>${
+    chip(0, 'Todos', total, !mesFiltro)
+  }${ms.map(m => chip(m, MESES_ABR[m - 1], (gradeItems || []).filter(it => mesDoItem(it) === m).length, mesFiltro === m)).join('')}</div>`;
+}
+window.setMesFiltro = function(m) {
+  mesFiltro = (m === 0 || m === mesFiltro) ? null : m;
+  const bar = document.querySelector('.mes-bar');
+  if (bar) bar.outerHTML = mesBarHTML();
+  if (tabAtivo === 'copy') renderCopyCards();
+  else if (tabAtivo === 'design') renderDesignCards();
+};
+
 // ── Carregamento cross-doc + tempo real ───────────────────────────────────────
 async function carregarCiclo(docId) {
   copyCiclo = docId;
@@ -1998,7 +2157,7 @@ function agendarSaveCopy() {
   copySaveTimer = setTimeout(salvarCopy, 1200);
 }
 async function salvarCopy() {
-  if (!copyCiclo) return;
+  if (!copyCiclo || bloqueiaGravacaoLocal()) return;
   // Blindagem: o Firestore rejeita array dentro de array (linhas de tabela).
   Object.values(copyData.itens || {}).forEach(it => { if (it && typeof it === 'object') normalizeCopy(it); });
   try {
@@ -2106,13 +2265,22 @@ function buildCopyTab() {
       ${impBtn}${avisarBtn}
     </div>`;
   const hint = (copyMode === 'valida' && podeValidarCopy())
-    ? `<div class="copy-hint"><strong>Toque num conteúdo</strong> para abrir. <strong>Selecione qualquer trecho</strong> do texto para comentar o que ajustar (fica destacado em laranja) e marque a <strong>decisão</strong> de cada material. Tudo salva automaticamente.</div>`
+    ? `<div class="copy-hint howto">
+        <div class="howto-t">✍️ Como pedir uma alteração — é igual ao Google Docs</div>
+        <div class="howto-steps">
+          <div class="howto-step"><span class="howto-n">1</span><div><strong>Selecione com o mouse</strong> o trecho que quer mudar<span class="howto-ex">no celular: toque e segure a palavra</span></div></div>
+          <div class="howto-step"><span class="howto-n">2</span><div><strong>Escreva</strong> na caixinha que aparece o que deve ficar no lugar</div></div>
+          <div class="howto-step"><span class="howto-n">3</span><div><strong>Comentar</strong> — o trecho fica <span class="howto-mark">marcado em laranja</span> e o Vitor recebe o ajuste</div></div>
+        </div>
+        <div class="howto-foot">Depois marque a <strong>decisão</strong> de cada material (aprovar / ajustar). Tudo salva sozinho — não existe botão de salvar.</div>
+      </div>`
     : (copyMode === 'valida')
     ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">👁 Visualização — somente leitura. Toque num conteúdo para abrir.</div>`
     : '';
   const fmtbar = (copyMode === 'edit') ? copyFmtbarHTML() : '';
   copyExpanded.clear();
-  cont.innerHTML = `${bar}${hint}${fmtbar}<div id="copy-cards"></div>`;
+  ajustarMesFiltroInicial();
+  cont.innerHTML = `${bar}${hint}${fmtbar}${mesBarHTML()}<div id="copy-cards"></div>`;
   renderCopyCards();
 }
 // Copy: avisa a Gabi de uma vez sobre os textos novos (com conteúdo, não aprovados
@@ -2227,7 +2395,12 @@ function renderCopyCards() {
     cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">A grade deste ciclo ainda não tem conteúdos. Adicione conteúdos na ferramenta de Planejamento.</p>`;
     return;
   }
-  cont.innerHTML = gradeItems.map(it => `<div class="copy-card${copyExpanded.has(it.id)?' open':''}" id="copy-card-${it.id}">${cardInnerHTML(it, getCopy(it.id))}</div>`).join('');
+  const lista = itensDoMes();
+  if (!lista.length) {
+    cont.innerHTML = `<p style="font-size:13px;color:var(--z-text-sec)">Nenhum conteúdo em ${MESES_ABR[mesFiltro-1]||''} neste ciclo. <a href="#" onclick="setMesFiltro(0);return false">Ver todos</a>.</p>`;
+    return;
+  }
+  cont.innerHTML = lista.map(it => `<div class="copy-card${copyExpanded.has(it.id)?' open':''}" id="copy-card-${it.id}">${cardInnerHTML(it, getCopy(it.id))}</div>`).join('');
 }
 function renderOneCard(id) {
   const it = gradeItems.find(x => x.id === id);
@@ -2384,9 +2557,11 @@ function vblockHTML(id, c, block, label, text) {
   corpo = inlineImagens(corpo, c);      // imagens valem em qualquer campo (arte, legenda, blog)
   corpo = inlineTabelasRef(corpo, c);
   corpo = inlineTabelas(corpo);         // compatibilidade: tabela escrita em texto com |
+  // Só quem valida (Gabi/Vitor) seleciona para comentar — a equipe de design só lê.
+  const podeCmt = ehCliente();
   return `<div class="cf">
-    ${label?`<label class="cf-lbl">${label}</label>`:''}
-    <div class="vblock" data-item="${id}" data-block="${block}">${corpo}</div>
+    ${label?`<label class="cf-lbl">${label}${podeCmt?'<span class="cf-cmt-dica">selecione o trecho para pedir alteração</span>':''}</label>`:''}
+    <div class="vblock${podeCmt?' vb-cmt':''}" data-item="${id}" data-block="${block}"${podeCmt?' title="Selecione o trecho que quer alterar e escreva o ajuste"':''}>${corpo}</div>
     ${commentListHTML(id, c, block)}
   </div>`;
 }
@@ -2395,7 +2570,8 @@ function cardValidacao(it, c) {
   if (c.isVideo) {
     blocks.push(vblockHTML(it.id, c, 'reels', 'Texto da arte — Reels', c.reels));
   } else {
-    c.slides.forEach((s, i) => blocks.push(`<div class="vslide-num">Slide ${i+1}</div>` + vblockHTML(it.id, c, 'slide:'+i, null, s.texto)));
+    const dicaSlide = ehCliente() ? '<span class="cf-cmt-dica">selecione o trecho para pedir alteração</span>' : '';
+    c.slides.forEach((s, i) => blocks.push(`<div class="vslide-num">Slide ${i+1}${dicaSlide}</div>` + vblockHTML(it.id, c, 'slide:'+i, null, s.texto)));
   }
   blocks.push(vblockHTML(it.id, c, 'legenda', 'Texto da legenda', c.legenda));
   if (c.blog) blocks.push(vblockHTML(it.id, c, 'blog', 'Texto de blog', c.blog));
@@ -2455,7 +2631,8 @@ function showCmtPopover(itemId, block, a, b, x, y) {
   pendingSel = { itemId, block, a, b };
   let pop = document.getElementById('cmt-pop');
   if (!pop) { pop = document.createElement('div'); pop.id = 'cmt-pop'; pop.className = 'cmt-pop'; document.body.appendChild(pop); }
-  pop.innerHTML = `<textarea id="cmt-pop-ta" rows="3" placeholder="O que ajustar neste trecho?"></textarea>
+  pop.innerHTML = `<div class="cmt-pop-t">✍️ Escreva o ajuste deste trecho</div>
+    <textarea id="cmt-pop-ta" rows="3" placeholder="Ex.: trocar por “crianças pequenas”"></textarea>
     <div class="pop-actions"><button class="pop-cancel" onclick="cancelCmt()">Cancelar</button><button class="pop-save" onclick="salvarCmt()">Comentar</button></div>`;
   pop.style.display = 'block';
   pop.style.left = Math.max(8, Math.min(x, window.innerWidth - 256)) + 'px';
@@ -2663,8 +2840,9 @@ window.salvarCmt = function() {
   renderOneCard(id);
 };
 
-// Seleção de texto → popover de comentário (apenas modo validação)
-document.addEventListener('mouseup', (e) => {
+// Seleção de texto → popover de comentário (apenas modo validação).
+// Vale para mouse e para toque: no celular a Gabi segura a palavra e solta.
+function onSelecaoValidacao(e) {
   if (!ehCliente()) return;
   if (e.target.closest && e.target.closest('#cmt-pop')) return;
   const sel = window.getSelection();
@@ -2682,8 +2860,18 @@ document.addEventListener('mouseup', (e) => {
   const en = offsetInBlock(block, range.endContainer, range.endOffset);
   const a = Math.min(s, en), b = Math.max(s, en);
   if (b <= a) return;
-  showCmtPopover(+block.dataset.item, block.dataset.block, a, b, e.pageX, e.pageY);
-});
+  // No toque não existe pageX/pageY do evento: usa o retângulo da seleção.
+  let px = e.pageX, py = e.pageY;
+  if (px == null || py == null) {
+    const r = range.getBoundingClientRect();
+    px = r.left + window.scrollX; py = r.bottom + window.scrollY;
+  }
+  showCmtPopover(+block.dataset.item, block.dataset.block, a, b, px, py);
+}
+document.addEventListener('mouseup', onSelecaoValidacao);
+// touchend dispara logo ao soltar, antes de o navegador fechar a seleção; o
+// pequeno atraso deixa a seleção do celular se firmar antes de ler.
+document.addEventListener('touchend', (e) => { setTimeout(() => onSelecaoValidacao(e), 120); });
 document.addEventListener('mousedown', (e) => {
   const p = document.getElementById('cmt-pop');
   if (p && p.style.display === 'block' && !e.target.closest('#cmt-pop') && !e.target.closest('.vblock')) hideCmtPopover();
@@ -2725,7 +2913,7 @@ function agendarSaveDesign(){
   clearTimeout(designSaveTimer); designSaveTimer=setTimeout(salvarDesign,1000);
 }
 async function salvarDesign(){
-  if(!copyCiclo) return;
+  if(!copyCiclo || bloqueiaGravacaoLocal()) return;
   try{
     await setDoc(designRef(copyCiclo), { itens: designData.itens, updatedAt:new Date().toISOString() });
     const el=document.getElementById('save-status'); if(el){ el.textContent='✓ Salvo'; el.classList.remove('saving'); }
@@ -2787,14 +2975,17 @@ function buildDesignTab(){
     ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 <strong>Toque num conteúdo</strong> para abrir e subir as artes (salvam sozinhas). Ao terminar, clique <strong>🔔 Avisar a Gabi das novidades</strong> uma vez — ela recebe <strong>um</strong> aviso com tudo, não um por arte.</div>`
     : `<div class="copy-hint"><strong>Toque num conteúdo</strong> para abrir, ver a arte e validar.</div>`;
   designExpanded.clear();
-  cont.innerHTML=`${bar}${hint}<div id="design-cards"></div>`;
+  ajustarMesFiltroInicial();
+  cont.innerHTML=`${bar}${hint}${mesBarHTML()}<div id="design-cards"></div>`;
   renderDesignCards();
 }
 function renderDesignCards(){
   const cont=document.getElementById('design-cards'); if(!cont) return;
   if(!gradeItems.length){ cont.innerHTML=`<p style="font-size:13px;color:var(--z-text-sec)">A grade deste ciclo ainda não tem conteúdos.</p>`; return; }
-  cont.innerHTML=gradeItems.map(it=>`<div class="copy-card${designExpanded.has(it.id)?' open':''}" id="design-card-${it.id}">${designCardInner(it,getDesign(it.id))}</div>`).join('');
-  gradeItems.forEach(it=>{ updateCarousel(it.id,'ig'); updateCarousel(it.id,'li'); });
+  const lista=itensDoMes();
+  if(!lista.length){ cont.innerHTML=`<p style="font-size:13px;color:var(--z-text-sec)">Nenhum conteúdo em ${MESES_ABR[mesFiltro-1]||''} neste ciclo. <a href="#" onclick="setMesFiltro(0);return false">Ver todos</a>.</p>`; return; }
+  cont.innerHTML=lista.map(it=>`<div class="copy-card${designExpanded.has(it.id)?' open':''}" id="design-card-${it.id}">${designCardInner(it,getDesign(it.id))}</div>`).join('');
+  lista.forEach(it=>{ updateCarousel(it.id,'ig'); updateCarousel(it.id,'li'); });
 }
 function renderDesignCard(id){
   const it=gradeItems.find(x=>x.id===id); const el=document.getElementById('design-card-'+id);
@@ -2914,6 +3105,16 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
   window.__seedVideo  = (id) => { const d=ensureDesign(id); d.midias=[{type:'video',url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'seedvid'}]; renderDesignCard(id); };
   window.__seedCarVideo = (id, n=3) => { const d=ensureDesign(id); d.midias=[...Array.from({length:n},(_,i)=>({type:'image',url:`https://picsum.photos/seed/z${id}-${i}/900/1100`,publicId:'seed'+i,w:900,h:1100})), {type:'video',url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'seedvid'}]; renderDesignCard(id); };
   window.__seedGrade = (items) => { gradeItems = items; renderDesignCards(); };
+  // Popula grade + métricas por post para conferir gráfico/filtro de mês sem login.
+  window.__seedCiclo = (items, posts) => {
+    gradeItems = items || [];
+    postsData = { itens: posts || {}, ciclo: {} };
+    copyCiclo = copyCiclo || 'teste-local';
+    if (tabAtivo === 'metricas') buildMetricasTab();
+    else if (tabAtivo === 'copy' && copyMode) buildCopyTab();
+    else if (tabAtivo === 'design' && designMode) buildDesignTab();
+    return gradeItems.length + ' itens';
+  };
   window.__seedLegacy = (id, nImg=2, comVideo=true) => { designData.itens[id]={ imagens:Array.from({length:nImg},(_,i)=>({url:`https://picsum.photos/seed/L${id}-${i}/900/1100`,publicId:'L'+i})), video: comVideo?{url:'https://www.w3schools.com/html/mov_bbb.mp4',publicId:'Lvid'}:null, statusDesign:'', comentarioDesign:'' }; renderDesignCard(id); };
 }
 
@@ -3014,6 +3215,7 @@ function agendarSaveMetricas(){
   clearTimeout(metricasSaveTimer); metricasSaveTimer=setTimeout(salvarMetricas,1000);
 }
 async function salvarMetricas(){
+  if(bloqueiaGravacaoLocal()) return;
   try{
     await setDoc(metricasRef, { snapshots: metricasData.snapshots, updatedAt:new Date().toISOString() });
     const el=document.getElementById('save-status'); if(el){ el.textContent='✓ Salvo'; el.classList.remove('saving'); }
@@ -3139,12 +3341,16 @@ function resumoChartHTML(items, posts, engMedio){
   (items||[]).forEach(it=>{ const p=(posts||{})[it.id]; if(!postComDados(p)) return; const tp=tipoPost(it); const a=postAlcance(p,tp), i=postInteracoes(p,tp); data.push({it,a,i,eng:(a>0?(i/a*100):0)}); });
   if(!data.length) return '';
   const n=data.length, H=250, mT=30, mB=44, mL=8, mR=8;
-  // Largura acompanha o nº de conteúdos (largura fixa por conteúdo). Com poucos
-  // posts o SVG fica estreito e centralizado; conforme entram dados, cresce e rola.
-  const W=n*72 + mL + mR, pw=W-mL-mR, ph=H-mT-mB, x0=mL, y0=H-mB;
+  // Largura FIXA: o gráfico ocupa 100% da área disponível e nunca rola. Conforme
+  // entram novos conteúdos, as barras se espremem (a fatia de cada um diminui) —
+  // assim o ciclo inteiro fica visível de uma vez.
+  const W=760, pw=W-mL-mR, ph=H-mT-mB, x0=mL, y0=H-mB;
   const maxA=Math.max(1,...data.map(d=>d.a)), maxI=Math.max(1,...data.map(d=>d.i));
   const maxE=Math.max(1,...data.map(d=>d.eng), engMedio||0)*1.12;
-  const slot=pw/n, gW=Math.min(34,slot*0.62), bW=gW/2;
+  const slot=pw/n, gW=Math.min(34,slot*0.62), bW=Math.max(1.5,gW/2);
+  // Com muitos conteúdos as datas colidem: mostra 1 a cada N (as barras continuam
+  // todas lá, e o valor exato aparece ao passar o mouse).
+  const labStep=Math.max(1, Math.ceil(30/slot));
   const teal='#11808C', terra='#D9814E', roxo='#7F77DD';
   let bars='', xlab=''; const pts=[];
   data.forEach((d,idx)=>{
@@ -3152,22 +3358,24 @@ function resumoChartHTML(items, posts, engMedio){
     const tt=`${esc(d.it.data||'')} ${esc((d.it.titulo||'').slice(0,40))}`;
     bars+=`<rect x="${(cx-bW).toFixed(1)}" y="${(y0-hA).toFixed(1)}" width="${bW.toFixed(1)}" height="${hA.toFixed(1)}" fill="${teal}" rx="1"><title>${tt}\nAlcance/Views: ${fmtMetric(d.a,'int')}</title></rect>`;
     bars+=`<rect x="${cx.toFixed(1)}" y="${(y0-hI).toFixed(1)}" width="${bW.toFixed(1)}" height="${hI.toFixed(1)}" fill="${terra}" rx="1"><title>${tt}\nInterações: ${fmtMetric(d.i,'int')}</title></rect>`;
-    pts.push([cx, y0-hE, d]); xlab+=`<text x="${cx.toFixed(1)}" y="${(H-mB+15).toFixed(1)}" text-anchor="middle" font-size="9" fill="#5A5A5A">${esc(d.it.data||'')}</text>`;
+    pts.push([cx, y0-hE, d]);
+    if(idx%labStep===0) xlab+=`<text x="${cx.toFixed(1)}" y="${(H-mB+15).toFixed(1)}" text-anchor="middle" font-size="9" fill="#5A5A5A">${esc(d.it.data||'')}</text>`;
   });
   const path=pts.map((p,i)=>`${i?'L':'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
-  const dots=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="3" fill="${roxo}"><title>${esc(p[2].it.data||'')} — Engajamento: ${fmtMetric(p[2].eng,'pct')}</title></circle>`).join('');
+  const rDot=Math.max(1.8, Math.min(3, slot/16));
+  const dots=pts.map(p=>`<circle cx="${p[0].toFixed(1)}" cy="${p[1].toFixed(1)}" r="${rDot.toFixed(1)}" fill="${roxo}"><title>${esc(p[2].it.data||'')} — Engajamento: ${fmtMetric(p[2].eng,'pct')}</title></circle>`).join('');
   const yAvg=(engMedio!=null)?(y0-(engMedio/maxE*ph)):null;
   const avgTxt=`média ${fmtMetric(engMedio,'pct')}`;
   const chipW=Math.round(avgTxt.length*5.4+8);
   const chipY=(yAvg!=null)?((yAvg-14<mT+2)?(yAvg+2):(yAvg-14)):0; // fundinho acima da linha; se estiver muito no topo, abaixo
   const avg=yAvg!=null?`<line x1="${x0}" y1="${yAvg.toFixed(1)}" x2="${(x0+pw).toFixed(1)}" y2="${yAvg.toFixed(1)}" stroke="${roxo}" stroke-width="1" stroke-dasharray="4 3" opacity=".55"/><rect x="${x0}" y="${chipY.toFixed(1)}" width="${chipW}" height="13" rx="3" fill="#ECEAFB"/><text x="${(x0+5).toFixed(1)}" y="${(chipY+9.5).toFixed(1)}" font-size="9" fill="${roxo}" font-weight="700">${avgTxt}</text>`:'';
   const axis=`<text x="${x0}" y="${(mT-9).toFixed(1)}" font-size="9" fill="${teal}" font-weight="700">Alcance · máx ${shortNum(maxA)}</text><text x="${(x0+pw).toFixed(1)}" y="${(mT-9).toFixed(1)}" text-anchor="end" font-size="9" fill="${terra}" font-weight="700">Interações · máx ${shortNum(maxI)}</text>`;
-  const svg=`<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" class="mx-chart2" role="img" aria-label="Desempenho por conteúdo">${axis}<line x1="${x0}" y1="${y0}" x2="${(x0+pw).toFixed(1)}" y2="${y0}" stroke="#E0DACE" stroke-width="1"/>${bars}${avg}<path d="${path}" fill="none" stroke="${roxo}" stroke-width="2"/>${dots}${xlab}</svg>`;
+  const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" class="mx-chart2" role="img" aria-label="Desempenho por conteúdo">${axis}<line x1="${x0}" y1="${y0}" x2="${(x0+pw).toFixed(1)}" y2="${y0}" stroke="#E0DACE" stroke-width="1"/>${bars}${avg}<path d="${path}" fill="none" stroke="${roxo}" stroke-width="2"/>${dots}${xlab}</svg>`;
   const legend=`<div class="mx-legend2"><span><i style="background:${teal}"></i>Alcance/Views</span><span><i style="background:${terra}"></i>Interações</span><span><i class="ln" style="background:${roxo}"></i>Engajamento</span></div>`;
-  return `<div class="rc-chart"><div class="rc-chart-title">📊 Desempenho por conteúdo</div>${legend}<div class="rc-chart-scroll">${svg}</div><div class="rc-chart-note">Barras: alcance (escala à esquerda) e interações (escala à direita) — cada métrica na sua própria escala. Linha roxa: engajamento de cada conteúdo; tracejado: média do ciclo. Passe o mouse para os valores exatos.</div></div>`;
+  return `<div class="rc-chart"><div class="rc-chart-title">📊 Desempenho por conteúdo <span class="rc-chart-n">${n} conteúdo${n>1?'s':''}</span></div>${legend}<div class="rc-chart-scroll">${svg}</div><div class="rc-chart-note">Barras: alcance (escala à esquerda) e interações (escala à direita) — cada métrica na sua própria escala. Linha roxa: engajamento de cada conteúdo; tracejado: média do ciclo. Passe o mouse para os valores exatos.</div></div>`;
 }
 function agendarSavePosts(){ const el=document.getElementById('save-status'); if(el){el.textContent='● Salvando...';el.classList.add('saving');} clearTimeout(postsSaveTimer); postsSaveTimer=setTimeout(salvarPosts,1000); }
-async function salvarPosts(){ if(!copyCiclo) return; try{ await setDoc(postsRef(copyCiclo),{itens:postsData.itens,ciclo:postsData.ciclo||{},updatedAt:new Date().toISOString()}); const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
+async function salvarPosts(){ if(!copyCiclo || bloqueiaGravacaoLocal()) return; try{ await setDoc(postsRef(copyCiclo),{itens:postsData.itens,ciclo:postsData.ciclo||{},updatedAt:new Date().toISOString()}); const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
 function postsMetricasHTML(){
   const plist=ciclosDoAno().map(x=>x.p);
   const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
@@ -3190,7 +3398,8 @@ function resumoCicloHTML(){
   const ag=agregarPosts(gradeItems, postsData.itens);
   const cic=postsData.ciclo||{};
   const podeEd=podeEditarMetricas();
-  const card=(lbl,val)=>`<div class="mx-card mx-card-calc" style="border-top-color:var(--z-teal)"><div class="mx-card-lbl">${lbl}</div><div class="mx-card-auto"><span class="mx-calc-tag">auto</span></div><div class="mx-card-val">${val}</div></div>`;
+  // Sem a etiqueta "auto": o aviso logo acima já diz que os 4 são calculados sozinhos.
+  const card=(lbl,val)=>`<div class="mx-card mx-card-calc" style="border-top-color:var(--z-teal)"><div class="mx-card-lbl">${lbl}</div><div class="mx-card-val">${val}</div></div>`;
   const cards=card('Alcance / Visualizações',fmtMetric(ag.alcance,'int'))
     +card('Interações totais',fmtMetric(ag.inter,'int'))
     +card('Engajamento médio',ag.engMedio==null?'—':fmtMetric(ag.engMedio,'pct'))
@@ -3756,7 +3965,7 @@ function mostrarLogin(msgHTML, semAcesso) {
   document.getElementById('auth-screen').style.display = 'flex';
   const _fab=document.getElementById('za-fab'); if(_fab) _fab.style.display='none';
   const _pan=document.getElementById('za-panel'); if(_pan) _pan.classList.remove('open'); asstAberto=false;
-  document.getElementById('auth-msg').innerHTML = msgHTML || 'Entre com sua conta Google para acessar o hub.';
+  document.getElementById('auth-msg').innerHTML = msgHTML || 'Entre com sua conta Google para acessar o HUB.';
   document.getElementById('auth-google').style.display = semAcesso ? 'none' : '';
   document.getElementById('auth-signout').style.display = semAcesso ? '' : 'none';
 }
