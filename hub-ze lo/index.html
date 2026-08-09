@@ -330,6 +330,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .dv-line{font-size:12.5px;color:var(--z-text-sec);line-height:1.6}
 .dv-mats-inline{display:flex;flex-wrap:wrap;gap:6px}
 .dv-mats-inline .dv-mat{padding:6px 10px}
+/* Redes da Zelo: cada ícone é o link para o perfil */
+.dv-redes{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px}
+.dv-rede{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--z-teal);text-decoration:none;background:var(--z-teal-light);border:1px solid rgba(17,128,140,.25);border-radius:20px;padding:5px 11px;transition:background .15s,color .15s}
+.dv-rede:hover{background:var(--z-teal);color:#fff;border-color:var(--z-teal)}
+.dv-rede-ico{font-size:14px;line-height:1}
+.dv-rede-seta{font-size:10px;opacity:.7}
+.dv-rede.off{background:var(--z-bg);border-color:var(--z-border);color:var(--z-text-sec);cursor:default}
 .dv-lastedit{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--z-text-sec);background:#fff;border:1px solid var(--z-border);border-radius:10px;padding:8px 12px;margin-bottom:14px}
 .dv-lastedit.cli{background:#FBF0DC;border-color:#E9D6AE;color:#7A5217}
 .dv-le-ico{font-size:13px}
@@ -1778,6 +1785,17 @@ function dvUltimaEdicaoHTML() {
     <span>Última atualização ${cli ? '<strong>pelo cliente</strong>' : ''} — ${esc(u.por || '')}${quando ? ' · ' + quando : ''}</span>
   </div>`;
 }
+// Perfis oficiais da Zelo — servem de link quando o campo de URL da plataforma
+// ainda está vazio na Base de Dados (o cliente pode sobrescrever em Edição).
+const REDES_ZELO = {
+  'Instagram': { url:'https://www.instagram.com/zeloconsultoria', ico:'📸' },
+  'Facebook':  { url:'https://www.facebook.com/ZeloConsultoria/', ico:'👍' },
+  'LinkedIn':  { url:'https://www.linkedin.com/company/zeloconsultoria/posts/?feedView=all', ico:'💼' },
+  'Site':      { url:'https://www.zeloconsultoria.com.br', ico:'🌐' },
+  'Blog':      { url:'', ico:'📝' },
+  'TikTok':    { url:'', ico:'🎵' },
+  'YouTube':   { url:'', ico:'▶️' },
+};
 function buildDocView() {
   function pillsCSV(str, cls) {
     if (!str) return '<span style="color:#bbb;font-size:12px">—</span>';
@@ -1794,7 +1812,13 @@ function buildDocView() {
   const emp  = estado.dadosEmpresa || {};
   const pres = estado.presencaDigital || {};
   const rel  = estado.relacaoRedes || {};
-  const plats = (estado.plataformas || []).filter(p => p.ativa || p.url);
+  // Plataformas salvas + as oficiais que ainda não estão na lista, para todas
+  // aparecerem clicáveis mesmo com o campo de URL em branco.
+  const salvas = (estado.plataformas || []).filter(p => p.ativa || p.url);
+  const plats = salvas.map(p => ({ nome:p.nome, url: p.url || (REDES_ZELO[p.nome]||{}).url || '' }));
+  Object.keys(REDES_ZELO).forEach(nome => {
+    if (REDES_ZELO[nome].url && !plats.some(p => p.nome === nome)) plats.push({ nome, url: REDES_ZELO[nome].url });
+  });
   const conc = (estado.concorrentes || []).filter(c => c.nome);
 
   // SWOT interativa (2x2, hover/clique revela os itens)
@@ -1839,15 +1863,18 @@ function buildDocView() {
     emp.email, emp.whatsapp || emp.telefone, emp.site, emp.endereco, emp.cnpj && 'CNPJ ' + emp.cnpj
   ].filter(Boolean);
   const cardEmpresa = empLinhas.length ? `<div class="dv-card">
-      <div class="dv-card-t">🏢 Empresa e contato ${dvTagCliente()}</div>
+      <div class="dv-card-t">🏢 Empresa e Contato ${dvTagCliente()}</div>
       <div class="dv-blk-v">${esc(emp.nomeFantasia || emp.razaoSocial || '')}</div>
       ${empLinhas.map(l => `<div class="dv-line">${esc(l)}</div>`).join('')}
     </div>` : '';
   const cardPlats = plats.length ? `<div class="dv-card">
-      <div class="dv-card-t">🌐 Presença digital ${dvTagCliente()}</div>
-      <div class="dv-mats dv-mats-inline">${plats.map(p => p.url
-        ? `<a class="dv-mat" href="${esc(p.url)}" target="_blank" rel="noopener"><div class="dv-mat-txt"><div class="dv-mat-tit">${esc(p.nome)}</div></div><div class="dv-mat-arrow">↗</div></a>`
-        : `<div class="dv-mat dv-mat-nolink"><div class="dv-mat-txt"><div class="dv-mat-tit">${esc(p.nome)}</div></div></div>`).join('')}</div>
+      <div class="dv-card-t">🌐 Presença Digital ${dvTagCliente()}</div>
+      <div class="dv-redes">${plats.map(p => {
+        const ico = (REDES_ZELO[p.nome]||{}).ico || '🔗';
+        return p.url
+          ? `<a class="dv-rede" href="${esc(p.url)}" target="_blank" rel="noopener" title="Abrir ${esc(p.nome)}"><span class="dv-rede-ico">${ico}</span><span class="dv-rede-nome">${esc(p.nome)}</span><span class="dv-rede-seta">↗</span></a>`
+          : `<span class="dv-rede off" title="Sem link cadastrado"><span class="dv-rede-ico">${ico}</span><span class="dv-rede-nome">${esc(p.nome)}</span></span>`;
+      }).join('')}</div>
       ${blk('Quem cuidava antes', pres.gestorAnterior)}
       ${blk('Identidade visual', pres.temIdentidadeVisual)}
     </div>` : '';
@@ -1860,11 +1887,11 @@ function buildDocView() {
       ${blk('Quem alimenta o conteúdo', rel.fontesInternas)}
       ${blk('Materiais que já existem', rel.materiaisExistentes)}
     </div>` : '';
+  // Concorrentes segue o mesmo padrão enxuto das Referências: nome + link.
   const cardConc = conc.length ? `<div class="dv-card dv-card-full">
       <div class="dv-card-t">🔎 Concorrentes</div>
       <div class="dv-refs">${conc.map(c => `<div class="dv-ref">
         <div class="dv-ref-top"><span class="dv-ref-nome">${esc(c.nome)}</span>${c.link ? `<a class="dv-ref-link" href="${esc(c.link)}" target="_blank" rel="noopener">↗ ver</a>` : ''}</div>
-        ${c.diferencial ? `<div class="dv-ref-desc">${esc(c.diferencial)}</div>` : ''}
       </div>`).join('')}</div>
     </div>` : '';
   const extras = cardEmpresa + cardPlats + cardRel;
@@ -1913,8 +1940,6 @@ function buildDocView() {
       <div class="dv-swot">${swotHTML}</div>
     </div>
 
-    ${cardConc}
-
     <div class="dv-card dv-card-full">
       <div class="dv-card-t">📎 Materiais de Apoio</div>
       <div class="dv-mats">${matsHTML}</div>
@@ -1923,7 +1948,9 @@ function buildDocView() {
     ${refs.length ? `<div class="dv-card dv-card-full">
       <div class="dv-card-t">⭐ Referências de Marca</div>
       <div class="dv-refs">${refsHTML}</div>
-    </div>` : ''}`;
+    </div>` : ''}
+
+    ${cardConc}`;
 }
 
 // ── PAINEL DE PENDÊNCIAS (topo da Base de Dados, que é a aba de entrada) ──────
@@ -2335,8 +2362,34 @@ function normalizeCopy(c) {
     if (!Array.isArray(t.rows)) t.rows = [];
     t.rows = t.rows.map(r => Array.isArray(r) ? { cels: r.slice() } : (r && Array.isArray(r.cels) ? r : { cels: [] }));
   });
+  migrarTabelasParaArte(c);
   return c;
 }
+// A tabela é um recurso de DIAGRAMAÇÃO do texto da arte: ela pertence a um slide
+// (ou ao roteiro do reels), não à legenda nem ao blog. Cada tabela guarda em
+// `block` o campo dono. Versões antigas marcavam a posição com [tabela N] no
+// texto — aqui isso vira `block` e a marca sai do texto.
+function blocosArte(c){ return c.isVideo ? ['reels'] : (c.slides||[]).map((_,i)=>'slide:'+i); }
+function migrarTabelasParaArte(c){
+  const arte = blocosArte(c);
+  const padrao = arte[0] || 'slide:0';
+  (c.tabelas||[]).forEach((t, ti) => {
+    if (!t.block) {
+      // procura a antiga marca [tabela N] para saber onde ela estava
+      const marca = '[tabela ' + (ti+1) + ']';
+      let achou = null;
+      ['reels','legenda','blog'].forEach(b => { if (!achou && String(blockText(c,b)).includes(marca)) achou = b; });
+      (c.slides||[]).forEach((s,i) => { if (!achou && String(s.texto||'').includes(marca)) achou = 'slide:'+i; });
+      // marca fora da arte (legenda/blog) passa para o texto da arte
+      t.block = (achou && arte.includes(achou)) ? achou : padrao;
+    }
+    if (!arte.includes(t.block)) t.block = padrao;   // slide apagado → volta pro primeiro
+  });
+  // As marcas não valem mais nada: limpa para não sobrar "[tabela 1]" no texto.
+  reescreverMarcas(c, 'tabela', () => '');
+  return c;
+}
+function tabelasDoBloco(c, block){ return (c.tabelas||[]).map((t,ti)=>({t,ti})).filter(x=>x.t.block===block); }
 function getCopy(id) {
   return normalizeCopy(copyData.itens[id] ? copyData.itens[id] : defaultCopy(id));
 }
@@ -2568,22 +2621,20 @@ window.fmtCopy=function(ev,kind){
   const out = jaTem ? limpo : _styleStr(limpo,kind);
   copyFmtCommit(ta, v.slice(0,s)+out+v.slice(e), s, s+out.length);
 };
-// Cria uma tabela (dados) e já marca a posição dela no campo em que se está escrevendo.
+// Cria a tabela no card de texto da arte em que o cursor está (slide ou reels).
 window.fmtTabela=function(ev){
   ev.preventDefault();
   const ta=copyFmtTarget()||ultimoCampoCopy;
   const card=ta&&ta.closest?ta.closest('.copy-card'):null;
-  if(!card){ showToast('Clique no campo de texto onde a tabela deve entrar.'); return; }
+  if(!card){ showToast('Clique no texto da arte (slide ou reels) onde a tabela deve entrar.'); return; }
   const id=+card.id.replace('copy-card-','');
-  const c=ensureCopy(id);
-  c.tabelas.push(tabelaVazia());
-  const ti=c.tabelas.length-1;
-  ultimoCampoCopy=ta;
-  inserirMarca(id, `[tabela ${ti+1}]`, true);
-  agendarSaveCopy();
-  renderOneCard(id);
-  setTimeout(()=>{ const el=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] .tb-edit input`); if(el){ el.focus(); el.select(); } }, 40);
-  showToast(`Tabela criada dentro de: ${nomeDoCampo(ta)}`);
+  const block=ta.dataset.copyblock||'';
+  if(!blocosArte(ensureCopy(id)).includes(block)){
+    showToast('A tabela é de diagramação da arte — clique num slide (ou no roteiro do reels).');
+    return;
+  }
+  window.novaTabelaNoCampo(id, block);
+  showToast(`Tabela criada em: ${nomeDoCampo(ta)}`);
 };
 window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'block':'none'); };
 window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; } const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value; copyFmtCommit(ta, v.slice(0,s)+emo+v.slice(e), s+emo.length, s+emo.length); };
@@ -2711,14 +2762,12 @@ function cardEdit(it, c) {
     ${arte}
     <div class="cf"><label class="cf-lbl">Texto da legenda</label>
       <textarea rows="4" data-copyblock="legenda" placeholder="Legenda do post, com hashtags..." oninput="updateCopyField(${it.id},'legenda',this)">${esc(c.legenda)}</textarea>
-      ${campoTabelasHTML(it.id, c, 'legenda')}
       ${commentListHTML(it.id, c, 'legenda')}</div>
     <div class="cf"><label class="cf-lbl">Texto de blog (opcional)</label>
       <textarea id="blog-${it.id}" rows="3" data-copyblock="blog" placeholder="Texto do blog, se houver..." oninput="updateCopyField(${it.id},'blog',this)">${esc(c.blog)}</textarea>
-      ${campoTabelasHTML(it.id, c, 'blog')}
       ${commentListHTML(it.id, c, 'blog')}</div>
     ${copyImagensHTML(it.id, c)}
-    ${copyTabelasHTML(it.id, c)}`;
+`;
 }
 
 // ── Modo validação (Gabi) ─────────────────────────────────────────────────────
@@ -2769,26 +2818,21 @@ function inlineTabelas(html){
     return `<span class="vsrc">${m}</span><table class="vtab vrender">${th}${tb}</table>`;
   });
 }
-// [tabela N] → a tabela de verdade, na posição marcada.
-function inlineTabelasRef(html, c){
-  const tabs=c.tabelas||[];
-  return html.replace(/\[tabela (\d+)\]/g, (m, n) => {
-    const t=tabs[+n-1]; if(!t) return m;
-    const cap=t.titulo?`<span class="vtab-cap">${esc(t.titulo)}</span>`:'';
-    return `<span class="vsrc">${m}</span><span class="vrender vtab-wrap">${cap}${tabelaRenderHTML(t)}</span>`;
-  });
-}
 function vblockHTML(id, c, block, label, text) {
   const comments = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
   let corpo = renderComentado(text||'', comments);
   corpo = inlineImagens(corpo, c);      // imagens valem em qualquer campo (arte, legenda, blog)
-  corpo = inlineTabelasRef(corpo, c);
   corpo = inlineTabelas(corpo);         // compatibilidade: tabela escrita em texto com |
   // Só quem valida (Gabi/Vitor) seleciona para comentar — a equipe de design só lê.
   const podeCmt = ehCliente();
+  // As tabelas do bloco entram FORA do .vblock, logo abaixo: assim os
+  // comentários por posição continuam contando só os caracteres do texto.
+  const tabs = tabelasDoBloco(c, block)
+    .map(({t}) => `<div class="vtab-wrap">${t.titulo?`<span class="vtab-cap">${esc(t.titulo)}</span>`:''}${tabelaRenderHTML(t)}</div>`).join('');
   return `<div class="cf">
     ${label?`<label class="cf-lbl">${label}${podeCmt?'<span class="cf-cmt-dica">selecione o trecho para pedir alteração</span>':''}</label>`:''}
     <div class="vblock${podeCmt?' vb-cmt':''}" data-item="${id}" data-block="${block}"${podeCmt?' title="Selecione o trecho que quer alterar e escreva o ajuste"':''}>${corpo}</div>
+    ${tabs}
     ${commentListHTML(id, c, block)}
   </div>`;
 }
@@ -2807,7 +2851,7 @@ function cardValidacao(it, c) {
     ${c.direcionamento?`<div class="cf"><label class="cf-lbl">Direcionamento</label><div style="font-size:12px;color:var(--z-text-sec)">${esc(c.direcionamento)}</div></div>`:''}
     ${blocks.join('')}
     ${copyImagensHTML(it.id, c)}
-    ${copyTabelasHTML(it.id, c)}`;
+`;
 }
 
 // ── Comentários (lista + marcação por palavra) ────────────────────────────────
@@ -2899,10 +2943,24 @@ window.autoGrow = function(el){
   el.style.height=(el.scrollHeight+2)+'px';
 };
 function autoGrowScope(root){ if(root) root.querySelectorAll('textarea').forEach(el=>autoGrow(el)); }
-window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[field] = el.value; autoGrow(el); agendarSaveCopy(); if(el.dataset.copyblock) sincTabelasCampo(id, el.dataset.copyblock); };
-window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; autoGrow(el); agendarSaveCopy(); sincTabelasCampo(id, 'slide:'+i); };
+window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[field] = el.value; autoGrow(el); agendarSaveCopy(); };
+window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; autoGrow(el); agendarSaveCopy(); };
 window.addSlide = function(id) { const c = ensureCopy(id); c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
-window.removeSlide = function(id, i) { const c = ensureCopy(id); c.slides.splice(i, 1); if (!c.slides.length) c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
+window.removeSlide = function(id, i) {
+  const c = ensureCopy(id);
+  c.slides.splice(i, 1);
+  if (!c.slides.length) c.slides.push({texto:''});
+  // As tabelas apontam para 'slide:N': a do slide removido volta para o anterior
+  // e as de baixo sobem uma casa, senão ficariam órfãs ou no slide errado.
+  const ultimo = c.slides.length - 1;
+  (c.tabelas||[]).forEach(t => {
+    const m = /^slide:(\d+)$/.exec(t.block||'');
+    if (!m) return;
+    const n = +m[1];
+    t.block = 'slide:' + (n === i ? Math.min(i, ultimo) : (n > i ? n - 1 : n));
+  });
+  agendarSaveCopy(); renderOneCard(id);
+};
 
 // ── Imagens do copy (galeria + referência dentro do texto de blog) ─────────────
 const podeSubirImgCopy = () => ROLE === 'editor';
@@ -2960,7 +3018,6 @@ function inserirMarca(id, marca, silencioso){
   if(!silencioso) showToast(`${marca} inserida em: ${nomeDoCampo(ta)}`);
 }
 window.inserirImgNoTexto = function(id,i){ inserirMarca(id, `[imagem ${i+1}]`); };
-window.inserirTabNoTexto = function(id,ti){ inserirMarca(id, `[tabela ${ti+1}]`); };
 function copyImagensHTML(id, c){
   const todas=c.imagens||[];
   const pode = podeSubirImgCopy() && copyMode==='edit';
@@ -2994,26 +3051,19 @@ function copyImagensHTML(id, c){
 // ordem em que as marcas aparecem. O texto continua sendo uma string pura —
 // é isso que faz os comentários por posição da Gabi e o colar no Instagram
 // continuarem funcionando.
-function tabelaVazia(){ return { titulo:'', cols:['Coluna A','Coluna B'], rows:[{cels:['','']},{cels:['','']}] }; }
+function tabelaVazia(block){ return { block:block||'slide:0', titulo:'', cols:['Coluna A','Coluna B'], rows:[{cels:['','']},{cels:['','']}] }; }
 function ensureTab(id, ti){ const c=ensureCopy(id); return c.tabelas[ti]; }
 function celsDa(r){ return (r && Array.isArray(r.cels)) ? r.cels : (Array.isArray(r) ? r : []); }
-// Índices das tabelas citadas num texto, na ordem em que aparecem.
-function marcasTabela(txt){
-  const out=[]; const re=/\[tabela (\d+)\]/g; let m;
-  while((m=re.exec(String(txt||'')))!==null){ const i=+m[1]-1; if(i>=0 && !out.includes(i)) out.push(i); }
-  return out;
-}
 const COPY_BLOCOS = (c) => ['reels','legenda','blog'].concat((c.slides||[]).map((_,i)=>'slide:'+i));
-// Todas as marcas de tabela usadas no conteúdo inteiro.
-function tabelasUsadas(c){
-  const s=new Set();
-  COPY_BLOCOS(c).forEach(b => marcasTabela(blockText(c,b)).forEach(i=>s.add(i)));
-  return s;
-}
 // Reescreve as marcas de todos os campos de texto (usado ao remover imagem/tabela).
 function reescreverMarcas(c, tipo, fn){
   const re=new RegExp('\\[' + tipo + ' (\\d+)\\]','g');
-  const sub=(s)=>String(s||'').replace(re,(m,n)=>fn(+n,m)).replace(/\n{3,}/g,'\n\n');
+  const sub=(s)=>{
+    const antes=String(s||'');
+    if(!re.test(antes)){ re.lastIndex=0; return antes; }   // nada a fazer: não mexe no texto
+    re.lastIndex=0;
+    return antes.replace(re,(m,n)=>fn(+n,m)).replace(/\n{3,}/g,'\n\n');
+  };
   c.reels=sub(c.reels); c.legenda=sub(c.legenda); c.blog=sub(c.blog);
   (c.slides||[]).forEach(s=>{ s.texto=sub(s.texto); });
 }
@@ -3022,39 +3072,21 @@ function reescreverMarcas(c, tipo, fn){
 function removerMarcaERenumerar(c, tipo, idx){
   reescreverMarcas(c, tipo, (n,m) => (n-1===idx) ? '' : (n-1>idx ? `[${tipo} ${n-1}]` : m));
 }
-window.addTabela = function(id){ const c=ensureCopy(id); c.tabelas.push(tabelaVazia()); agendarSaveCopy(); renderOneCard(id); showToast('Tabela criada — clique em ↳ Inserir no texto para posicioná-la.'); };
 window.removeTabela = function(id, ti){
   const c=ensureCopy(id);
-  if(!confirm(`Remover a tabela ${ti+1}? Ela sai do texto e as outras são renumeradas.`)) return;
+  if(!confirm('Remover esta tabela?')) return;
   c.tabelas.splice(ti,1);
-  removerMarcaERenumerar(c,'tabela',ti);
   agendarSaveCopy(); renderOneCard(id);
 };
-// Cria a tabela já ancorada no campo em que se está escrevendo.
+// Cria a tabela direto no card do texto da arte (slide ou roteiro do reels).
 window.novaTabelaNoCampo = function(id, block){
-  const ta=taDoCampo(id, block);
-  if(!ta){ showToast('Não achei o campo de texto.'); return; }
-  ultimoCampoCopy = ta;
   const c=ensureCopy(id);
-  c.tabelas.push(tabelaVazia());
+  if(!blocosArte(c).includes(block)){ showToast('A tabela só entra no texto da arte (slides ou reels).'); return; }
+  c.tabelas.push(tabelaVazia(block));
   const ti=c.tabelas.length-1;
-  inserirMarca(id, `[tabela ${ti+1}]`, true);
   agendarSaveCopy(); renderOneCard(id);
   setTimeout(()=>{ const el=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] .tb-edit input`); if(el){ el.focus(); el.select(); } }, 40);
 };
-function taDoCampo(id, block){
-  return document.querySelector(`#copy-card-${id} textarea[data-copyblock="${block}"]`);
-}
-// Redesenha só a faixa de tabelas de um campo quando as marcas dele mudam
-// (digitar não pode redesenhar o card inteiro — perderia o cursor).
-function sincTabelasCampo(id, block){
-  const cont=document.querySelector(`#copy-card-${id} .cf-tabs[data-block="${block}"]`);
-  if(!cont) return;
-  const c=getCopy(id);
-  const sig=marcasTabela(blockText(c,block)).join(',');
-  if(cont.dataset.sig===sig) return;
-  cont.outerHTML = campoTabelasHTML(id, c, block);
-}
 window.updateTabTitulo = function(id,ti,el){ const t=ensureTab(id,ti); if(t){ t.titulo=el.value; agendarSaveCopy(); } };
 window.updateTabCol = function(id,ti,ci,el){ const t=ensureTab(id,ti); if(t){ t.cols[ci]=el.value; agendarSaveCopy(); } };
 window.updateTabCel = function(id,ti,ri,ci,el){ const t=ensureTab(id,ti); if(t&&t.rows[ri]){ celsDa(t.rows[ri])[ci]=el.value; agendarSaveCopy(); } };
@@ -3087,29 +3119,15 @@ function tabelaEditorHTML(id, t, ti){
     </div>
   </div>`;
 }
-// Faixa de tabelas de UM campo: aparece logo abaixo do texto, na ordem das marcas.
+// Tabelas de UM campo da arte: entram dentro do próprio card, abaixo do texto.
 function campoTabelasHTML(id, c, block){
   const pode = copyMode==='edit' && ROLE==='editor';
-  const idxs = marcasTabela(blockText(c,block)).filter(i => (c.tabelas||[])[i]);
-  const corpo = idxs.map(i => pode ? tabelaEditorHTML(id, c.tabelas[i], i)
-    : `<div class="tb-card tb-inline">${c.tabelas[i].titulo?`<div class="tb-num">${esc(c.tabelas[i].titulo)}</div>`:''}${tabelaRenderHTML(c.tabelas[i])}</div>`).join('');
-  const btn = pode ? `<button class="cf-tabbtn" onclick="novaTabelaNoCampo(${id},'${block}')">⊞ Criar tabela aqui</button>` : '';
+  const lista = tabelasDoBloco(c, block);
+  const corpo = lista.map(({t,ti}) => pode ? tabelaEditorHTML(id, t, ti)
+    : `<div class="tb-card tb-inline">${t.titulo?`<div class="tb-num">${esc(t.titulo)}</div>`:''}${tabelaRenderHTML(t)}</div>`).join('');
+  const btn = pode ? `<button class="cf-tabbtn" onclick="novaTabelaNoCampo(${id},'${block}')">⊞ Adicionar tabela</button>` : '';
   if(!corpo && !btn) return '';
-  return `<div class="cf-tabs" data-block="${block}" data-sig="${idxs.join(',')}">${corpo}${btn}</div>`;
-}
-// Sobra: tabelas criadas mas sem marca em nenhum texto (ex.: a marca foi apagada).
-function copyTabelasHTML(id, c){
-  const tabs=c.tabelas||[];
-  if(!tabs.length) return '';
-  const usadas=tabelasUsadas(c);
-  const orfas=tabs.map((t,ti)=>({t,ti})).filter(x=>!usadas.has(x.ti));
-  if(!orfas.length) return '';
-  const pode = copyMode==='edit' && ROLE==='editor';
-  const corpo = orfas.map(({t,ti}) => pode
-    ? tabelaEditorHTML(id,t,ti) + `<button class="tb-btn tb-ins" onclick="inserirTabNoTexto(${id},${ti})">↳ Inserir no texto</button>`
-    : `<div class="tb-card">${t.titulo?`<div class="tb-num">${esc(t.titulo)}</div>`:`<div class="tb-num">Tabela ${ti+1}</div>`}${tabelaRenderHTML(t)}</div>`).join('');
-  return `<div class="cf cf-orfas"><label class="cf-lbl">📊 Tabelas sem posição no texto</label>
-    <div class="dz-ordhint">Estas tabelas não estão marcadas em nenhum campo${pode?' — clique num campo de texto e use ↳ Inserir no texto':''}.</div>${corpo}</div>`;
+  return `<div class="cf-tabs" data-block="${block}">${corpo}${btn}</div>`;
 }
 // Navegação por teclado: Tab anda entre células, Enter cria/desce linha.
 window.tbKey = function(ev, id, ti){
