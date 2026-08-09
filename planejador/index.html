@@ -151,6 +151,9 @@ button.sbtn.is-redirecionado span{color:#5C2A0D !important}
 .item-row-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .item-row-title{font-size:12px;font-weight:600;color:var(--z-teal)}
 .del-btn{font-size:11px;color:var(--z-terra);background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px}
+.item-row-acts{display:flex;align-items:center;gap:2px}
+.dup-btn{font-size:11px;color:#5A5A5A;background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 6px}
+.dup-btn:hover{color:#11808C}
 .add-item-btn{width:100%;padding:8px;font-size:12px;border-radius:8px;border:1px dashed var(--z-teal);background:transparent;cursor:pointer;color:var(--z-teal);font-family:inherit;display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px;font-weight:500}
 .add-item-btn:hover{background:var(--z-teal-light)}
 .sel-add{display:flex;gap:4px;align-items:stretch}
@@ -574,7 +577,10 @@ window.renderEditItems = function() {
     html += `<div class="item-edit-row" id="er-${it.id}">
       <div class="item-row-top">
         <div class="item-row-title">Conteúdo ${i+1}</div>
-        <button class="del-btn" onclick="delItem(${it.id})">✕ remover</button>
+        <div class="item-row-acts">
+          <button class="dup-btn" title="Duplicar este conteúdo" onclick="dupItem(${it.id})">⧉ duplicar</button>
+          <button class="del-btn" onclick="delItem(${it.id})">✕ remover</button>
+        </div>
       </div>
       <div class="edit-field" style="margin-bottom:6px">
         <label class="edit-label">Título</label>
@@ -740,6 +746,24 @@ window.delItem = function(id) {
   items = items.filter(x => x.id !== id);
   renderEditItems();
   document.getElementById('e-total').value = items.length;
+}
+
+// Duplica um conteúdo logo abaixo do original — séries (TBT, Mentes da Primeira
+// Infância, Aprendendo com o Brincar) repetem pilar/formato/camada quase sempre.
+// A data sai em branco de propósito, para não criar dois posts no mesmo dia.
+window.dupItem = function(id) {
+  const i = items.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const copia = { ...items[i], id: nextId++, data: '', titulo: (items[i].titulo || '') + ' (cópia)' };
+  items.splice(i + 1, 0, copia);
+  renderEditItems();
+  document.getElementById('e-total').value = items.length;
+  agendarSalvamento();
+  showToast('⧉ Conteúdo duplicado — ajuste a data e o título');
+  setTimeout(() => {
+    const el = document.getElementById('er-' + copia.id);
+    if (el) { el.scrollIntoView({ behavior:'smooth', block:'center' }); const inp = el.querySelector('input[type=text]'); if (inp) inp.focus(); }
+  }, 60);
 }
 
 window.salvarEVisualizar = async function() {
