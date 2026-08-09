@@ -484,6 +484,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .cf textarea,.cf input[type=text]{width:100%;font-size:13px;padding:8px 10px;border:0.5px solid var(--z-border);border-radius:8px;font-family:inherit;line-height:1.55;color:var(--z-text);background:#fff;resize:vertical;box-sizing:border-box}
 #copy-cards .cf textarea,#copy-cards .slide-card textarea{overflow-y:hidden;min-height:64px}
 .cf textarea:focus,.cf input:focus{outline:none;border-color:var(--z-teal);box-shadow:0 0 0 2px rgba(17,128,140,.08)}
+/* ── Editor rico do copy: texto, tabela e imagem no mesmo documento ────────── */
+.rt-editor{width:100%;min-height:64px;font-size:13px;padding:8px 10px;border:0.5px solid var(--z-border);border-radius:8px;font-family:inherit;line-height:1.6;color:var(--z-text);background:#fff;box-sizing:border-box;white-space:pre-wrap;overflow-wrap:anywhere}
+.rt-editor:focus{outline:none;border-color:var(--z-teal);box-shadow:0 0 0 2px rgba(17,128,140,.08)}
+.rt-editor.ro{background:var(--z-bg)}
+.slide-card .rt-editor{padding:6px 8px;border-radius:6px}
+.slide-card .rt-editor:focus{border-color:var(--z-ocre-dark);box-shadow:0 0 0 2px rgba(154,122,31,.10)}
+.rt-editor:empty::before{content:attr(data-ph);color:#bbb;pointer-events:none}
+/* widget (tabela/imagem): bloco atômico dentro do texto */
+.rt-w{position:relative;display:block;margin:8px 0;user-select:none}
+.rt-w-tab .tb-card{margin-bottom:0}
+.rt-w-img{max-width:320px}
+.rt-w-img img{display:block;width:100%;border-radius:8px;border:1px solid var(--z-border)}
+.rt-img-cap{display:block;font-size:11px;color:var(--z-text-sec);margin-top:3px;line-height:1.4}
+.rt-w-x{position:absolute;top:4px;right:4px;z-index:2;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+.rt-w-x:hover{background:var(--z-terra)}
+.rt-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:5px 0 2px}
+.rt-tool{font-size:11px;font-weight:600;font-family:inherit;color:var(--z-teal);background:none;border:1px dashed var(--z-teal);border-radius:7px;padding:4px 10px;cursor:pointer;opacity:.8;transition:opacity .15s,background .15s}
+.rt-tool:hover{opacity:1;background:var(--z-teal-light)}
+.rt-tools-dica{font-size:10.5px;color:var(--z-text-sec)}
+.rtimg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin:10px 0}
+.rtimg-op{border:1px solid var(--z-border);border-radius:8px;background:#fff;padding:5px;cursor:pointer;font-family:inherit;font-size:10.5px;color:var(--z-text-sec)}
+.rtimg-op:hover{border-color:var(--z-teal);color:var(--z-teal)}
+.rtimg-op img{display:block;width:100%;height:70px;object-fit:cover;border-radius:5px;margin-bottom:4px}
 /* slides */
 .slide-card{background:var(--z-bg);border:0.5px solid var(--z-border);border-left:3px solid var(--z-ocre-dark);border-radius:8px;padding:9px 10px;margin-bottom:8px}
 .slide-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
@@ -1975,20 +1998,20 @@ function pendCalcular(){
     const des =(id)=>((c.design[id]||{}).statusDesign||'');
     const comDados=(id)=>postComDados(c.posts[id]);
 
+    // Só entra aqui o que JÁ EXISTE: copy escrito ou arte subida. Cobrar o que
+    // ainda nem foi montado só faria barulho — o painel é sobre material pronto
+    // que está parado esperando alguém.
     if (ehCliente()) {
-      add('📅', 'Conteúdos do planejamento sem sua validação', its.filter(it=>!c.estados[it.id]).length, 'plan', c.docId, null, false);
       add('✍️', 'Textos esperando sua validação', its.filter(it=>temTexto(it.id) && !['aprovado','cancelado','revisao_necessaria'].includes(gabi(it.id))).length, 'copy', c.docId, 'pendente', true);
       add('🎨', 'Artes esperando sua validação', its.filter(it=>temArte(it.id) && !['aprovado','ajustes_necessarios'].includes(des(it.id))).length, 'design', c.docId, 'pendente', true);
     } else if (ehVisualizador()) {
-      add('🎨', 'Conteúdos ainda sem arte subida', its.filter(it=>!temArte(it.id)).length, 'design', c.docId, 'semtexto', false);
       add('✏️', 'Artes com ajuste pedido pela Gabi', its.filter(it=>des(it.id)==='ajustes_necessarios').length, 'design', c.docId, 'ajustes', true);
     } else {
       add('✏️', 'Textos com ajuste pedido pela Gabi', its.filter(it=>gabi(it.id)==='revisao_necessaria').length, 'copy', c.docId, 'ajustes', true);
       add('✏️', 'Artes com ajuste pedido pela Gabi', its.filter(it=>des(it.id)==='ajustes_necessarios').length, 'design', c.docId, 'ajustes', true);
-      add('📝', 'Conteúdos ainda sem copy', its.filter(it=>!temTexto(it.id)).length, 'copy', c.docId, 'semtexto', false);
-      add('🖼', 'Conteúdos ainda sem arte', its.filter(it=>!temArte(it.id)).length, 'design', c.docId, 'semtexto', false);
-      add('📊', 'Já postados e ainda sem métrica', its.filter(it=>pendDataPassou(it.data) && !comDados(it.id)).length, 'metricas', c.docId, null, false);
-      add('⏳', 'Esperando a Gabi validar', its.filter(it=>temTexto(it.id) && !['aprovado','cancelado','revisao_necessaria'].includes(gabi(it.id))).length, 'copy', c.docId, 'pendente', false);
+      add('⏳', 'Textos esperando a Gabi validar', its.filter(it=>temTexto(it.id) && !['aprovado','cancelado','revisao_necessaria'].includes(gabi(it.id))).length, 'copy', c.docId, 'pendente', false);
+      add('⏳', 'Artes esperando a Gabi validar', its.filter(it=>temArte(it.id) && !['aprovado','ajustes_necessarios'].includes(des(it.id))).length, 'design', c.docId, 'pendente', false);
+      add('📊', 'Já postados e ainda sem métrica', its.filter(it=>pendDataPassou(it.data) && (temTexto(it.id)||temArte(it.id)) && !comDados(it.id)).length, 'metricas', c.docId, null, false);
     }
   });
   linhas.sort((a,b)=>(b.urg?1:0)-(a.urg?1:0));
@@ -2365,31 +2388,30 @@ function normalizeCopy(c) {
   migrarTabelasParaArte(c);
   return c;
 }
-// A tabela é um recurso de DIAGRAMAÇÃO do texto da arte: ela pertence a um slide
-// (ou ao roteiro do reels), não à legenda nem ao blog. Cada tabela guarda em
-// `block` o campo dono. Versões antigas marcavam a posição com [tabela N] no
-// texto — aqui isso vira `block` e a marca sai do texto.
+// A POSIÇÃO da tabela/imagem é a marca [tabela N] / [imagem N] dentro do texto —
+// é ela que faz o editor desenhar o widget no ponto exato e o designer ler o
+// slide na ordem certa. `block` é só a lembrança de a qual campo a tabela
+// pertencia numa versão anterior, usada para recolocar a marca uma única vez.
 function blocosArte(c){ return c.isVideo ? ['reels'] : (c.slides||[]).map((_,i)=>'slide:'+i); }
 function migrarTabelasParaArte(c){
   const arte = blocosArte(c);
   const padrao = arte[0] || 'slide:0';
+  const todoTexto = () => [c.reels, c.legenda, c.blog].concat((c.slides||[]).map(s=>s.texto)).join('\n');
   (c.tabelas||[]).forEach((t, ti) => {
-    if (!t.block) {
-      // procura a antiga marca [tabela N] para saber onde ela estava
-      const marca = '[tabela ' + (ti+1) + ']';
-      let achou = null;
-      ['reels','legenda','blog'].forEach(b => { if (!achou && String(blockText(c,b)).includes(marca)) achou = b; });
-      (c.slides||[]).forEach((s,i) => { if (!achou && String(s.texto||'').includes(marca)) achou = 'slide:'+i; });
-      // marca fora da arte (legenda/blog) passa para o texto da arte
-      t.block = (achou && arte.includes(achou)) ? achou : padrao;
-    }
-    if (!arte.includes(t.block)) t.block = padrao;   // slide apagado → volta pro primeiro
+    if (!t.block) return;            // tabela atual: a posição já é a marca no texto
+    const marca = '[tabela ' + (ti+1) + ']';
+    if (todoTexto().includes(marca)) { delete t.block; return; }   // já posicionada
+    // Sem marca no texto: veio da versão que guardava a posição em `block`.
+    // Recoloca a marca no fim daquele campo — que é onde ela era desenhada.
+    const alvo = (t.block && arte.includes(t.block)) ? t.block : padrao;
+    const atual = String(blockText(c, alvo) || '');
+    const novo = (atual ? atual.replace(/\s*$/,'') + '\n' : '') + marca + '\n';
+    if (alvo === 'reels') c.reels = novo;
+    else if (alvo.startsWith('slide:')) { const i = +alvo.split(':')[1]; if (c.slides[i]) c.slides[i].texto = novo; }
+    delete t.block;
   });
-  // As marcas não valem mais nada: limpa para não sobrar "[tabela 1]" no texto.
-  reescreverMarcas(c, 'tabela', () => '');
   return c;
 }
-function tabelasDoBloco(c, block){ return (c.tabelas||[]).map((t,ti)=>({t,ti})).filter(x=>x.t.block===block); }
 function getCopy(id) {
   return normalizeCopy(copyData.itens[id] ? copyData.itens[id] : defaultCopy(id));
 }
@@ -2606,38 +2628,55 @@ function _unstyleStr(str){
   for(const ch of str){ out += _ehAcento(ch) ? ch : _unstyle(ch); }
   return out.normalize('NFC');   // recompõe "a"+til → "ã"
 }
-function copyFmtTarget(){ const ta=document.activeElement; return (ta&&ta.tagName==='TEXTAREA'&&ta.closest&&ta.closest('#copy-cards'))?ta:null; }
-function copyFmtCommit(ta,val,selA,selB){ ta.value=val; ta.focus(); ta.setSelectionRange(selA,selB); ta.dispatchEvent(new Event('input',{bubbles:true})); }
+// Alvo da barra de formatação: o editor rico em que o cursor está.
+function copyFmtTarget(){
+  const a=document.activeElement;
+  const ed=a && a.closest ? a.closest('.rt-editor') : null;
+  return (ed && ed.isContentEditable && ed.closest('#copy-cards')) ? ed : null;
+}
+// Escreve no editor pelo execCommand para não perder o cursor nem o desfazer.
+function rtEscrever(el, txt){
+  document.execCommand('insertText', false, txt);
+  el.dispatchEvent(new Event('input',{bubbles:true}));
+}
+function rtTextoSelecionado(el){
+  const sel=window.getSelection();
+  if(!sel || !sel.rangeCount) return '';
+  const r=sel.getRangeAt(0);
+  if(!el.contains(r.startContainer) || r.collapsed) return '';
+  return sel.toString();
+}
 window.fmtCopy=function(ev,kind){
   ev.preventDefault();
-  const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; }
-  const s=ta.selectionStart, e=ta.selectionEnd, v=ta.value;
-  if(kind==='bullet'){ const ins=(s>0&&v[s-1]!=='\n')?'\n• ':'• '; copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+ins.length, s+ins.length); return; }
-  if(kind==='link'){ const url=(prompt('Cole o link (entra como texto — em legenda de rede social o link não fica clicável):')||'').trim(); if(!url) return; const pre=(s!==e)?v.slice(s,e)+' ':''; const ins=pre+url; copyFmtCommit(ta, v.slice(0,s)+ins+v.slice(e), s+ins.length, s+ins.length); return; }
-  if(s===e){ showToast('Selecione o texto para aplicar negrito/itálico.'); return; }
-  const trecho=v.slice(s,e);
+  const el=copyFmtTarget(); if(!el){ showToast('Clique num campo de texto do copy primeiro.'); return; }
+  if(kind==='bullet'){ rtEscrever(el, '\n• '); return; }
+  if(kind==='link'){
+    const url=(prompt('Cole o link (entra como texto — em legenda de rede social o link não fica clicável):')||'').trim();
+    if(!url) return;
+    const sel=rtTextoSelecionado(el);
+    rtEscrever(el, sel ? (sel+' '+url) : url);
+    return;
+  }
+  const trecho=rtTextoSelecionado(el);
+  if(!trecho){ showToast('Selecione o texto para aplicar negrito/itálico.'); return; }
   const jaTem = [...trecho].some(kind==='bold' ? _isBold : _isItal);
   const limpo=_unstyleStr(trecho);              // tira o estilo atual (permite alternar N ↔ I)
-  const out = jaTem ? limpo : _styleStr(limpo,kind);
-  copyFmtCommit(ta, v.slice(0,s)+out+v.slice(e), s, s+out.length);
+  rtEscrever(el, jaTem ? limpo : _styleStr(limpo,kind));
 };
-// Cria a tabela no card de texto da arte em que o cursor está (slide ou reels).
+// Cria a tabela no ponto do cursor, dentro do texto da arte.
 window.fmtTabela=function(ev){
   ev.preventDefault();
-  const ta=copyFmtTarget()||ultimoCampoCopy;
-  const card=ta&&ta.closest?ta.closest('.copy-card'):null;
-  if(!card){ showToast('Clique no texto da arte (slide ou reels) onde a tabela deve entrar.'); return; }
-  const id=+card.id.replace('copy-card-','');
-  const block=ta.dataset.copyblock||'';
+  const el=copyFmtTarget();
+  if(!el){ showToast('Clique no texto da arte (slide ou reels) onde a tabela deve entrar.'); return; }
+  const id=+el.dataset.item, block=el.dataset.copyblock||'';
   if(!blocosArte(ensureCopy(id)).includes(block)){
     showToast('A tabela é de diagramação da arte — clique num slide (ou no roteiro do reels).');
     return;
   }
-  window.novaTabelaNoCampo(id, block);
-  showToast(`Tabela criada em: ${nomeDoCampo(ta)}`);
+  window.rtInserirTabela(ev, id, block);
 };
 window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'block':'none'); };
-window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const ta=copyFmtTarget(); if(!ta){ showToast('Clique num campo de texto do copy primeiro.'); return; } const s=ta.selectionStart,e=ta.selectionEnd,v=ta.value; copyFmtCommit(ta, v.slice(0,s)+emo+v.slice(e), s+emo.length, s+emo.length); };
+window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const el=copyFmtTarget(); if(!el){ showToast('Clique num campo de texto do copy primeiro.'); return; } rtEscrever(el, emo); };
 // Emojis agrupados: os de tópico/seta ficam primeiro porque são os mais usados
 // para montar lista em legenda (o Instagram não tem marcador nativo).
 const FMT_EMOJI_GRUPOS=[
@@ -2729,25 +2768,255 @@ function statusRowEdit(it, c) {
     ${gabi}
   </div>`;
 }
+// ══════════════════════════════════════════════════════════════════════════════
+// EDITOR RICO DO COPY — o texto da arte é um documento só
+// ══════════════════════════════════════════════════════════════════════════════
+// O designer precisa ler o slide de cima a baixo: título, subtítulo, a tabela na
+// posição em que ela entra, o texto de apoio, o CTA. Então tabela e imagem são
+// desenhadas DENTRO da caixa de texto, no ponto exato.
+//
+// O que é guardado continua sendo uma string pura, com [tabela N] / [imagem N]
+// marcando a posição. É isso que mantém de pé (a) os comentários da Gabi, que são
+// posições de caractere, e (b) o colar da legenda no Instagram. A marca nunca
+// aparece para quem escreve: no lugar dela vai o widget de verdade.
+function rtEditavel(){ return copyMode==='edit' && ROLE==='editor'; }
+// Um widget (tabela/imagem) é atômico: contenteditable=false, o cursor pula por cima.
+function rtWidgetTabela(id, ti, t, editavel){
+  const corpo = editavel ? tabelaEditorHTML(id, t, ti) : tabelaRenderHTML(t);
+  return `<div class="rt-w rt-w-tab" contenteditable="false" data-marca="tabela" data-n="${ti+1}">${corpo}</div>`;
+}
+function rtWidgetImagem(id, ii, im, editavel){
+  const del = editavel ? `<button class="rt-w-x" title="Tirar do texto" onmousedown="rtRemoverWidget(event,${id},'imagem',${ii+1})">✕</button>` : '';
+  const cap = im.legenda ? `<span class="rt-img-cap">${esc(im.legenda)}</span>` : '';
+  return `<div class="rt-w rt-w-img" contenteditable="false" data-marca="imagem" data-n="${ii+1}">${del}<img src="${esc(im.url)}" alt="${esc(im.legenda||('imagem '+(ii+1)))}">${cap}</div>`;
+}
+// texto (com marcas) → HTML do editor
+function rtHTML(id, c, texto){
+  const editavel = rtEditavel();
+  let out = '';
+  const re = /\[(tabela|imagem) (\d+)\]/g;
+  let last = 0, m;
+  const txt = String(texto || '');
+  while ((m = re.exec(txt)) !== null) {
+    out += esc(txt.slice(last, m.index));
+    const n = +m[2] - 1;
+    if (m[1] === 'tabela' && (c.tabelas||[])[n])      out += rtWidgetTabela(id, n, c.tabelas[n], editavel);
+    else if (m[1] === 'imagem' && (c.imagens||[])[n]) out += rtWidgetImagem(id, n, c.imagens[n], editavel);
+    else out += esc(m[0]);                       // marca sem dono: mostra crua para dar para apagar
+    last = m.index + m[0].length;
+  }
+  out += esc(txt.slice(last));
+  return out;
+}
+// HTML do editor → texto (com marcas).
+// O contenteditable monta a quebra de linha do jeito dele: às vezes <br>, às
+// vezes <div>. Os dois viram "\n" aqui, e o widget vira a marca de volta.
+function rtSerializar(el){
+  let out = '';
+  const anda = (node) => {
+    node.childNodes.forEach(n => {
+      if (n.nodeType === 3) { out += n.textContent; return; }
+      if (n.nodeType !== 1) return;
+      if (n.dataset && n.dataset.marca) { out += `[${n.dataset.marca} ${n.dataset.n}]`; return; }
+      if (n.tagName === 'BR') {
+        // <div><br></div> é como o navegador escreve "linha vazia": o \n do
+        // bloco já dá conta, senão contaria a quebra duas vezes.
+        const enche = n.parentNode !== el && n.parentNode.childNodes.length === 1;
+        if (!enche) out += '\n';
+        return;
+      }
+      if (/^(DIV|P|LI|H[1-6]|SECTION|ARTICLE|BLOCKQUOTE|PRE)$/.test(n.tagName)) {
+        if (out !== '') out += '\n';   // todo bloco começa numa linha nova
+        anda(n);
+        return;
+      }
+      anda(n);   // SPAN, B, I... só o texto interessa
+    });
+  };
+  anda(el);
+  return out.replace(/\u00a0/g, ' ');   // &nbsp; do contenteditable → espaço normal
+}
+function rtEditorHTML(id, c, block, texto, placeholder){
+  const editavel = rtEditavel();
+  return `<div class="rt-editor${editavel?'':' ro'}" ${editavel?'contenteditable="true"':''} spellcheck="true"
+      data-copyblock="${block}" data-item="${id}" data-ph="${esc(placeholder||'')}"
+      oninput="rtInput(this)" onkeydown="rtKeydown(event,this)" onpaste="rtPaste(event,this)"
+    >${rtHTML(id, c, texto)}</div>`;
+}
+// Barra de inserção do próprio campo — deixa claro que a tabela entra NO texto.
+function rtToolsHTML(id, block){
+  if(!rtEditavel()) return '';
+  const arte = /^(slide:|reels)/.test(block);
+  return `<div class="rt-tools">
+    ${arte?`<button class="rt-tool" onmousedown="rtInserirTabela(event,${id},'${block}')">⊞ Tabela aqui</button>`:''}
+    <button class="rt-tool" onmousedown="rtInserirImagem(event,${id},'${block}')">🖼 Imagem aqui</button>
+    <span class="rt-tools-dica">entram na posição do cursor</span>
+  </div>`;
+}
+function rtEditorDoBloco(id, block){
+  return document.querySelector(`#copy-card-${id} .rt-editor[data-copyblock="${block}"]`);
+}
+// Guarda a posição do cursor como offset no TEXTO (não no DOM) para reinserir
+// depois de redesenhar o editor.
+function rtOffsetCursor(el){
+  const sel = window.getSelection();
+  if(!sel || !sel.rangeCount) return null;
+  const r = sel.getRangeAt(0);
+  if(!el.contains(r.startContainer)) return null;
+  const pre = r.cloneRange();
+  pre.selectNodeContents(el);
+  pre.setEnd(r.startContainer, r.startOffset);
+  const frag = pre.cloneContents();
+  const tmp = document.createElement('div');
+  tmp.appendChild(frag);
+  return rtSerializar(tmp).length;
+}
+// Só roda logo depois de rtRedesenhar, quando a árvore está plana (nós de texto
+// + widgets), então basta percorrer os filhos diretos — e assim o texto de
+// dentro do widget não entra na conta.
+function rtPorCursor(el, offset){
+  el.focus();
+  const sel = window.getSelection(); const r = document.createRange();
+  const põe = (fn) => { fn(r); r.collapse(true); sel.removeAllRanges(); sel.addRange(r); };
+  if(offset != null){
+    let acc = 0;
+    for(const n of el.childNodes){
+      if(n.nodeType === 3){
+        const len = n.textContent.length;
+        if(acc + len >= offset){ põe(rr => rr.setStart(n, Math.max(0, offset-acc))); return; }
+        acc += len;
+      } else if(n.nodeType === 1 && n.dataset && n.dataset.marca){
+        const len = (`[${n.dataset.marca} ${n.dataset.n}]`).length;
+        if(acc + len >= offset){ põe(rr => rr.setStartAfter(n)); return; }
+        acc += len;
+      }
+    }
+  }
+  r.selectNodeContents(el); r.collapse(false); sel.removeAllRanges(); sel.addRange(r);
+}
+// Redesenha o editor mantendo o cursor (usado ao inserir/remover widget).
+function rtRedesenhar(id, block, offset){
+  const el = rtEditorDoBloco(id, block); if(!el) return;
+  const c = getCopy(id);
+  el.innerHTML = rtHTML(id, c, blockText(c, block));
+  rtPorCursor(el, offset);
+}
+window.rtInput = function(el){
+  const id = +el.dataset.item, block = el.dataset.copyblock;
+  const c = ensureCopy(id);
+  const txt = rtSerializar(el);
+  if(block === 'reels') c.reels = txt;
+  else if(block === 'legenda') c.legenda = txt;
+  else if(block === 'blog') c.blog = txt;
+  else if(block.startsWith('slide:')) { const i = +block.split(':')[1]; if(c.slides[i]) c.slides[i].texto = txt; }
+  agendarSaveCopy();
+};
+window.rtKeydown = function(ev, el){
+  // O Enter fica com o comportamento nativo do navegador (ele cria <div>/<br>);
+  // rtSerializar traduz os dois para "\n", então não há motivo para brigar.
+  // Ctrl/Cmd+B e Ctrl/Cmd+I usam o negrito Unicode, não o do navegador (que
+  // viraria <b> e não sobreviveria ao colar no Instagram).
+  if((ev.ctrlKey || ev.metaKey) && !ev.altKey){
+    const k = ev.key.toLowerCase();
+    if(k === 'b' || k === 'i'){ fmtCopy(ev, k === 'b' ? 'bold' : 'italic'); }
+  }
+};
+window.rtPaste = function(ev, el){
+  ev.preventDefault();
+  const txt = ((ev.clipboardData || window.clipboardData).getData('text') || '').replace(/\r/g,'');
+  document.execCommand('insertText', false, txt);
+  el.dispatchEvent(new Event('input', {bubbles:true}));
+};
+// Insere a marca na posição do cursor do editor (ou no fim, se não houver cursor).
+function rtInserirMarca(id, block, marca){
+  const el = rtEditorDoBloco(id, block); if(!el) return;
+  const sel = window.getSelection();
+  const dentro = sel && sel.rangeCount && el.contains(sel.getRangeAt(0).startContainer);
+  if(!dentro){ el.focus(); const r=document.createRange(); r.selectNodeContents(el); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
+  const off = rtOffsetCursor(el) ?? blockText(getCopy(id), block).length;
+  const txt = blockText(getCopy(id), block);
+  // A marca fica sempre na sua própria linha, sem criar linha em branco à toa.
+  const pre = (off>0 && txt[off-1] !== '\n') ? '\n' : '';
+  const pos = (txt[off] !== '\n' ) ? '\n' : '';
+  const novo = txt.slice(0,off) + pre + marca + pos + txt.slice(off);
+  rtGravarTexto(id, block, novo);
+  rtRedesenhar(id, block, off + pre.length + marca.length + pos.length);
+}
+function rtGravarTexto(id, block, txt){
+  const c = ensureCopy(id);
+  if(block === 'reels') c.reels = txt;
+  else if(block === 'legenda') c.legenda = txt;
+  else if(block === 'blog') c.blog = txt;
+  else if(block.startsWith('slide:')) { const i = +block.split(':')[1]; if(c.slides[i]) c.slides[i].texto = txt; }
+  agendarSaveCopy();
+}
+window.rtInserirTabela = function(ev, id, block){
+  ev.preventDefault();
+  const c = ensureCopy(id);
+  c.tabelas.push(tabelaVazia());
+  const ti = c.tabelas.length - 1;
+  rtInserirMarca(id, block, `[tabela ${ti+1}]`);
+  setTimeout(()=>{ const inp=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] .tb-edit input`); if(inp){ inp.focus(); inp.select(); } }, 40);
+};
+window.rtInserirImagem = function(ev, id, block){
+  ev.preventDefault();
+  const c = ensureCopy(id);
+  const imgs = c.imagens || [];
+  if(!imgs.length){ showToast('Suba a imagem primeiro em 🖼 Imagens do conteúdo.'); rolarParaImagens(id); return; }
+  if(imgs.length === 1){ rtInserirMarca(id, block, '[imagem 1]'); return; }
+  rtEscolherImagem(id, block, imgs);
+};
+function rolarParaImagens(id){
+  const el = document.querySelector(`#copy-card-${id} .ci-grid`);
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+// Com mais de uma imagem, pergunta qual entra no texto.
+function rtEscolherImagem(id, block, imgs){
+  let m = document.getElementById('rtimg-modal');
+  if(!m){ m = document.createElement('div'); m.id='rtimg-modal'; m.className='impc-modal'; document.body.appendChild(m); }
+  m.innerHTML = `<div class="impc-box">
+    <h3>Qual imagem entra aqui?</h3>
+    <div class="rtimg-grid">${imgs.map((im,i)=>
+      `<button class="rtimg-op" onclick="rtEscolhida(${id},'${block}',${i+1})"><img src="${esc(im.url)}" alt=""><span>imagem ${i+1}</span></button>`).join('')}</div>
+    <div class="impc-actions"><button onclick="document.getElementById('rtimg-modal').style.display='none'">Cancelar</button></div>
+  </div>`;
+  m.style.display='flex';
+}
+window.rtEscolhida = function(id, block, n){
+  const m=document.getElementById('rtimg-modal'); if(m) m.style.display='none';
+  rtInserirMarca(id, block, `[imagem ${n}]`);
+};
+// Tira o widget do texto (a tabela/imagem em si continua existindo no conteúdo).
+window.rtRemoverWidget = function(ev, id, tipo, n){
+  ev.preventDefault(); ev.stopPropagation();
+  const w = ev.target.closest('.rt-w'); const el = w && w.closest('.rt-editor'); if(!el) return;
+  const block = el.dataset.copyblock;
+  const txt = blockText(getCopy(id), block);
+  const marca = `[${tipo} ${n}]`;
+  const at = txt.indexOf(marca);
+  if(at < 0) return;
+  rtGravarTexto(id, block, (txt.slice(0, at) + txt.slice(at + marca.length)).replace(/\n{3,}/g,'\n\n'));
+  rtRedesenhar(id, block, at);
+};
 function slidesHTML(id, c) {
   return c.slides.map((s, i) => `
     <div class="slide-card">
       <div class="slide-head"><span class="slide-num">Slide ${i+1}</span>
         ${c.slides.length>1?`<button class="slide-del" onclick="removeSlide(${id},${i})">✕ remover</button>`:''}</div>
-      <textarea rows="3" data-copyblock="slide:${i}" placeholder="Texto do slide ${i+1}..." oninput="updateSlide(${id},${i},this)">${esc(s.texto)}</textarea>
-      ${campoTabelasHTML(id, c, 'slide:'+i)}
+      ${rtEditorHTML(id, c, 'slide:'+i, s.texto, 'Texto do slide '+(i+1)+'…')}
+      ${rtToolsHTML(id, 'slide:'+i)}
       ${commentListHTML(id, c, 'slide:'+i)}
     </div>`).join('');
 }
 function renderSlides(id) {
   const el = document.getElementById('slides-' + id);
-  if (el) { el.innerHTML = slidesHTML(id, getCopy(id)); autoGrowScope(el); }
+  if (el) { el.innerHTML = slidesHTML(id, getCopy(id)); }
 }
 function cardEdit(it, c) {
   const arte = c.isVideo
     ? `<div class="cf"><label class="cf-lbl">Texto da arte — Reels</label>
-        <textarea rows="4" data-copyblock="reels" placeholder="Roteiro / texto da arte do reels..." oninput="updateCopyField(${it.id},'reels',this)">${esc(c.reels)}</textarea>
-        ${campoTabelasHTML(it.id, c, 'reels')}
+        ${rtEditorHTML(it.id, c, 'reels', c.reels, 'Roteiro / texto da arte do reels…')}
+        ${rtToolsHTML(it.id, 'reels')}
         ${commentListHTML(it.id, c, 'reels')}</div>`
     : `<div class="cf"><label class="cf-lbl">Texto da arte — Slides do carrossel</label>
         <div id="slides-${it.id}">${slidesHTML(it.id, c)}</div>
@@ -2761,10 +3030,12 @@ function cardEdit(it, c) {
       <input type="text" value="${esc(c.materiais)}" placeholder="https://drive.google.com/..." oninput="updateCopyField(${it.id},'materiais',this)"></div>
     ${arte}
     <div class="cf"><label class="cf-lbl">Texto da legenda</label>
-      <textarea rows="4" data-copyblock="legenda" placeholder="Legenda do post, com hashtags..." oninput="updateCopyField(${it.id},'legenda',this)">${esc(c.legenda)}</textarea>
+      ${rtEditorHTML(it.id, c, 'legenda', c.legenda, 'Legenda do post, com hashtags…')}
+      ${rtToolsHTML(it.id, 'legenda')}
       ${commentListHTML(it.id, c, 'legenda')}</div>
     <div class="cf"><label class="cf-lbl">Texto de blog (opcional)</label>
-      <textarea id="blog-${it.id}" rows="3" data-copyblock="blog" placeholder="Texto do blog, se houver..." oninput="updateCopyField(${it.id},'blog',this)">${esc(c.blog)}</textarea>
+      ${rtEditorHTML(it.id, c, 'blog', c.blog, 'Texto do blog, se houver…')}
+      ${rtToolsHTML(it.id, 'blog')}
       ${commentListHTML(it.id, c, 'blog')}</div>
     ${copyImagensHTML(it.id, c)}
 `;
@@ -2818,21 +3089,28 @@ function inlineTabelas(html){
     return `<span class="vsrc">${m}</span><table class="vtab vrender">${th}${tb}</table>`;
   });
 }
+// [tabela N] → a tabela de verdade, exatamente na posição marcada.
+// O texto-fonte fica num span escondido de propósito: offsetInBlock percorre os
+// nós de texto para posicionar os comentários da Gabi, então ele não pode sumir.
+function inlineTabelasRef(html, c){
+  const tabs=c.tabelas||[];
+  return html.replace(/\[tabela (\d+)\]/g, (m, n) => {
+    const t=tabs[+n-1]; if(!t) return m;
+    const cap=t.titulo?`<span class="vtab-cap">${esc(t.titulo)}</span>`:'';
+    return `<span class="vsrc">${m}</span><span class="vrender vtab-wrap">${cap}${tabelaRenderHTML(t)}</span>`;
+  });
+}
 function vblockHTML(id, c, block, label, text) {
   const comments = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
   let corpo = renderComentado(text||'', comments);
-  corpo = inlineImagens(corpo, c);      // imagens valem em qualquer campo (arte, legenda, blog)
+  corpo = inlineImagens(corpo, c);      // imagem na posição em que foi inserida
+  corpo = inlineTabelasRef(corpo, c);   // tabela na posição em que foi inserida
   corpo = inlineTabelas(corpo);         // compatibilidade: tabela escrita em texto com |
   // Só quem valida (Gabi/Vitor) seleciona para comentar — a equipe de design só lê.
   const podeCmt = ehCliente();
-  // As tabelas do bloco entram FORA do .vblock, logo abaixo: assim os
-  // comentários por posição continuam contando só os caracteres do texto.
-  const tabs = tabelasDoBloco(c, block)
-    .map(({t}) => `<div class="vtab-wrap">${t.titulo?`<span class="vtab-cap">${esc(t.titulo)}</span>`:''}${tabelaRenderHTML(t)}</div>`).join('');
   return `<div class="cf">
     ${label?`<label class="cf-lbl">${label}${podeCmt?'<span class="cf-cmt-dica">selecione o trecho para pedir alteração</span>':''}</label>`:''}
     <div class="vblock${podeCmt?' vb-cmt':''}" data-item="${id}" data-block="${block}"${podeCmt?' title="Selecione o trecho que quer alterar e escreva o ajuste"':''}>${corpo}</div>
-    ${tabs}
     ${commentListHTML(id, c, block)}
   </div>`;
 }
@@ -2986,38 +3264,27 @@ window.removeCopyImg = function(id,i){
   agendarSaveCopy(); renderOneCard(id);
 };
 window.updateCopyImgLegenda = function(id,i,el){ const c=ensureCopy(id); if(c.imagens[i]) c.imagens[i].legenda=el.value; agendarSaveCopy(); };
-// Último campo de texto do copy em que se clicou — a marca de imagem/tabela entra
-// nele (serve para slides da arte, legenda, reels ou blog).
+// Último editor de texto do copy em que se clicou — é nele que a imagem da
+// galeria entra quando se usa "↳ Inserir no texto".
 let ultimoCampoCopy = null;
 document.addEventListener('focusin', (e) => {
-  const t = e.target;
-  if (t && t.tagName === 'TEXTAREA' && t.closest && t.closest('#copy-cards')) ultimoCampoCopy = t;
+  const ed = e.target && e.target.closest ? e.target.closest('.rt-editor') : null;
+  if (ed && ed.isContentEditable && ed.closest('#copy-cards')) ultimoCampoCopy = ed;
 });
-function campoAlvoCopy(id){
-  const card=document.getElementById('copy-card-'+id); if(!card) return null;
-  if(ultimoCampoCopy && card.contains(ultimoCampoCopy) && document.body.contains(ultimoCampoCopy)) return ultimoCampoCopy;
-  return document.getElementById('blog-'+id) || card.querySelector('textarea');
-}
-function nomeDoCampo(ta){
-  if(!ta) return 'texto';
-  if(ta.id && ta.id.startsWith('blog-')) return 'texto de blog';
-  const sc=ta.closest('.slide-card'); if(sc) return (sc.querySelector('.slide-num')?.textContent||'slide');
-  const lbl=ta.closest('.cf')?.querySelector('.cf-lbl')?.textContent;
+function nomeDoCampo(el){
+  if(!el) return 'texto';
+  const sc=el.closest('.slide-card'); if(sc) return (sc.querySelector('.slide-num')?.textContent||'slide');
+  const lbl=el.closest('.cf')?.querySelector('.cf-lbl')?.textContent;
   return lbl ? lbl.toLowerCase() : 'texto';
 }
-// Insere a marca ([imagem N] / [tabela N]) na posição do cursor do campo escolhido.
-function inserirMarca(id, marca, silencioso){
-  const ta=campoAlvoCopy(id);
-  if(!ta){ showToast('Abra o conteúdo e clique no campo de texto onde quer inserir.'); return; }
-  const v=ta.value, s=(ta.selectionStart!=null)?ta.selectionStart:v.length;
-  const pre=(s>0 && v[s-1]!=='\n') ? '\n' : '';
-  const ins=pre+marca+'\n';
-  ta.value=v.slice(0,s)+ins+v.slice(s);
-  ta.focus(); ta.setSelectionRange(s+ins.length, s+ins.length);
-  ta.dispatchEvent(new Event('input',{bubbles:true}));
-  if(!silencioso) showToast(`${marca} inserida em: ${nomeDoCampo(ta)}`);
-}
-window.inserirImgNoTexto = function(id,i){ inserirMarca(id, `[imagem ${i+1}]`); };
+window.inserirImgNoTexto = function(id,i){
+  const card=document.getElementById('copy-card-'+id);
+  let ed = (ultimoCampoCopy && card && card.contains(ultimoCampoCopy) && document.body.contains(ultimoCampoCopy))
+    ? ultimoCampoCopy : (card ? card.querySelector('.rt-editor[contenteditable="true"]') : null);
+  if(!ed){ showToast('Clique antes no texto onde a imagem deve entrar.'); return; }
+  rtInserirMarca(id, ed.dataset.copyblock, `[imagem ${i+1}]`);
+  showToast(`Imagem ${i+1} entrou em: ${nomeDoCampo(ed)}`);
+};
 function copyImagensHTML(id, c){
   const todas=c.imagens||[];
   const pode = podeSubirImgCopy() && copyMode==='edit';
@@ -3051,7 +3318,9 @@ function copyImagensHTML(id, c){
 // ordem em que as marcas aparecem. O texto continua sendo uma string pura —
 // é isso que faz os comentários por posição da Gabi e o colar no Instagram
 // continuarem funcionando.
-function tabelaVazia(block){ return { block:block||'slide:0', titulo:'', cols:['Coluna A','Coluna B'], rows:[{cels:['','']},{cels:['','']}] }; }
+// Sem `block`: a posição da tabela é a marca [tabela N] que rtInserirMarca põe no
+// texto. `block` só existe em dado antigo, e migrarTabelasParaArte o converte.
+function tabelaVazia(){ return { titulo:'', cols:['Coluna A','Coluna B'], rows:[{cels:['','']},{cels:['','']}] }; }
 function ensureTab(id, ti){ const c=ensureCopy(id); return c.tabelas[ti]; }
 function celsDa(r){ return (r && Array.isArray(r.cels)) ? r.cels : (Array.isArray(r) ? r : []); }
 const COPY_BLOCOS = (c) => ['reels','legenda','blog'].concat((c.slides||[]).map((_,i)=>'slide:'+i));
@@ -3074,18 +3343,10 @@ function removerMarcaERenumerar(c, tipo, idx){
 }
 window.removeTabela = function(id, ti){
   const c=ensureCopy(id);
-  if(!confirm('Remover esta tabela?')) return;
+  if(!confirm('Remover esta tabela? Ela sai do texto e as outras são renumeradas.')) return;
   c.tabelas.splice(ti,1);
+  removerMarcaERenumerar(c,'tabela',ti);
   agendarSaveCopy(); renderOneCard(id);
-};
-// Cria a tabela direto no card do texto da arte (slide ou roteiro do reels).
-window.novaTabelaNoCampo = function(id, block){
-  const c=ensureCopy(id);
-  if(!blocosArte(c).includes(block)){ showToast('A tabela só entra no texto da arte (slides ou reels).'); return; }
-  c.tabelas.push(tabelaVazia(block));
-  const ti=c.tabelas.length-1;
-  agendarSaveCopy(); renderOneCard(id);
-  setTimeout(()=>{ const el=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] .tb-edit input`); if(el){ el.focus(); el.select(); } }, 40);
 };
 window.updateTabTitulo = function(id,ti,el){ const t=ensureTab(id,ti); if(t){ t.titulo=el.value; agendarSaveCopy(); } };
 window.updateTabCol = function(id,ti,ci,el){ const t=ensureTab(id,ti); if(t){ t.cols[ci]=el.value; agendarSaveCopy(); } };
@@ -3118,16 +3379,6 @@ function tabelaEditorHTML(id, t, ti){
       <span class="tb-dica">Tab anda entre as células · Enter cria linha · dá para colar do Sheets/Excel</span>
     </div>
   </div>`;
-}
-// Tabelas de UM campo da arte: entram dentro do próprio card, abaixo do texto.
-function campoTabelasHTML(id, c, block){
-  const pode = copyMode==='edit' && ROLE==='editor';
-  const lista = tabelasDoBloco(c, block);
-  const corpo = lista.map(({t,ti}) => pode ? tabelaEditorHTML(id, t, ti)
-    : `<div class="tb-card tb-inline">${t.titulo?`<div class="tb-num">${esc(t.titulo)}</div>`:''}${tabelaRenderHTML(t)}</div>`).join('');
-  const btn = pode ? `<button class="cf-tabbtn" onclick="novaTabelaNoCampo(${id},'${block}')">⊞ Adicionar tabela</button>` : '';
-  if(!corpo && !btn) return '';
-  return `<div class="cf-tabs" data-block="${block}">${corpo}${btn}</div>`;
 }
 // Navegação por teclado: Tab anda entre células, Enter cria/desce linha.
 window.tbKey = function(ev, id, ti){
@@ -3472,6 +3723,8 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
   window.__seedGrade = (items) => { gradeItems = items; renderDesignCards(); };
   // Alterna edição/validação sem recarregar o ciclo (o Firestore local nega leitura)
   window.__setCopyMode = (m) => { copyMode = m; buildCopyTab(); return copyMode; };
+  window.__copyTxt = (id, block) => blockText(getCopy(id), block);
+  window.__serial = (el) => rtSerializar(el);
   // Popula grade + métricas por post para conferir gráfico/filtro de mês sem login.
   window.__seedCiclo = (items, posts) => {
     gradeItems = items || [];
