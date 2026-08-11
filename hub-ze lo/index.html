@@ -69,6 +69,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
   .side-foot{margin-top:0}
 }
 
+}
+
 /* AUTH / LOGIN */
 .auth-screen{min-height:78vh;display:flex;align-items:center;justify-content:center;padding:2rem}
 /* largura pensada para o subtítulo padrão caber em UMA linha só */
@@ -492,17 +494,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .slide-card .rt-editor:focus{border-color:var(--z-ocre-dark);box-shadow:0 0 0 2px rgba(154,122,31,.10)}
 .rt-editor:empty::before{content:attr(data-ph);color:#bbb;pointer-events:none}
 /* widget (tabela/imagem): bloco atômico dentro do texto */
-.rt-w{position:relative;display:block;margin:8px 0;user-select:none}
+/* white-space:normal é essencial: o editor usa pre-wrap, e sem isso a
+   indentação do HTML do widget virava um monte de linha em branco na tela */
+.rt-w{position:relative;display:block;margin:8px 0;user-select:none;white-space:normal}
 .rt-w-tab .tb-card{margin-bottom:0}
 .rt-w-img{max-width:320px}
 .rt-w-img img{display:block;width:100%;border-radius:8px;border:1px solid var(--z-border)}
 .rt-img-cap{display:block;font-size:11px;color:var(--z-text-sec);margin-top:3px;line-height:1.4}
 .rt-w-x{position:absolute;top:4px;right:4px;z-index:2;width:20px;height:20px;border:none;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
 .rt-w-x:hover{background:var(--z-terra)}
-.rt-tools{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:5px 0 2px}
 .rt-tool{font-size:11px;font-weight:600;font-family:inherit;color:var(--z-teal);background:none;border:1px dashed var(--z-teal);border-radius:7px;padding:4px 10px;cursor:pointer;opacity:.8;transition:opacity .15s,background .15s}
 .rt-tool:hover{opacity:1;background:var(--z-teal-light)}
-.rt-tools-dica{font-size:10.5px;color:var(--z-text-sec)}
 .rtimg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin:10px 0}
 .rtimg-op{border:1px solid var(--z-border);border-radius:8px;background:#fff;padding:5px;cursor:pointer;font-family:inherit;font-size:10.5px;color:var(--z-text-sec)}
 .rtimg-op:hover{border-color:var(--z-teal);color:var(--z-teal)}
@@ -567,7 +569,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .vimg-cap{display:block;font-size:11px;color:var(--z-text-sec);margin-top:4px;font-style:italic}
 .vtab{border-collapse:collapse;margin:8px 0;font-size:12.5px;background:#fff;border-radius:8px;overflow:hidden;display:block;max-width:100%;overflow-x:auto;white-space:normal}
 .vtab th,.vtab td{border:0.5px solid var(--z-border);padding:6px 10px;text-align:left;vertical-align:top}
-.vtab th{background:var(--z-teal-light);color:var(--z-teal);font-weight:700}
+.vtab td{white-space:pre-wrap}
 /* Galeria de imagens do copy */
 .ci-grid{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
 .ci-item{width:150px}
@@ -578,35 +580,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ci-leg-ro{font-size:11px;color:var(--z-text-sec);margin-top:4px;font-style:italic}
 .ci-ins{width:100%;margin-top:4px;font-size:10.5px;font-weight:700;padding:5px;border:1px solid var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);border-radius:6px;cursor:pointer;font-family:inherit}
 .ci-ins:hover{background:#d3ebee}
-/* Editor de tabela */
-.tb-card{border:0.5px solid var(--z-border);border-radius:10px;padding:10px;margin-bottom:10px;background:#fff}
-.tb-head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
-.tb-num{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--z-teal);white-space:nowrap}
-.tb-tit{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid var(--z-border);border-radius:6px;font-family:inherit;color:var(--z-text);min-width:0}
-.tb-del{position:static!important;flex-shrink:0}
-.tb-scroll{overflow-x:auto}
-.tb-edit{border-collapse:collapse;width:100%}
-.tb-edit th,.tb-edit td{border:0.5px solid var(--z-border);padding:0;position:relative}
-.tb-edit th{background:var(--z-teal-light)}
-.tb-edit input{width:100%;min-width:90px;border:none;background:transparent;padding:7px 8px;font-family:inherit;font-size:12.5px;color:var(--z-text);box-sizing:border-box}
-.tb-edit th input{font-weight:700;color:var(--z-teal)}
-.tb-edit input:focus{outline:2px solid var(--z-teal);outline-offset:-2px;background:#fff}
-.tb-x{border:none;background:none;color:var(--z-text-sec);cursor:pointer;font-size:9px;padding:2px 4px;opacity:.5;line-height:1}
-.tb-x:hover{opacity:1;color:var(--z-terra)}
-.tb-edit th .tb-x{position:absolute;top:1px;right:1px}
-.tb-rowact{border:none!important;width:22px;text-align:center;background:none!important}
-.tb-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+/* Grade simples, no espirito da tabela do Google Docs: celulas todas iguais,
+   sem cabecalho especial e sem enfeite. As alcas de remover so aparecem no hover. */
+.tb-card{margin:8px 0;background:#fff}
+.tb-edit{border-collapse:collapse;width:100%;table-layout:fixed}
+.tb-edit td{border:1px solid #C9C2B4;padding:0;vertical-align:top}
+.tb-edit textarea{display:block;width:100%;border:none;background:transparent;padding:7px 9px;font-family:inherit;font-size:12.5px;line-height:1.5;color:var(--z-text);box-sizing:border-box;resize:none;overflow:hidden;min-height:34px}
+.tb-edit textarea:focus{outline:2px solid var(--z-teal);outline-offset:-2px;background:#fff}
+/* a célula não pode herdar o min-height dos campos grandes de texto do slide */
+#copy-cards .tb-edit textarea{min-height:34px}
+.tb-x{border:none;background:none;color:var(--z-text-sec);cursor:pointer;font-size:9px;padding:2px 4px;opacity:0;line-height:1;transition:opacity .12s}
+.tb-card:hover .tb-x{opacity:.45}
+.tb-x:hover{opacity:1!important;color:var(--z-terra)}
+.tb-alca{border:none!important;width:20px;text-align:center;background:none!important}
+.tb-alcas td{border:none!important;height:14px}
+.tb-acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:2px;opacity:0;transition:opacity .12s}
+.tb-card:hover .tb-acts,.tb-card:focus-within .tb-acts{opacity:1}
+.tb-del-btn:hover{border-color:var(--z-terra)!important;color:var(--z-terra)!important}
 .tb-btn{font-size:11px;font-weight:600;padding:6px 11px;border:0.5px solid var(--z-border);background:var(--z-bg);color:var(--z-text-sec);border-radius:7px;cursor:pointer;font-family:inherit}
 .tb-btn:hover{border-color:var(--z-teal);color:var(--z-teal)}
 .tb-btn.tb-ins{border-color:var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);font-weight:700}
 /* Tabela ancorada no campo: entra logo abaixo do texto, com um "fio" ligando os dois */
-.cf-tabs{margin:2px 0 4px}
-.tb-inline{position:relative;margin-left:14px;border-left:2px solid var(--z-teal);border-top-left-radius:0;border-bottom-left-radius:0}
-.tb-inline::before{content:"";position:absolute;left:-14px;top:16px;width:12px;height:2px;background:var(--z-teal);opacity:.5}
 .tb-dica{font-size:10.5px;color:var(--z-text-sec);align-self:center;line-height:1.35}
-.cf-tabbtn{font-size:11px;font-weight:600;font-family:inherit;color:var(--z-teal);background:none;border:1px dashed var(--z-teal);border-radius:7px;padding:5px 11px;cursor:pointer;margin:2px 0 6px;opacity:.75;transition:opacity .15s,background .15s}
-.cf-tabbtn:hover{opacity:1;background:var(--z-teal-light)}
-.cf-orfas{border:1px dashed var(--z-ocre-dark);border-radius:10px;padding:10px 12px;background:#FFFDF7}
 .vtab-wrap{display:block;margin:8px 0}
 .vtab-cap{display:block;font-size:11px;font-weight:700;color:var(--z-teal);margin-bottom:4px}
 .vblock-empty{color:#bbb;font-size:12px}
@@ -688,6 +683,9 @@ mark.cmt:hover{background:#f6d9c4}
 .dz-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:8px 14px;border-radius:8px;border:1px dashed var(--z-teal);background:var(--z-teal-light);color:var(--z-teal);cursor:pointer;font-family:inherit}
 .dz-btn:hover{background:#d3ebee}
 .dz-progress{font-size:11px;color:var(--z-text-sec);margin-left:10px}
+.dz-erro{display:flex;align-items:flex-start;gap:8px;background:#FDECE4;border:1px solid var(--z-terra);border-radius:8px;padding:9px 11px;margin-top:8px;font-size:12px;line-height:1.5;color:#7A3B18}
+.dz-erro-ico{font-size:13px;flex:0 0 auto}
+.dz-erro-x{margin-left:auto;border:none;background:none;color:#7A3B18;font-size:12px;cursor:pointer;padding:0 2px;line-height:1}
 .prev-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:.3rem 0 .5rem}
 @media(max-width:620px){.prev-grid{grid-template-columns:1fr}}
 .car-block{min-width:0}
@@ -800,6 +798,86 @@ mark.cmt:hover{background:#f6d9c4}
 .rc-field label{display:block;font-size:11px;font-weight:600;color:var(--z-text-sec);margin-bottom:4px}
 .rc-field input{width:100%;padding:8px 10px;border:1px solid var(--z-border);border-radius:8px;font-family:inherit;font-size:14px;box-sizing:border-box}
 @media(max-width:520px){.rc-grid{grid-template-columns:1fr}}
+
+/* ══ CELULAR ══════════════════════════════════════════════════════════════════
+   A Gabi valida quase tudo pelo telefone. Aqui o menu deixa de ser uma linha
+   só (que estourava a caixa), os alvos de toque crescem e nada mais empurra a
+   página para os lados. */
+@media(max-width:620px){
+  body{-webkit-text-size-adjust:100%}
+  .container{padding:1rem .75rem 2.5rem}
+  .shell{gap:.75rem}
+  .sidebar{padding:.9rem}
+  .brand-logo{width:104px}
+  /* menu em pílulas que quebram linha — todas visíveis, sem rolagem escondida */
+  .side-nav{flex-wrap:wrap;gap:6px;justify-content:center}
+  /* width:auto anula o width:100% do menu vertical — sem isso cada item ocupa
+     uma linha inteira e o menu vira uma coluna gigante no telefone */
+  .nav-item{width:auto;flex:0 1 auto;min-width:0;white-space:nowrap;padding:9px 13px;font-size:12.5px;min-height:40px;gap:5px}
+  .nav-item .nav-ico{display:inline}
+  .main-head{flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:1rem;padding-bottom:.7rem}
+  .main-title{font-size:19px}
+  .main-sub{font-size:11.5px}
+  /* barras de ação: quebram em vez de espremer */
+  .cycle-open-bar{flex-wrap:wrap;gap:8px;padding:10px}
+  .cycle-open-info{width:100%;order:-1}
+  .back-ciclos,.avisar-btn,.copy-imp-btn,.plan-newtab{min-height:38px}
+  .avisar-btn,.copy-imp-btn{flex:1 1 auto;justify-content:center}
+  /* formatação: alvos maiores e sem dica ocupando espaço */
+  .fmtbar{gap:4px;padding:6px;position:sticky;top:0;z-index:20}
+  .fmtb{min-width:38px;min-height:38px;font-size:15px}
+  .fmt-emo{width:38px;height:36px;font-size:20px}
+  .fmt-emojis{max-height:180px}
+  /* cards e campos */
+  .copy-card,.plan-card,.sec-card{border-radius:10px}
+  .copy-card:hover,.sec-card:hover,.plan-card:hover{transform:none;box-shadow:none}
+  .cc-head{padding:11px 12px}
+  .cc-title{font-size:13.5px}
+  .cf textarea,.cf input[type=text],.rt-editor{font-size:16px}  /* 16px evita o zoom automático do iOS */
+  .rt-editor{padding:10px}
+  .slide-card{padding:10px}
+  /* tabela do copy: rola dentro do próprio bloco, sem empurrar a página */
+  .rt-w-tab{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tb-edit{min-width:320px}
+  .tb-x{opacity:.45}                     /* sem hover no toque: alças sempre visíveis */
+  .tb-acts{opacity:1}
+  .tb-btn{min-height:34px}
+  #copy-cards .tb-edit textarea{min-height:38px;font-size:16px;padding:6px 7px}
+  .vtab{font-size:12px}
+  /* validação */
+  .vblock{font-size:14px;padding:10px}
+  .gabi-dec{gap:6px}
+  .gd-chip,.st-chip{min-height:34px;font-size:11.5px}
+  .cmt-pop{width:calc(100vw - 24px);max-width:300px}
+  .howto-steps{grid-template-columns:1fr}
+  /* filtros */
+  .mes-bar,.filtro-bar{gap:5px}
+  .mes-chip,.st-fchip{min-height:34px}
+  .busca-wrap{max-width:none;flex:1 1 100%}
+  /* métricas */
+  .mx-cards{grid-template-columns:repeat(2,1fr);gap:8px}
+  .mx-card-val{font-size:18px}
+  .rc-chart{padding:10px}
+  /* base de dados */
+  .dv-grid,.dv-swot,.dv-mats,.dv-refs{grid-template-columns:1fr}
+  .pd-row{padding:10px 8px}
+  .pd-txt{font-size:12px}
+  /* modais ocupam a tela toda no telefone */
+  .impc-box,.imp-box{width:calc(100vw - 24px);max-width:none;max-height:88vh;overflow-y:auto}
+  /* o planejador roda dentro de um iframe: precisa de altura de tela */
+  .plan-iframe-wrap{height:calc(100vh - 210px);min-height:420px}
+  /* nada pode vazar para os lados */
+  .tab-content{overflow-x:hidden}
+  .mx-table-wrap,.prev-wrap{overflow-x:auto}
+  /* o botão do assistente cobria botões da página */
+  .za-fab{width:46px;height:46px;font-size:19px;right:12px;bottom:12px;opacity:.92}
+  .za-panel{right:8px;left:8px;bottom:66px;width:auto;max-width:none;height:calc(100vh - 140px)}
+  .container{padding-bottom:5rem}
+}
+@media(max-width:400px){
+  .nav-item{font-size:12px;padding:10px 9px}
+  .main-title{font-size:17px}
+}
 </style>
 </head>
 <body>
@@ -2384,6 +2462,16 @@ function normalizeCopy(c) {
     if (!Array.isArray(t.cols)) t.cols = [];
     if (!Array.isArray(t.rows)) t.rows = [];
     t.rows = t.rows.map(r => Array.isArray(r) ? { cels: r.slice() } : (r && Array.isArray(r.cels) ? r : { cels: [] }));
+    // A tabela não tem mais campo de título separado — o texto vira a primeira
+    // linha da grade, que é onde ele apareceria de qualquer jeito.
+    if (t.titulo) {
+      t.rows.unshift({ cels: t.cols.slice() });
+      t.cols = t.cols.map((_, i) => i === 0 ? t.titulo : '');
+      delete t.titulo;
+    }
+    // "Coluna A/B" era rótulo automático da versão anterior; numa grade solta
+    // vira só ruído dentro da célula.
+    t.cols = t.cols.map(v => /^Coluna [A-Z]$/.test(v || '') ? '' : v);
   });
   migrarTabelasParaArte(c);
   return c;
@@ -2663,17 +2751,26 @@ window.fmtCopy=function(ev,kind){
   const limpo=_unstyleStr(trecho);              // tira o estilo atual (permite alternar N ↔ I)
   rtEscrever(el, jaTem ? limpo : _styleStr(limpo,kind));
 };
-// Cria a tabela no ponto do cursor, dentro do texto da arte.
+// Tabela e imagem entram no ponto do cursor, e só no texto da arte.
+function fmtAlvoArte(qual){
+  const el=copyFmtTarget();
+  if(!el){ showToast(`Clique no texto da arte (slide ou reels) onde a ${qual} deve entrar.`); return null; }
+  const block=el.dataset.copyblock||'';
+  if(!blocoEhArte(block)){
+    showToast(`${qual==='tabela'?'A tabela':'A imagem'} é instrução de diagramação da arte — clique num slide (ou no roteiro do reels).`);
+    return null;
+  }
+  return { el, id:+el.dataset.item, block };
+}
 window.fmtTabela=function(ev){
   ev.preventDefault();
-  const el=copyFmtTarget();
-  if(!el){ showToast('Clique no texto da arte (slide ou reels) onde a tabela deve entrar.'); return; }
-  const id=+el.dataset.item, block=el.dataset.copyblock||'';
-  if(!blocosArte(ensureCopy(id)).includes(block)){
-    showToast('A tabela é de diagramação da arte — clique num slide (ou no roteiro do reels).');
-    return;
-  }
-  window.rtInserirTabela(ev, id, block);
+  const a=fmtAlvoArte('tabela'); if(!a) return;
+  window.rtInserirTabela(ev, a.id, a.block);
+};
+window.fmtImagem=function(ev){
+  ev.preventDefault();
+  const a=fmtAlvoArte('imagem'); if(!a) return;
+  window.rtInserirImagem(ev, a.id, a.block);
 };
 window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'block':'none'); };
 window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const el=copyFmtTarget(); if(!el){ showToast('Clique num campo de texto do copy primeiro.'); return; } rtEscrever(el, emo); };
@@ -2693,7 +2790,8 @@ function copyFmtbarHTML(){
     <button class="fmtb" title="Negrito (funciona ao colar no Instagram/LinkedIn)" onmousedown="fmtCopy(event,'bold')"><strong>N</strong></button>
     <button class="fmtb" title="Itálico" onmousedown="fmtCopy(event,'italic')"><em style="font-family:Georgia,serif">I</em></button>
     <button class="fmtb" title="Marcador (•)" onmousedown="fmtCopy(event,'bullet')">•</button>
-    <button class="fmtb" title="Criar tabela dentro do campo em que você está escrevendo" onmousedown="fmtTabela(event)">⊞</button>
+    <button class="fmtb" title="Tabela no ponto do cursor (só no texto da arte)" onmousedown="fmtTabela(event)">⊞</button>
+    <button class="fmtb" title="Imagem no ponto do cursor (só no texto da arte)" onmousedown="fmtImagem(event)">🖼</button>
     <button class="fmtb" title="Inserir link (como texto)" onmousedown="fmtCopy(event,'link')">🔗</button>
     <button class="fmtb" title="Emojis" onmousedown="fmtEmojiToggle(event)">😀</button>
     <span class="fmt-hint">selecione o texto e clique em N / I</span>
@@ -2843,16 +2941,10 @@ function rtEditorHTML(id, c, block, texto, placeholder){
       oninput="rtInput(this)" onkeydown="rtKeydown(event,this)" onpaste="rtPaste(event,this)"
     >${rtHTML(id, c, texto)}</div>`;
 }
-// Barra de inserção do próprio campo — deixa claro que a tabela entra NO texto.
-function rtToolsHTML(id, block){
-  if(!rtEditavel()) return '';
-  const arte = /^(slide:|reels)/.test(block);
-  return `<div class="rt-tools">
-    ${arte?`<button class="rt-tool" onmousedown="rtInserirTabela(event,${id},'${block}')">⊞ Tabela aqui</button>`:''}
-    <button class="rt-tool" onmousedown="rtInserirImagem(event,${id},'${block}')">🖼 Imagem aqui</button>
-    <span class="rt-tools-dica">entram na posição do cursor</span>
-  </div>`;
-}
+// Tabela e imagem são instruções de diagramação para o design — valem só no
+// texto da arte. Em legenda e blog não existe imagem no meio do texto em rede
+// social nenhuma, então os botões nem se aplicam ali.
+function blocoEhArte(block){ return /^(slide:|reels$)/.test(block||''); }
 function rtEditorDoBloco(id, block){
   return document.querySelector(`#copy-card-${id} .rt-editor[data-copyblock="${block}"]`);
 }
@@ -2899,6 +2991,7 @@ function rtRedesenhar(id, block, offset){
   const el = rtEditorDoBloco(id, block); if(!el) return;
   const c = getCopy(id);
   el.innerHTML = rtHTML(id, c, blockText(c, block));
+  autoGrowScope(el);          // as células da tabela crescem conforme o texto
   rtPorCursor(el, offset);
 }
 window.rtInput = function(el){
@@ -3004,7 +3097,6 @@ function slidesHTML(id, c) {
       <div class="slide-head"><span class="slide-num">Slide ${i+1}</span>
         ${c.slides.length>1?`<button class="slide-del" onclick="removeSlide(${id},${i})">✕ remover</button>`:''}</div>
       ${rtEditorHTML(id, c, 'slide:'+i, s.texto, 'Texto do slide '+(i+1)+'…')}
-      ${rtToolsHTML(id, 'slide:'+i)}
       ${commentListHTML(id, c, 'slide:'+i)}
     </div>`).join('');
 }
@@ -3016,7 +3108,6 @@ function cardEdit(it, c) {
   const arte = c.isVideo
     ? `<div class="cf"><label class="cf-lbl">Texto da arte — Reels</label>
         ${rtEditorHTML(it.id, c, 'reels', c.reels, 'Roteiro / texto da arte do reels…')}
-        ${rtToolsHTML(it.id, 'reels')}
         ${commentListHTML(it.id, c, 'reels')}</div>`
     : `<div class="cf"><label class="cf-lbl">Texto da arte — Slides do carrossel</label>
         <div id="slides-${it.id}">${slidesHTML(it.id, c)}</div>
@@ -3031,11 +3122,9 @@ function cardEdit(it, c) {
     ${arte}
     <div class="cf"><label class="cf-lbl">Texto da legenda</label>
       ${rtEditorHTML(it.id, c, 'legenda', c.legenda, 'Legenda do post, com hashtags…')}
-      ${rtToolsHTML(it.id, 'legenda')}
       ${commentListHTML(it.id, c, 'legenda')}</div>
     <div class="cf"><label class="cf-lbl">Texto de blog (opcional)</label>
       ${rtEditorHTML(it.id, c, 'blog', c.blog, 'Texto do blog, se houver…')}
-      ${rtToolsHTML(it.id, 'blog')}
       ${commentListHTML(it.id, c, 'blog')}</div>
     ${copyImagensHTML(it.id, c)}
 `;
@@ -3096,8 +3185,7 @@ function inlineTabelasRef(html, c){
   const tabs=c.tabelas||[];
   return html.replace(/\[tabela (\d+)\]/g, (m, n) => {
     const t=tabs[+n-1]; if(!t) return m;
-    const cap=t.titulo?`<span class="vtab-cap">${esc(t.titulo)}</span>`:'';
-    return `<span class="vsrc">${m}</span><span class="vrender vtab-wrap">${cap}${tabelaRenderHTML(t)}</span>`;
+    return `<span class="vsrc">${m}</span><span class="vrender vtab-wrap">${tabelaRenderHTML(t)}</span>`;
   });
 }
 function vblockHTML(id, c, block, label, text) {
@@ -3220,7 +3308,12 @@ window.autoGrow = function(el){
   el.style.height='auto';
   el.style.height=(el.scrollHeight+2)+'px';
 };
-function autoGrowScope(root){ if(root) root.querySelectorAll('textarea').forEach(el=>autoGrow(el)); }
+// Espera o próximo quadro: medido antes de o navegador aplicar o layout, o
+// scrollHeight vem errado e as células da tabela nascem altas demais.
+function autoGrowScope(root){
+  if(!root) return;
+  requestAnimationFrame(()=>root.querySelectorAll('textarea').forEach(el=>autoGrow(el)));
+}
 window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[field] = el.value; autoGrow(el); agendarSaveCopy(); };
 window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; autoGrow(el); agendarSaveCopy(); };
 window.addSlide = function(id) { const c = ensureCopy(id); c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
@@ -3246,13 +3339,18 @@ window.onCopyImgFiles = async function(id, input){
   const files=[...input.files]; input.value='';
   if(!files.length) return;
   if(!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET){ showToast('Upload ainda não configurado (Cloudinary).'); return; }
-  const c=ensureCopy(id); const prog=document.getElementById('ci-prog-'+id); let ok=0;
+  const c=ensureCopy(id); const prog=document.getElementById('ci-prog-'+id); let ok=0; let erro='';
   for(const f of files){
-    if(prog) prog.textContent=`Enviando ${ok+1}/${files.length}...`;
-    try{ const r=await uploadCloudinary(f); c.imagens.push({ url:r.url, publicId:r.publicId, legenda:'' }); ok++; }
-    catch(e){ console.error(e); showToast('Falha ao enviar '+f.name); }
+    const barra=barrarPorTamanho(f);
+    if(barra){ erro=barra; continue; }
+    try{
+      const r=await uploadCloudinary(f, (pct)=>{ if(prog) prog.textContent=`Enviando ${f.name} — ${pct}%`; });
+      c.imagens.push({ url:r.url, publicId:r.publicId, legenda:'' }); ok++;
+    }
+    catch(e){ console.error(e); erro=`Não deu para enviar “${f.name}”: ${e.message}`; }
   }
   if(prog) prog.textContent='';
+  if(erro) showToast(erro);
   agendarSaveCopy(); renderOneCard(id);
   if(ok) showToast(`✓ ${ok} imagem(ns) adicionada(s)`);
 };
@@ -3280,8 +3378,10 @@ function nomeDoCampo(el){
 window.inserirImgNoTexto = function(id,i){
   const card=document.getElementById('copy-card-'+id);
   let ed = (ultimoCampoCopy && card && card.contains(ultimoCampoCopy) && document.body.contains(ultimoCampoCopy))
-    ? ultimoCampoCopy : (card ? card.querySelector('.rt-editor[contenteditable="true"]') : null);
-  if(!ed){ showToast('Clique antes no texto onde a imagem deve entrar.'); return; }
+    ? ultimoCampoCopy : null;
+  if(ed && !blocoEhArte(ed.dataset.copyblock)) ed = null;
+  if(!ed && card) ed = card.querySelector('.rt-editor[data-copyblock^="slide:"], .rt-editor[data-copyblock="reels"]');
+  if(!ed){ showToast('Clique antes no texto da arte onde a imagem deve entrar.'); return; }
   rtInserirMarca(id, ed.dataset.copyblock, `[imagem ${i+1}]`);
   showToast(`Imagem ${i+1} entrou em: ${nomeDoCampo(ed)}`);
 };
@@ -3306,7 +3406,7 @@ function copyImagensHTML(id, c){
   const up = pode
     ? `<label class="dz-btn">🖼 Adicionar imagem<input type="file" accept="image/*" multiple style="display:none" onchange="onCopyImgFiles(${id},this)"></label><span class="dz-progress" id="ci-prog-${id}"></span>`
     : '';
-  const dica = pode ? `<div class="dz-ordhint">Clique no campo onde quer a imagem (slide da arte, legenda ou blog) e use <strong>↳ Inserir no texto</strong> — na validação ela aparece exatamente ali.</div>` : '';
+  const dica = pode ? `<div class="dz-ordhint">Suba aqui e depois use o botão <strong>🖼</strong> da barra de formatação para colocá-la no ponto do texto da arte. Limite de ${mbs(UPLOAD_MAX)} por arquivo.</div>` : '';
   const lbl = pode ? '🖼 Imagens do conteúdo' : '🖼 Imagens sem posição no texto';
   return `<div class="cf"><label class="cf-lbl">${lbl}</label>
     <div class="ci-grid">${thumbs}</div>${up}${dica}</div>`;
@@ -3348,57 +3448,70 @@ window.removeTabela = function(id, ti){
   removerMarcaERenumerar(c,'tabela',ti);
   agendarSaveCopy(); renderOneCard(id);
 };
-window.updateTabTitulo = function(id,ti,el){ const t=ensureTab(id,ti); if(t){ t.titulo=el.value; agendarSaveCopy(); } };
-window.updateTabCol = function(id,ti,ci,el){ const t=ensureTab(id,ti); if(t){ t.cols[ci]=el.value; agendarSaveCopy(); } };
-window.updateTabCel = function(id,ti,ri,ci,el){ const t=ensureTab(id,ti); if(t&&t.rows[ri]){ celsDa(t.rows[ri])[ci]=el.value; agendarSaveCopy(); } };
-window.addTabLinha = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.rows.push({cels:t.cols.map(()=>'')}); agendarSaveCopy(); renderOneCard(id); } };
-window.addTabCol = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.cols.push('Coluna '+String.fromCharCode(65+t.cols.length)); t.rows.forEach(r=>celsDa(r).push('')); agendarSaveCopy(); renderOneCard(id); } };
-window.removeTabLinha = function(id,ti,ri){ const t=ensureTab(id,ti); if(t&&t.rows.length>1){ t.rows.splice(ri,1); agendarSaveCopy(); renderOneCard(id); } else showToast('A tabela precisa de pelo menos uma linha.'); };
-window.removeTabCol = function(id,ti,ci){ const t=ensureTab(id,ti); if(t&&t.cols.length>1){ t.cols.splice(ci,1); t.rows.forEach(r=>celsDa(r).splice(ci,1)); agendarSaveCopy(); renderOneCard(id); } else showToast('A tabela precisa de pelo menos uma coluna.'); };
-window.copiarTabelaTexto = function(id,ti){
+// A tabela é uma GRADE simples, igual à do Google Docs: todas as células iguais,
+// sem cabeçalho especial, sem título, sem numeração. A primeira linha é `cols`
+// (só por causa do formato antigo) — na tela ela é uma linha como as outras.
+function tabGrade(t){ return [t.cols].concat((t.rows||[]).map(celsDa)); }
+function tabCelula(t, r, c, val){
+  const linha = (r===0) ? t.cols : celsDa(t.rows[r-1]);
+  if(!linha) return;
+  if(val===undefined) return linha[c] || '';
+  linha[c] = val;
+}
+window.updateTabCelula = function(id,ti,r,c,el){
   const t=ensureTab(id,ti); if(!t) return;
-  const linhas=[t.cols, ...t.rows.map(celsDa)].map(r=>r.join('\t')).join('\n');
-  navigator.clipboard.writeText((t.titulo?t.titulo+'\n':'')+linhas)
-    .then(()=>showToast('Tabela copiada — cole no Google Docs/Sheets que vira tabela.'))
-    .catch(()=>showToast('Não consegui copiar.'));
+  tabCelula(t,r,c,el.value);
+  autoGrow(el);
+  agendarSaveCopy();
+};
+window.addTabLinha = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.rows.push({cels:t.cols.map(()=>'')}); agendarSaveCopy(); renderOneCard(id); } };
+window.addTabCol = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.cols.push(''); t.rows.forEach(r=>celsDa(r).push('')); agendarSaveCopy(); renderOneCard(id); } };
+window.removeTabLinha = function(id,ti,r){
+  const t=ensureTab(id,ti); if(!t) return;
+  if(tabGrade(t).length<=1){ showToast('A tabela precisa de pelo menos uma linha.'); return; }
+  if(r===0){ t.cols = celsDa(t.rows[0]).slice(); t.rows.shift(); }   // 1ª linha some: a de baixo vira ela
+  else t.rows.splice(r-1,1);
+  agendarSaveCopy(); renderOneCard(id);
+};
+window.removeTabCol = function(id,ti,ci){
+  const t=ensureTab(id,ti); if(!t) return;
+  if(t.cols.length<=1){ showToast('A tabela precisa de pelo menos uma coluna.'); return; }
+  t.cols.splice(ci,1); t.rows.forEach(r=>celsDa(r).splice(ci,1));
+  agendarSaveCopy(); renderOneCard(id);
 };
 function tabelaEditorHTML(id, t, ti){
-  const cols=t.cols.map((cn,ci)=>`<th><input value="${esc(cn)}" data-tb="${ti}" data-r="-1" data-c="${ci}" oninput="updateTabCol(${id},${ti},${ci},this)" onkeydown="tbKey(event,${id},${ti})" onpaste="tbPaste(event,${id},${ti},-1,${ci})" placeholder="Coluna"><button class="tb-x" title="Remover coluna" onclick="removeTabCol(${id},${ti},${ci})">✕</button></th>`).join('');
-  const rows=t.rows.map((r,ri)=>{ const cel=celsDa(r); return `<tr>${t.cols.map((_,ci)=>`<td><input value="${esc(cel[ci]||'')}" data-tb="${ti}" data-r="${ri}" data-c="${ci}" oninput="updateTabCel(${id},${ti},${ri},${ci},this)" onkeydown="tbKey(event,${id},${ti})" onpaste="tbPaste(event,${id},${ti},${ri},${ci})"></td>`).join('')}<td class="tb-rowact"><button class="tb-x" title="Remover linha" onclick="removeTabLinha(${id},${ti},${ri})">✕</button></td></tr>`; }).join('');
-  return `<div class="tb-card tb-inline" data-ti="${ti}" data-ncols="${t.cols.length}">
-    <div class="tb-head">
-      <span class="tb-num">⊞ Tabela ${ti+1}</span>
-      <input class="tb-tit" value="${esc(t.titulo||'')}" placeholder="Título da tabela (opcional)" oninput="updateTabTitulo(${id},${ti},this)">
-      <button class="dz-del tb-del" title="Remover tabela" onclick="removeTabela(${id},${ti})">✕</button>
-    </div>
-    <div class="tb-scroll"><table class="tb-edit"><tr>${cols}<th class="tb-rowact"></th></tr>${rows}</table></div>
+  const g = tabGrade(t);
+  const nc = t.cols.length;
+  // alças de coluna: aparecem no hover, para remover a coluna
+  const alcas = t.cols.map((_,ci)=>`<td class="tb-alca"><button class="tb-x" title="Remover coluna" onclick="removeTabCol(${id},${ti},${ci})">✕</button></td>`).join('');
+  const linhas = g.map((linha, r) => `<tr>${
+    t.cols.map((_,c)=>`<td><textarea rows="1" data-r="${r}" data-c="${c}"
+        oninput="updateTabCelula(${id},${ti},${r},${c},this)"
+        onkeydown="tbKey(event,${id},${ti})"
+        onpaste="tbPaste(event,${id},${ti},${r},${c})">${esc(linha[c]||'')}</textarea></td>`).join('')
+    }<td class="tb-alca"><button class="tb-x" title="Remover linha" onclick="removeTabLinha(${id},${ti},${r})">✕</button></td></tr>`).join('');
+  return `<div class="tb-card" data-ti="${ti}" data-ncols="${nc}">
+    <table class="tb-edit">${linhas}<tr class="tb-alcas">${alcas}<td></td></tr></table>
     <div class="tb-acts">
       <button class="tb-btn" onclick="addTabLinha(${id},${ti})">+ linha</button>
       <button class="tb-btn" onclick="addTabCol(${id},${ti})">+ coluna</button>
-      <button class="tb-btn" onclick="copiarTabelaTexto(${id},${ti})">⧉ Copiar</button>
-      <span class="tb-dica">Tab anda entre as células · Enter cria linha · dá para colar do Sheets/Excel</span>
+      <button class="tb-btn tb-del-btn" onclick="removeTabela(${id},${ti})">✕ tabela</button>
     </div>
   </div>`;
 }
-// Navegação por teclado: Tab anda entre células, Enter cria/desce linha.
+// Tab anda entre as células (e no fim cria linha). O Enter fica valendo dentro
+// da célula: no Docs a célula tem várias linhas, e é assim que se monta o slide.
 window.tbKey = function(ev, id, ti){
-  const inp=ev.target, card=inp.closest('.tb-card');
-  if(!card) return;
-  const cels=[...card.querySelectorAll('.tb-edit input')];
+  if(ev.key!=='Tab') return;
+  const inp=ev.target, card=inp.closest('.tb-card'); if(!card) return;
+  const cels=[...card.querySelectorAll('.tb-edit textarea')];
   const pos=cels.indexOf(inp);
-  if(ev.key==='Tab'){
-    ev.preventDefault();
-    const alvo = ev.shiftKey ? cels[pos-1] : cels[pos+1];
-    if(alvo){ alvo.focus(); alvo.select(); }
-    else if(!ev.shiftKey){ addTabLinha(id,ti); setTimeout(()=>{ const n=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] tr:last-child input`); if(n) n.focus(); },30); }
-    return;
-  }
-  if(ev.key==='Enter'){
-    ev.preventDefault();
-    const nCols=+card.dataset.ncols || (card.querySelectorAll('.tb-edit tr:first-child th').length-1);
-    const abaixo=cels[pos+nCols];
-    if(abaixo){ abaixo.focus(); abaixo.select(); }
-    else { addTabLinha(id,ti); setTimeout(()=>{ const n=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] tr:last-child input`); if(n) n.focus(); },30); }
+  ev.preventDefault();
+  const alvo = ev.shiftKey ? cels[pos-1] : cels[pos+1];
+  if(alvo){ alvo.focus(); alvo.select(); return; }
+  if(!ev.shiftKey){
+    addTabLinha(id,ti);
+    setTimeout(()=>{ const n=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] .tb-edit tr:nth-last-child(2) textarea`); if(n) n.focus(); },30);
   }
 };
 // Colar do Sheets/Excel: TSV com várias linhas preenche a tabela a partir da célula.
@@ -3409,23 +3522,22 @@ window.tbPaste = function(ev, id, ti, ri, ci){
   const linhas=txt.replace(/\r/g,'').replace(/\n+$/,'').split('\n').map(l=>l.split('\t'));
   const t=ensureTab(id,ti); if(!t) return;
   const nCols=Math.max(t.cols.length, ci + Math.max(...linhas.map(l=>l.length)));
-  while(t.cols.length<nCols) t.cols.push('Coluna '+String.fromCharCode(65+t.cols.length));
+  while(t.cols.length<nCols) t.cols.push('');
   t.rows.forEach(r=>{ const cel=celsDa(r); while(cel.length<nCols) cel.push(''); });
   linhas.forEach((linha,li)=>{
-    const alvoR=ri+li;                            // ri = -1 quando começa no cabeçalho
-    if(alvoR<0){ linha.forEach((v,k)=>{ if(ci+k<t.cols.length) t.cols[ci+k]=v; }); return; }
-    while(t.rows.length<=alvoR) t.rows.push({cels:t.cols.map(()=>'')});
-    const cel=celsDa(t.rows[alvoR]);
-    linha.forEach((v,k)=>{ if(ci+k<nCols) cel[ci+k]=v; });
+    const alvoR=ri+li;                            // r é 0-based na grade (0 = 1ª linha)
+    while(tabGrade(t).length<=alvoR) t.rows.push({cels:t.cols.map(()=>'')});
+    linha.forEach((v,k)=>{ if(ci+k<nCols) tabCelula(t, alvoR, ci+k, v); });
   });
   agendarSaveCopy(); renderOneCard(id);
   showToast(`Tabela preenchida com ${linhas.length} linha(s) coladas.`);
 };
-// A mesma tabela renderizada (usada na validação e na visualização somente leitura)
+// A mesma grade renderizada (validação e leitura). Sem cabeçalho especial: as
+// células são todas iguais, como numa tabela de Google Docs.
 function tabelaRenderHTML(t){
-  const th='<tr>'+t.cols.map(c=>`<th>${esc(c)}</th>`).join('')+'</tr>';
-  const tb=t.rows.map(r=>{ const cel=celsDa(r); return '<tr>'+t.cols.map((_,ci)=>`<td>${esc(cel[ci]||'')}</td>`).join('')+'</tr>'; }).join('');
-  return `<table class="vtab">${th}${tb}</table>`;
+  const linhas=tabGrade(t).map(linha =>
+    '<tr>'+t.cols.map((_,ci)=>`<td>${esc(linha[ci]||'')}</td>`).join('')+'</tr>').join('');
+  return `<table class="vtab">${linhas}</table>`;
 }
 window.setCopyStatus = function(id, which, val) { const c = ensureCopy(id); c[which] = (c[which]===val?'':val); agendarSaveCopy(); renderOneCard(id); };
 window.setGabiStatus = function(id, val) { const c = ensureCopy(id); c.statusGabi = (c.statusGabi===val?'':val); agendarSaveCopy(); renderOneCard(id); };
@@ -3538,12 +3650,40 @@ async function salvarDesign(){
 }
 
 // Upload sem backend — Cloudinary unsigned
-async function uploadCloudinary(file){
-  const fd=new FormData(); fd.append('file',file); fd.append('upload_preset',CLOUDINARY_PRESET);
-  const res=await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`,{ method:'POST', body:fd });
-  if(!res.ok) throw new Error('upload '+res.status);
-  const d=await res.json();
-  return { url:d.secure_url, publicId:d.public_id, w:d.width, h:d.height, resource_type:d.resource_type };
+// Teto da conta Cloudinary (plano gratuito): 100 MB por arquivo. Acima disso a
+// API responde 400 "File size too large" — dá para avisar antes de gastar o
+// upload inteiro à toa.
+const UPLOAD_MAX = 100 * 1024 * 1024;
+function mbs(bytes){ return (bytes/1048576).toLocaleString('pt-BR',{maximumFractionDigits:1}) + ' MB'; }
+// XHR (e não fetch) porque só ele dá progresso de upload — vídeo de 80 MB leva
+// minutos e sem barra parece que travou.
+function uploadCloudinary(file, onProgresso){
+  return new Promise((resolve, reject) => {
+    const fd=new FormData(); fd.append('file',file); fd.append('upload_preset',CLOUDINARY_PRESET);
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/auto/upload`);
+    if(onProgresso && xhr.upload){
+      xhr.upload.onprogress = (e) => { if(e.lengthComputable) onProgresso(Math.round(e.loaded/e.total*100)); };
+    }
+    xhr.onload = () => {
+      let d=null; try{ d=JSON.parse(xhr.responseText); }catch(e){}
+      if(xhr.status>=200 && xhr.status<300 && d){
+        resolve({ url:d.secure_url, publicId:d.public_id, w:d.width, h:d.height, resource_type:d.resource_type });
+      } else {
+        // devolve a mensagem real do Cloudinary, não um "falha" genérico
+        reject(new Error((d && d.error && d.error.message) ? d.error.message : ('HTTP '+xhr.status)));
+      }
+    };
+    xhr.onerror = () => reject(new Error('Sem conexão com o servidor de mídia.'));
+    xhr.send(fd);
+  });
+}
+// Checa o tamanho ANTES de enviar. Devolve a mensagem de erro, ou null se pode ir.
+function barrarPorTamanho(f){
+  if(f.size <= UPLOAD_MAX) return null;
+  const ehVideo = /^video\//.test(f.type);
+  return `“${f.name}” tem ${mbs(f.size)} e o limite por arquivo é ${mbs(UPLOAD_MAX)}.` +
+    (ehVideo ? ' Reexporte o vídeo com bitrate menor (H.264, ~8–10 Mbps) — um Reels de 1 min costuma ficar entre 15 e 30 MB.' : ' Reduza a resolução ou salve como JPG.');
 }
 
 // ── Lista de ciclos (boxes) ────────────────────────────────────────────────────
@@ -3627,8 +3767,18 @@ function uploadAreaHTML(id,d){
     <div class="dz-thumbs">${thumbs}</div>
     <label class="dz-btn">📎 Subir arte / vídeo<input type="file" accept="image/*,video/*" multiple style="display:none" onchange="onDesignFiles(${id},this)"></label>
     <span class="dz-progress" id="dz-prog-${id}"></span>
+    <div class="dz-erro" id="dz-erro-${id}" style="display:none"></div>
+    <div class="dz-ordhint">Limite de ${mbs(UPLOAD_MAX)} por arquivo.</div>
     ${dica}
   </div>`;
+}
+// Erro de upload fica fixo no card (o toast some rápido demais para uma
+// instrução do tipo "reexporte o vídeo com bitrate menor").
+function mostrarErroUpload(id, msg){
+  const el=document.getElementById('dz-erro-'+id);
+  if(!el){ showToast(msg); return; }
+  el.innerHTML=`<span class="dz-erro-ico">⚠</span><span>${esc(msg)}</span><button class="dz-erro-x" onclick="this.parentNode.style.display='none'">✕</button>`;
+  el.style.display='flex';
 }
 function designStatusRow(id,d){
   const chip=(val,lbl)=>`<button class="gd-chip ${val}${d.statusDesign===val?' on':''}" onclick="setDesignStatus(${id},'${val}')">${lbl}</button>`;
@@ -3745,18 +3895,22 @@ window.onDesignFiles=async function(id,input){
   const files=[...input.files]; input.value='';
   if(!files.length) return;
   if(!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET){ showToast('Upload ainda não configurado (Cloudinary).'); return; }
-  const prog=document.getElementById('dz-prog-'+id); const d=ensureDesign(id); let ok=0;
-  for(const f of files){
-    if(prog) prog.textContent=`Enviando ${ok+1}/${files.length}...`;
+  const prog=document.getElementById('dz-prog-'+id); const d=ensureDesign(id); let ok=0; let erro='';
+  for(let n=0; n<files.length; n++){
+    const f=files[n];
+    const barra=barrarPorTamanho(f);
+    if(barra){ erro=barra; if(prog) prog.textContent=''; console.warn('Arquivo grande demais:', f.name, f.size); continue; }
     try{
-      const r=await uploadCloudinary(f);
+      const r=await uploadCloudinary(f, (pct)=>{ if(prog) prog.textContent=`Enviando ${f.name} — ${pct}%`; });
       if(r.resource_type==='video') d.midias.push({ type:'video', url:r.url, publicId:r.publicId });
       else d.midias.push({ type:'image', url:r.url, publicId:r.publicId, w:r.w, h:r.h });
       d.notificadoEm=''; // arte nova/alterada volta a contar como novidade
       ok++;
-    }catch(e){ console.error(e); showToast('Falha ao enviar '+f.name); }
+    }catch(e){ console.error(e); erro=`Não deu para enviar “${f.name}”: ${e.message}`; }
   }
+  if(prog) prog.textContent='';
   agendarSaveDesign(); renderDesignCard(id);
+  if(erro) mostrarErroUpload(id, erro);
   if(ok) showToast(`✓ ${ok} arquivo(s) enviado(s)`);
 };
 window.removeDesignMidia=function(id,i){ const d=ensureDesign(id); (d.midias||[]).splice(i,1); agendarSaveDesign(); renderDesignCard(id); };
@@ -3964,7 +4118,9 @@ function resumoChartHTML(items, posts, engMedio){
   // Largura FIXA: o gráfico ocupa 100% da área disponível e nunca rola. Conforme
   // entram novos conteúdos, as barras se espremem (a fatia de cada um diminui) —
   // assim o ciclo inteiro fica visível de uma vez.
-  const W=760, pw=W-mL-mR, ph=H-mT-mB, x0=mL, y0=H-mB;
+  // No celular o SVG é reduzido para caber, e junto encolhem os rótulos. Usando
+  // uma largura lógica menor a escala fica ~1:1 e o texto continua legível.
+  const W=(window.innerWidth<620)?390:760, pw=W-mL-mR, ph=H-mT-mB, x0=mL, y0=H-mB;
   const maxA=Math.max(1,...data.map(d=>d.a)), maxI=Math.max(1,...data.map(d=>d.i));
   const maxE=Math.max(1,...data.map(d=>d.eng), engMedio||0)*1.12;
   const slot=pw/n, gW=Math.min(34,slot*0.62), bW=Math.max(1.5,gW/2);
