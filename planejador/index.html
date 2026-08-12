@@ -100,7 +100,30 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .stat-val{font-size:20px;font-weight:700;color:var(--z-teal)}
 
 /* CONTENT CARDS */
-.cc{background:#fff;border:0.5px solid var(--z-border);border-left:4px solid var(--z-border);border-radius:12px;padding:1rem 1.25rem;margin-bottom:10px;transition:border-color 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.cc{background:#fff;border:0.5px solid var(--z-border);border-left:4px solid var(--z-border);border-radius:12px;padding:0;margin-bottom:10px;transition:border-color 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.04);overflow:hidden}
+/* Conteúdo fechado por padrão: só o cabeçalho aparece */
+.cc-cab{display:flex;align-items:flex-start;gap:10px;padding:.85rem 1rem;cursor:pointer;user-select:none}
+.cc-cab:hover{background:#FAFAF8}
+.cc-cab-txt{flex:1;min-width:0}
+.cc-cab-data{display:block;font-size:11px;font-weight:700;color:var(--z-terra);margin-bottom:2px}
+.cc-cab-tit{display:block;font-size:14px;font-weight:600;color:var(--z-text);line-height:1.3}
+.cc-cab-dir{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.cc-selo{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;background:var(--z-bg);color:#5A5A5A}
+.cc-selo.is-aprovado{background:#E3F1E8;color:#1B6B3A}
+.cc-selo.is-ajuste{background:var(--z-ocre-light);color:var(--z-ocre-dark)}
+.cc-selo.is-bloqueado{background:#D9F4FC;color:#05A8CC}
+.cc-selo.is-redirecionado{background:#EFE9FA;color:#6B5BB5}
+.cc-selo.vazio{opacity:.65;font-weight:600}
+.cc-cab-chev{font-size:11px;color:#8A8378;transition:transform .18s ease}
+.cc.open .cc-cab-chev{transform:rotate(180deg)}
+.cc-corpo{display:none;padding:0 1rem 1rem}
+.cc.open .cc-corpo{display:block}
+.cc-corpo .pill.p-data{display:none}   /* a data já está no cabeçalho */
+@media(max-width:620px){
+  .cc-cab{padding:.75rem .8rem}
+  .cc-cab-dir{flex-direction:column;align-items:flex-end;gap:4px}
+  .cc-corpo{padding:0 .8rem .9rem}
+}
 .cc.aprovado{border-left-color:#1B6B3A}
 .cc.ajuste{border-left-color:var(--z-ocre-dark)}
 .cc.bloqueado{border-left-color:var(--z-cyan)}
@@ -886,6 +909,14 @@ function atualizarStats() {
     <div class="stat"><div class="stat-lbl">Bloqueados</div><div class="stat-val" style="color:#05A8CC">${bl}</div></div>`;
 }
 
+// Conteúdos abrem um por vez, como nas abas de Copy e Conteúdos do HUB.
+const LBL_STATUS = { aprovado:'✓ Aprovado', ajuste:'✏ Ajuste', bloqueado:'⛔ Bloqueado', redirecionado:'↪ Redirecionado' };
+let planExpandido = new Set();
+window.togglePlanCard = function(id){
+  if(planExpandido.has(id)) planExpandido.delete(id); else planExpandido.add(id);
+  const el = document.getElementById('cc-' + id);
+  if(el) el.classList.toggle('open', planExpandido.has(id));
+};
 function renderCards() {
   const meses = getMeses();
   // Com um mês selecionado na barra, só ele é montado.
@@ -899,7 +930,19 @@ function renderCards() {
       const gf = gabiEdits[it.id] || {};
       const gabiEditedAny = Object.values(gf).some(Boolean);
 
-      hc += `<div class="cc ${s}" id="cc-${it.id}">`;
+      const aberto = planExpandido.has(it.id);
+      // Cabecalho sempre visivel: data, titulo e situacao. O resto so abre no
+      // clique -- com 20 conteudos por ciclo, tudo aberto vira uma parede.
+      const selo = s ? `<span class="cc-selo is-${s}">${LBL_STATUS[s]||s}</span>` : '<span class="cc-selo vazio">a validar</span>';
+      hc += `<div class="cc ${s}${aberto?' open':''}" id="cc-${it.id}">`;
+      hc += `<div class="cc-cab" onclick="togglePlanCard(${it.id})" role="button" tabindex="0">
+        <div class="cc-cab-txt">
+          <span class="cc-cab-data">📅 ${esc(it.data)||'--'}</span>
+          <span class="cc-cab-tit">${esc(it.titulo)||'(sem titulo)'}</span>
+        </div>
+        <div class="cc-cab-dir">${selo}<span class="cc-cab-chev">▾</span></div>
+      </div>`;
+      hc += `<div class="cc-corpo">`;
 
       if (isValidacao) {
         // Modo Gabi: campos editáveis
@@ -926,7 +969,7 @@ function renderCards() {
         hc += `</div>`; // /pills
       } else {
         // Modo Vitor: leitura com indicadores de edição da Gabi
-        hc += `<div class="cc-title">${esc(it.titulo)||'(sem título)'}${gabiEditedAny?'<span class="gabi-badge">↩ Gabi editou</span>':''}</div>`;
+        if (gabiEditedAny) hc += `<div class="cc-title"><span class="gabi-badge">↩ Gabi editou</span></div>`;
         hc += `<div class="pills">
           <span class="pill p-data${gf.data?' pill-modified':''}">📅 ${esc(it.data)||'--'}</span>
           <span class="pill p-pilar${gf.pilar?' pill-modified':''}">${esc(it.pilar)}</span>
@@ -949,6 +992,7 @@ function renderCards() {
       hc += `<div class="obs-area" id="ob-${it.id}" style="${(s==='ajuste'||s==='bloqueado'||s==='redirecionado')?'display:block':''}">
         <textarea id="ta-${it.id}" rows="2" placeholder="Observação ou referência..." oninput="saveObs(${it.id})">${observacoes[it.id]||''}</textarea>
       </div>`;
+      hc += `</div>`; // /cc-corpo
       hc += `</div>`; // /cc
     });
   });
@@ -1006,6 +1050,11 @@ window.saveGabiField = function(id, field, value) {
   gabiEdits[id][field] = true;
   const wrap = document.getElementById('gf-'+id+'-'+field);
   if (wrap) wrap.classList.add('gabi-modified');
+  // O cabeçalho do card mostra data e título: mantém em dia enquanto ela digita.
+  if (field === 'titulo' || field === 'data') {
+    const cab = document.querySelector('#cc-'+id+' .cc-cab-'+(field==='titulo'?'tit':'data'));
+    if (cab) cab.textContent = (field==='data' ? '📅 ' : '') + (value || (field==='data'?'--':'(sem título)'));
+  }
   const si = document.getElementById('si-'+id);
   if (si) { si.classList.add('show'); setTimeout(()=>si.classList.remove('show'),2000); }
   agendarSalvamento();
