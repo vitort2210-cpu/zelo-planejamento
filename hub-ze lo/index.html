@@ -300,19 +300,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .dv-swot{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media(max-width:640px){.dv-swot{grid-template-columns:1fr}}
 .dv-q{border-radius:10px;padding:12px 14px;cursor:pointer;border:1px solid;transition:box-shadow .2s ease,transform .2s ease}
-.dv-q:hover{box-shadow:0 6px 18px rgba(0,0,0,.1);transform:translateY(-2px)}
+@media(hover:hover){.dv-q:hover{box-shadow:0 6px 18px rgba(0,0,0,.1);transform:translateY(-2px)}}
 .dv-q-head{display:flex;align-items:center;gap:8px}
 .dv-q-ico{font-size:16px}
 .dv-q-lbl{font-size:13.5px;font-weight:700;flex:1}
 .dv-q-count{font-size:11px;font-weight:700;padding:1px 8px;border-radius:20px;background:rgba(255,255,255,.7)}
+.dv-q-chev{font-size:10px;opacity:.55;transition:transform .18s ease}
+.dv-q.open .dv-q-chev{transform:rotate(180deg)}
 .dv-q-items{list-style:none;margin:0;padding:0;display:none}
-.dv-q:hover .dv-q-items,.dv-q.open .dv-q-items{display:block;margin-top:9px}
+.dv-q.open .dv-q-items{display:block;margin-top:9px}
+@media(hover:hover){.dv-q:hover .dv-q-items{display:block;margin-top:9px}}
 .dv-q-items li{font-size:12.5px;line-height:1.45;padding:4px 0 4px 16px;position:relative;border-top:1px solid rgba(0,0,0,.06)}
 .dv-q-items li:before{content:'•';position:absolute;left:2px;opacity:.6}
 .dv-q-items li:first-child{border-top:0}
 .dv-q-empty{opacity:.6;font-style:italic;border-top:0!important}
 .dv-q-hint{font-size:10.5px;color:var(--z-text-sec);margin-top:6px;opacity:.7}
-.dv-q:hover .dv-q-hint,.dv-q.open .dv-q-hint{display:none}
+.dv-q.open .dv-q-hint{display:none}
+@media(hover:hover){.dv-q:hover .dv-q-hint{display:none}}
 .dv-q-f{background:var(--z-teal-light);border-color:rgba(17,128,140,.35)}.dv-q-f .dv-q-lbl{color:var(--z-teal)}
 .dv-q-w{background:var(--z-terra-light);border-color:rgba(217,129,78,.4)}.dv-q-w .dv-q-lbl{color:var(--z-terra)}
 .dv-q-o{background:var(--z-cyan-light,#cdf2fc);border-color:rgba(5,199,242,.4)}.dv-q-o .dv-q-lbl{color:#0a7c99}
@@ -804,17 +808,26 @@ mark.cmt:hover{background:#f6d9c4}
    só (que estourava a caixa), os alvos de toque crescem e nada mais empurra a
    página para os lados. */
 @media(max-width:620px){
-  body{-webkit-text-size-adjust:100%}
-  .container{padding:1rem .75rem 2.5rem}
+  body{-webkit-text-size-adjust:100%;padding:.6rem}
+  .container{padding:.25rem 0 5.5rem}
   .shell{gap:.75rem}
   .sidebar{padding:.9rem}
   .brand-logo{width:104px}
-  /* menu em pílulas que quebram linha — todas visíveis, sem rolagem escondida */
-  .side-nav{flex-wrap:wrap;gap:6px;justify-content:center}
-  /* width:auto anula o width:100% do menu vertical — sem isso cada item ocupa
-     uma linha inteira e o menu vira uma coluna gigante no telefone */
-  .nav-item{width:auto;flex:0 1 auto;min-width:0;white-space:nowrap;padding:9px 13px;font-size:12.5px;min-height:40px;gap:5px}
-  .nav-item .nav-ico{display:inline}
+  /* MENU FIXO EM BAIXO: fica sempre ao alcance do polegar e nao vai embora com
+     a rolagem. So os icones — o nome de cada aba vira title/aria-label. */
+  .side-nav{position:fixed;left:0;right:0;bottom:0;z-index:1100;flex-direction:row;
+    justify-content:space-around;align-items:stretch;gap:0;margin:0;
+    background:rgba(255,255,255,.97);backdrop-filter:saturate(180%) blur(10px);
+    border-top:1px solid var(--z-border);box-shadow:0 -2px 14px rgba(0,0,0,.07);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  .nav-item{width:auto;flex:1 1 0;min-width:0;flex-direction:column;justify-content:center;
+    gap:0;padding:8px 2px;border-radius:12px;min-height:48px;background:transparent}
+  .nav-item .nav-lbl{display:none}
+  .nav-item .nav-ico{display:block;width:auto;font-size:23px;line-height:1;opacity:.5;transition:opacity .15s,transform .12s}
+  .nav-item.active{background:var(--z-teal-light);box-shadow:inset 0 0 0 1px rgba(17,128,140,.28)}
+  .nav-item.active .nav-ico{opacity:1;transform:scale(1.1)}
+  .nav-item:hover{background:transparent}
+  .nav-item.active:hover{background:var(--z-teal-light)}
   .main-head{flex-direction:column;align-items:flex-start;gap:4px;margin-bottom:1rem;padding-bottom:.7rem}
   .main-title{font-size:19px}
   .main-sub{font-size:11.5px}
@@ -870,9 +883,26 @@ mark.cmt:hover{background:#f6d9c4}
   .tab-content{overflow-x:hidden}
   .mx-table-wrap,.prev-wrap{overflow-x:auto}
   /* o botão do assistente cobria botões da página */
-  .za-fab{width:46px;height:46px;font-size:19px;right:12px;bottom:12px;opacity:.92}
-  .za-panel{right:8px;left:8px;bottom:66px;width:auto;max-width:none;height:calc(100vh - 140px)}
-  .container{padding-bottom:5rem}
+  .za-fab{width:44px;height:44px;font-size:18px;right:10px;bottom:calc(66px + env(safe-area-inset-bottom));opacity:.9}
+  .za-panel{right:6px;left:6px;bottom:calc(118px + env(safe-area-inset-bottom));width:auto;max-width:none;height:calc(100vh - 200px)}
+
+  /* CAIXA DE CICLO: "Junho — Agosto 2026" numa linha so e o titulo do ciclo
+     embaixo, menor — antes o ano caia sozinho e a pilula tomava a caixa. */
+  .plan-card-head{flex-direction:column;align-items:flex-start;gap:5px}
+  .plan-period{font-size:14.5px;white-space:nowrap}
+  .plan-cycle-wrap{width:100%}
+  .plan-cycle{font-size:10.5px;padding:3px 9px;line-height:1.35;white-space:normal;background:transparent;color:var(--z-teal);border:1px solid rgba(17,128,140,.35);font-weight:700}
+  .plan-links{gap:6px}
+  .plan-link{min-height:40px}
+
+  /* CABECALHO DO CONTEUDO: titulo em cima, ocupando a largura toda; status e
+     "ler conteudo" descem para uma linha propria. Antes o titulo ficava numa
+     coluna estreita e quebrava uma palavra por linha. */
+  .cc-head{flex-direction:column;align-items:stretch;gap:8px}
+  .cc-head-right{justify-content:flex-start;flex-wrap:wrap;width:100%}
+  .cc-title{font-size:14.5px;line-height:1.3}
+  .cc-tags{gap:4px}
+  .cc-openhint{margin-left:auto}
 }
 @media(max-width:400px){
   .nav-item{font-size:12px;padding:10px 9px}
@@ -1494,8 +1524,8 @@ window.avisarPlanCiclo = function(idx) {
   notificarNovidades('Planejamento', ['Grade do ciclo pronta para validação'], p.periodo || '');
   showToast('🔔 A Gabi foi avisada sobre o planejamento deste ciclo.');
 };
-window.abrirPlan = function(idx, mode) { planOpen = { idx, mode }; renderTabContent(); window.scrollTo(0, 0); };
-window.voltarPlan = function() { planOpen = null; renderTabContent(); window.scrollTo(0, 0); };
+window.abrirPlan = function(idx, mode) { planOpen = { idx, mode }; renderTabContent(); navegou(); window.scrollTo(0, 0); };
+window.voltarPlan = function() { planOpen = null; renderTabContent(); navegou(); window.scrollTo(0, 0); };
 
 // ── VISÃO MACRO 2027 (conteúdo fixo, curado do documento estratégico) ──────────
 const MACRO_CICLOS = [
@@ -1722,8 +1752,39 @@ window.setAno = function(a) {
   if (anoAtivo === a) return;
   anoAtivo = a;
   planOpen = null; planView = null; copyMode = null; designMode = null;
-  renderTabContent(); window.scrollTo(0, 0);
+  renderTabContent(); navegou(); window.scrollTo(0, 0);
 };
+
+// ── HISTÓRICO / BOTÃO VOLTAR ──────────────────────────────────────────────────
+// No celular (principalmente Android) o botão físico de voltar é o gesto natural
+// para sair de um ciclo. Sem histórico, ele fechava o site inteiro. Cada
+// navegação vira um estado no history; voltar refaz o caminho de trás para a
+// frente e só sai do HUB quando não há mais para onde voltar.
+let navPronto = false;
+function snapNav(){
+  return { tabAtivo, subMode, planOpen, planView, copyMode, designMode,
+           copyCiclo, anoAtivo, metricaGranularity, mesFiltro, statusFiltro, buscaFiltro };
+}
+function navegou(){
+  if(!navPronto) return;
+  try { history.pushState({ z: snapNav() }, ''); } catch(e){}
+}
+function aplicarNav(s){
+  if(!s) return;
+  tabAtivo = s.tabAtivo; subMode = s.subMode;
+  planOpen = s.planOpen; planView = s.planView;
+  copyMode = s.copyMode; designMode = s.designMode;
+  copyCiclo = s.copyCiclo; anoAtivo = s.anoAtivo;
+  if(s.metricaGranularity) metricaGranularity = s.metricaGranularity;
+  mesFiltro = s.mesFiltro ?? null;
+  statusFiltro = s.statusFiltro || 'todos';
+  buscaFiltro = s.buscaFiltro || '';
+  buildHub();
+  window.scrollTo(0, 0);
+}
+window.addEventListener('popstate', (e) => {
+  if(e.state && e.state.z) aplicarNav(e.state.z);
+});
 
 // ── ESTADO DE NAVEGAÇÃO ───────────────────────────────────────────────────────
 let tabAtivo = 'dados';  // 'plan' | 'copy' | 'dados' — abre em Base de Dados
@@ -1746,7 +1807,9 @@ function brandLogo() { return `<img class="brand-logo" src="logo.png" alt="Zelo 
 
 function buildHub() {
   const m = TAB_META[tabAtivo] || TAB_META.plan;
-  const navItem = (key) => `<button class="nav-item${tabAtivo===key?' active':''}" onclick="setTab('${key}')"><span class="nav-ico">${TAB_META[key].ico}</span> ${TAB_META[key].title}</button>`;
+  // O rótulo fica num span próprio para o celular poder escondê-lo e deixar só
+  // o ícone na barra de baixo (title/aria mantêm o nome acessível).
+  const navItem = (key) => `<button class="nav-item${tabAtivo===key?' active':''}" onclick="setTab('${key}')" title="${esc(TAB_META[key].title)}" aria-label="${esc(TAB_META[key].title)}"><span class="nav-ico">${TAB_META[key].ico}</span><span class="nav-lbl">${TAB_META[key].title}</span></button>`;
   const brandSub = ehCliente() ? 'Área do cliente' : ehVisualizador() ? 'Equipe de design' : 'HUB do Cliente';
   const linkBtn = (ROLE === 'editor') ? `<button class="copy-row" id="btn-copiar" onclick="copiarLink()">🔗 Link de redirecionamento</button>` : '';
   document.getElementById('view-edit').innerHTML = `
@@ -1933,9 +1996,9 @@ function buildDocView() {
     const items = (sw[q.key] || '').split('\n').map(s => s.trim()).filter(Boolean);
     const lis = items.length ? items.map(it => `<li>${esc(it)}</li>`).join('') : '<li class="dv-q-empty">— nada informado —</li>';
     return `<div class="dv-q dv-q-${q.cls}" onclick="this.classList.toggle('open')">
-      <div class="dv-q-head"><span class="dv-q-ico">${q.ico}</span><span class="dv-q-lbl">${q.lbl}</span><span class="dv-q-count">${items.length}</span></div>
+      <div class="dv-q-head"><span class="dv-q-ico">${q.ico}</span><span class="dv-q-lbl">${q.lbl}</span><span class="dv-q-count">${items.length}</span><span class="dv-q-chev">▼</span></div>
       <ul class="dv-q-items">${lis}</ul>
-      ${items.length ? '<div class="dv-q-hint">passe o mouse para ver</div>' : ''}
+      ${items.length ? '<div class="dv-q-hint">toque para abrir</div>' : ''}
     </div>`;
   }).join('');
 
@@ -2133,7 +2196,7 @@ window.irPend = function(i){
   else if(l.area==='copy'){ tabAtivo='copy'; copyCiclo=l.docId; copyMode = ehCliente()?'valida':'edit'; }
   else if(l.area==='design'){ tabAtivo='design'; copyCiclo=l.docId; designMode = ehCliente()?'valida':'edit'; }
   else if(l.area==='metricas'){ tabAtivo='metricas'; copyCiclo=l.docId; metricaGranularity='posts'; }
-  buildHub(); window.scrollTo(0,0);
+  buildHub(); navegou(); window.scrollTo(0,0);
 };
 
 // ── ATAS DE REUNIÃO (topo da Base de Dados) ───────────────────────────────────
@@ -2254,12 +2317,12 @@ window.setTab = function(t) {
   tabAtivo = t;
   // toda aba abre na lista de ciclos
   planOpen = null; planView = null; copyMode = null; designMode = null;
-  buildHub();
+  buildHub(); navegou();
   window.scrollTo(0, 0);
 };
 window.setSubMode = function(m) {
   subMode = m;
-  renderTabContent();
+  renderTabContent(); navegou();
   window.scrollTo(0, 0);
 };
 
@@ -3281,13 +3344,13 @@ function hideCmtPopover() { const p = document.getElementById('cmt-pop'); if (p)
 // ── Window handlers da aba Copy ───────────────────────────────────────────────
 window.abrirCicloCopy = function(docId, mode) {
   copyCiclo = docId; copyMode = mode;
-  renderTabContent();
+  renderTabContent(); navegou();
   window.scrollTo(0, 0);
 };
 window.voltarCiclosCopy = function() {
   copyMode = null;
   if (copyUnsub) { copyUnsub(); copyUnsub = null; }
-  renderTabContent();
+  renderTabContent(); navegou();
   window.scrollTo(0, 0);
 };
 window.copiarLinkGabiCopy = function() {
@@ -3889,8 +3952,8 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
 }
 
 // ── Upload / validação / envio ────────────────────────────────────────────────
-window.abrirCicloDesign=function(docId,mode){ copyCiclo=docId; designMode=mode; renderTabContent(); window.scrollTo(0,0); };
-window.voltarCiclosDesign=function(){ designMode=null; if(designUnsub){designUnsub();designUnsub=null;} renderTabContent(); window.scrollTo(0,0); };
+window.abrirCicloDesign=function(docId,mode){ copyCiclo=docId; designMode=mode; renderTabContent(); navegou(); window.scrollTo(0,0); };
+window.voltarCiclosDesign=function(){ designMode=null; if(designUnsub){designUnsub();designUnsub=null;} renderTabContent(); navegou(); window.scrollTo(0,0); };
 window.onDesignFiles=async function(id,input){
   const files=[...input.files]; input.value='';
   if(!files.length) return;
@@ -4755,6 +4818,9 @@ async function iniciarHub(role, email) {
   if (role === 'editor' && migrarCiclos()) agendarSalvamento();
   document.getElementById('loading').classList.add('hide');
   buildHub();
+  // ponto de partida do histórico: daqui para trás, o voltar sai do HUB
+  try { history.replaceState({ z: snapNav() }, ''); } catch(e){}
+  navPronto = true;
   montarAssistente();
   // Carrega todos os ciclos em segundo plano para o painel de pendências (e o
   // assistente aproveita o mesmo cache).
