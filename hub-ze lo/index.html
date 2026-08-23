@@ -519,6 +519,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 /* white-space:normal é essencial: o editor usa pre-wrap, e sem isso a
    indentação do HTML do widget virava um monte de linha em branco na tela */
 .rt-w{position:relative;display:block;margin:8px 0;user-select:none;white-space:normal}
+.rt-w-tab{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .rt-w-tab .tb-card{margin-bottom:0}
 .rt-w-img{max-width:320px}
 .rt-w-img img{display:block;width:100%;border-radius:8px;border:1px solid var(--z-border)}
@@ -560,6 +561,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pd-load{font-size:11px;color:var(--z-text-sec)}
 .pd-chev{font-size:11px;color:var(--z-text-sec)}
 .pd-body{padding:6px}
+.pd-janela-bar{font-size:10.5px;color:var(--z-text-sec);padding:6px 14px 0}
+.pd-janela{font-size:10.5px;color:var(--z-text-sec)}
 .pd-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;background:none;border:none;border-radius:8px;padding:8px 10px;cursor:pointer;transition:background .15s}
 .pd-row:hover{background:var(--z-bg)}
 .pd-n{flex:0 0 26px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:var(--z-text-sec);background:var(--z-bg);border-radius:20px}
@@ -607,7 +610,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .tb-card{margin:8px 0;background:#fff}
 .tb-edit{border-collapse:collapse;width:100%;table-layout:fixed}
 .tb-edit td{border:1px solid #C9C2B4;padding:0;vertical-align:top}
-.tb-edit textarea{display:block;width:100%;border:none;background:transparent;padding:7px 9px;font-family:inherit;font-size:12.5px;line-height:1.5;color:var(--z-text);box-sizing:border-box;resize:none;overflow:hidden;min-height:34px}
+.tb-edit textarea{display:block;width:100%;border:none;background:transparent;padding:7px 9px;font-family:inherit;font-size:12.5px;line-height:1.5;color:var(--z-text);box-sizing:border-box;resize:none;overflow-y:auto;min-height:34px;overflow-wrap:break-word}
 .tb-edit textarea:focus{outline:2px solid var(--z-teal);outline-offset:-2px;background:#fff}
 /* a célula não pode herdar o min-height dos campos grandes de texto do slide */
 #copy-cards .tb-edit textarea{min-height:34px}
@@ -2155,15 +2158,40 @@ function buildDocView() {
 // já com o filtro aplicado. Substitui o e-mail automático que o Vitor desligou.
 let pendAberto = true;
 let filtroPendente = null;   // status a aplicar assim que a aba de destino montar
-function pendDataPassou(d){
+function pendDataPassou(d, ano){
   const m=String(d||'').match(/^(\d{1,2})\/(\d{1,2})/); if(!m) return false;
-  const hoje=new Date(); const alvo=new Date(anoAtivo, +m[2]-1, +m[1]);
+  const hoje=new Date(); const alvo=new Date(ano || anoAtivo, +m[2]-1, +m[1]);
   return alvo <= hoje;
+}
+// ── Janela do painel: só o ciclo de agora e o seguinte ────────────────────────
+// Listar tudo que existe (inclusive ciclo do ano que vem) transforma o painel em
+// ruído. O que está "esperando você" é o que está em produção agora e o que vem
+// logo depois — o resto ainda não é trabalho de hoje.
+const MESES_NOME = { janeiro:1, fevereiro:2, marco:3, 'março':3, abril:4, maio:5, junho:6,
+                     julho:7, agosto:8, setembro:9, outubro:10, novembro:11, dezembro:12 };
+function cicloJanela(c){
+  const txt = String(c.periodo || c.docId || '').toLowerCase();
+  const meses = (txt.match(/[a-zçã]+/g) || []).map(w => MESES_NOME[w]).filter(Boolean);
+  const ano = c.ano || anoCiclo({ periodo: c.periodo });
+  if(!meses.length) return { ini: ano*12, fim: ano*12 + 11 };
+  return { ini: ano*12 + meses[0], fim: ano*12 + meses[meses.length-1] };
+}
+function ciclosDoPainel(){
+  const todos = (asstCache.cycles || []).map(c => ({ c, j: cicloJanela(c) }))
+    .sort((a,b) => a.j.ini - b.j.ini);
+  if(!todos.length) return [];
+  const hoje = new Date();
+  const agora = hoje.getFullYear()*12 + (hoje.getMonth()+1);
+  // o ciclo que contém hoje; se não houver, o próximo que ainda vai começar
+  let i = todos.findIndex(x => agora >= x.j.ini && agora <= x.j.fim);
+  if(i < 0) i = todos.findIndex(x => x.j.ini > agora);
+  if(i < 0) i = todos.length - 1;                 // tudo já passou: mostra o último
+  return todos.slice(i, i + 2).map(x => x.c);
 }
 function pendCalcular(){
   const linhas=[];
   const add=(ico,txt,n,area,docId,filtro,urg)=>{ if(n>0) linhas.push({ico,txt,n,area,docId,filtro,urg}); };
-  zaCy().forEach(c=>{
+  ciclosDoPainel().forEach(c=>{
     const its=c.items||[];
     const temTexto=(id)=>{ const x=c.copy[id]; return x && (x.legenda||x.reels||x.blog||(Array.isArray(x.slides)&&x.slides.some(s=>s.texto))); };
     const temArte=(id)=>{ const d=c.design[id]; return d && desMidias(d).length>0; };
@@ -2195,7 +2223,7 @@ function pendCalcular(){
       add('📅', 'Planejamento esperando a Gabi validar', planPendente, 'plan', c.docId, null, false);
       add('⏳', 'Textos esperando a Gabi validar', its.filter(it=>textoPronto(it.id)).length, 'copy', c.docId, 'pendente', false);
       add('⏳', 'Artes esperando a Gabi validar', its.filter(it=>artePronta(it.id)).length, 'design', c.docId, 'pendente', false);
-      add('📊', 'Já postados e ainda sem métrica', its.filter(it=>pendDataPassou(it.data) && (temTexto(it.id)||temArte(it.id)) && !comDados(it.id)).length, 'metricas', c.docId, null, false);
+      add('📊', 'Já postados e ainda sem métrica', its.filter(it=>pendDataPassou(it.data, c.ano) && (temTexto(it.id)||temArte(it.id)) && !comDados(it.id)).length, 'metricas', c.docId, null, false);
     }
   });
   linhas.sort((a,b)=>(b.urg?1:0)-(a.urg?1:0));
@@ -2209,8 +2237,9 @@ function renderPendencias(){
   }
   const linhas=pendCalcular();
   const total=linhas.reduce((a,l)=>a+l.n,0);
+  const janela = ciclosDoPainel().map(c=>c.periodo).filter(Boolean).join(' · ');
   if(!total){
-    wrap.innerHTML=`<div class="pd-panel ok"><div class="pd-head"><span class="pd-ico">✅</span><span class="pd-t">Tudo em dia por aqui</span></div></div>`;
+    wrap.innerHTML=`<div class="pd-panel ok"><div class="pd-head"><span class="pd-ico">✅</span><span class="pd-t">Tudo em dia por aqui</span>${janela?`<span class="pd-janela">${esc(janela)}</span>`:''}</div></div>`;
     return;
   }
   const nomeCiclo=(docId)=>{ const p=(estado.planejamentos||[]).find(x=>cicloDocId(x)===docId); return p?(p.periodo||''):''; };
@@ -2225,7 +2254,7 @@ function renderPendencias(){
     <div class="pd-head" onclick="togglePend()">
       <span class="pd-ico">🧭</span><span class="pd-t">O que está esperando você</span>
       <span class="pd-total">${total}</span><span class="pd-chev">${pendAberto?'▾':'▸'}</span>
-    </div>${corpo}</div>`;
+    </div>${janela?`<div class="pd-janela-bar">Ciclo atual e o próximo — ${esc(janela)}</div>`:''}${corpo}</div>`;
 }
 window.togglePend = function(){ pendAberto=!pendAberto; renderPendencias(); };
 window.irPend = function(i){
@@ -3003,6 +3032,9 @@ function renderCopyCards() {
   const lista = itensVisiveis();
   if (!lista.length) { cont.innerHTML = vazioHTML(); return; }
   cont.innerHTML = lista.map(it => `<div class="copy-card${copyExpanded.has(it.id)?' open':''}" id="copy-card-${it.id}">${cardInnerHTML(it, getCopy(it.id))}</div>`).join('');
+  // Sem isto, o redesenho vindo do listener do Firestore recria as celulas da
+  // tabela na altura minima e o texto some atras do overflow.
+  autoGrowScope(cont);
 }
 function renderOneCard(id) {
   const it = gradeItems.find(x => x.id === id);
@@ -3293,7 +3325,7 @@ function slidesHTML(id, c) {
 }
 function renderSlides(id) {
   const el = document.getElementById('slides-' + id);
-  if (el) { el.innerHTML = slidesHTML(id, getCopy(id)); }
+  if (el) { el.innerHTML = slidesHTML(id, getCopy(id)); autoGrowScope(el); }
 }
 function cardEdit(it, c) {
   const arte = c.isVideo
@@ -3499,12 +3531,35 @@ window.autoGrow = function(el){
   el.style.height='auto';
   el.style.height=(el.scrollHeight+2)+'px';
 };
-// Espera o próximo quadro: medido antes de o navegador aplicar o layout, o
-// scrollHeight vem errado e as células da tabela nascem altas demais.
+// Ajusta a altura de todo textarea abaixo de `root`.
+// Três passadas de propósito: a imediata resolve o caso comum; a do próximo
+// quadro pega o layout que ainda não tinha sido calculado; e a do timer é a
+// rede de segurança para quando a aba está em segundo plano — aí o
+// requestAnimationFrame simplesmente não roda, e era isso que deixava as
+// células da tabela na altura mínima, escondendo o texto.
 function autoGrowScope(root){
   if(!root) return;
-  requestAnimationFrame(()=>root.querySelectorAll('textarea').forEach(el=>autoGrow(el)));
+  const passa = () => root.querySelectorAll('textarea').forEach(el => autoGrow(el));
+  passa();
+  requestAnimationFrame(passa);
+  setTimeout(passa, 60);
 }
+// Mudou a largura da tela (girar o celular, teclado abrindo, barra do navegador
+// sumindo), o texto da célula re-quebra e precisa de outra altura. Sem isto, a
+// altura fica com o valor antigo e o texto some.
+let _agResize = null;
+function reajustarAlturas(){
+  clearTimeout(_agResize);
+  _agResize = setTimeout(() => {
+    const c = document.getElementById('copy-cards');
+    if (c) autoGrowScope(c);
+  }, 150);
+}
+window.addEventListener('resize', reajustarAlturas);
+window.addEventListener('orientationchange', reajustarAlturas);
+// Voltar para a aba também: se o navegador segurou o layout enquanto ela estava
+// escondida, as alturas são refeitas na volta.
+document.addEventListener('visibilitychange', () => { if(document.visibilityState==='visible') reajustarAlturas(); });
 window.updateCopyField = function(id, field, el) { const c = ensureCopy(id); c[field] = el.value; autoGrow(el); agendarSaveCopy(); };
 window.updateSlide = function(id, i, el) { const c = ensureCopy(id); c.slides[i].texto = el.value; autoGrow(el); agendarSaveCopy(); };
 window.addSlide = function(id) { const c = ensureCopy(id); c.slides.push({texto:''}); agendarSaveCopy(); renderSlides(id); };
@@ -3678,11 +3733,15 @@ function tabelaEditorHTML(id, t, ti){
   const linhas = g.map((linha, r) => `<tr>${
     t.cols.map((_,c)=>`<td><textarea rows="1" data-r="${r}" data-c="${c}"
         oninput="updateTabCelula(${id},${ti},${r},${c},this)"
+        onfocus="autoGrow(this)"
         onkeydown="tbKey(event,${id},${ti})"
         onpaste="tbPaste(event,${id},${ti},${r},${c})">${esc(linha[c]||'')}</textarea></td>`).join('')
     }<td class="tb-alca"><button class="tb-x" title="Remover linha" onclick="removeTabLinha(${id},${ti},${r})">✕</button></td></tr>`).join('');
+  // Cada coluna precisa de ~160px para o texto respirar. Com muitas colunas a
+  // tabela passa da largura do card e rola de lado, em vez de espremer tudo.
+  const minW = Math.max(280, nc * 160);
   return `<div class="tb-card" data-ti="${ti}" data-ncols="${nc}">
-    <table class="tb-edit">${linhas}<tr class="tb-alcas">${alcas}<td></td></tr></table>
+    <table class="tb-edit" style="min-width:${minW}px">${linhas}<tr class="tb-alcas">${alcas}<td></td></tr></table>
     <div class="tb-acts">
       <button class="tb-btn" onclick="addTabLinha(${id},${ti})">+ linha</button>
       <button class="tb-btn" onclick="addTabCol(${id},${ti})">+ coluna</button>
@@ -4071,6 +4130,8 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
   // Alterna edição/validação sem recarregar o ciclo (o Firestore local nega leitura)
   window.__setCopyMode = (m) => { copyMode = m; buildCopyTab(); return copyMode; };
   window.__copyTxt = (id, block) => blockText(getCopy(id), block);
+  // Monta um cache de ciclos qualquer, para conferir a janela do painel.
+  window.__seedCiclos = (lista) => { asstCache = { carregado:true, cycles:lista }; renderPendencias(); return ciclosDoPainel().map(c=>c.periodo); };
   window.__serial = (el) => rtSerializar(el);
   // Popula grade + métricas por post para conferir gráfico/filtro de mês sem login.
   window.__seedCiclo = (items, posts) => {
