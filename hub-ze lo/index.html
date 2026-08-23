@@ -409,6 +409,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ata-texto{font-size:13px;color:var(--z-text);line-height:1.55;white-space:pre-wrap}
 .ata-del{margin-top:10px;background:none;border:1px solid var(--z-terra);color:var(--z-terra);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
 .ata-add{align-self:flex-start;margin-top:4px;background:var(--z-teal-light);border:1.5px dashed var(--z-teal);color:var(--z-teal);border-radius:9px;padding:9px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
+/* Brainstorming: mesmo esqueleto das atas, com cara própria */
+.ideias-panel .atas-head{background:#EFE9FA;border-bottom-color:#C9BCEC}
+.ideias-panel .atas-count{background:#7F77DD;color:#fff}
+.ideia-tipo{font-size:15px;flex-shrink:0}
+.ideia-autor{font-size:10.5px;color:var(--z-text-sec);white-space:nowrap;flex-shrink:0}
+.ideia-abas{display:flex;gap:6px;margin-bottom:8px}
+.ideia-aba{display:inline-flex;align-items:center;gap:5px;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--z-text-sec);background:#fff;border:1px solid var(--z-border);border-radius:20px;padding:5px 11px;cursor:pointer}
+.ideia-aba.on{background:#7F77DD;border-color:#7F77DD;color:#fff}
+.ideia-aba.on .mes-n{background:rgba(255,255,255,.24);color:#fff}
+.ideia-acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.ideia-usada{margin-top:10px;background:var(--z-teal-light);border:1px solid var(--z-teal);color:var(--z-teal);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
+.ideia-rodape{font-size:10.5px;color:var(--z-text-sec);margin-top:9px}
+.ata-item.ideia-ok .ata-titulo{text-decoration:line-through;opacity:.6}
+.ideias-panel select{width:100%;padding:8px 10px;border:1px solid var(--z-border);border-radius:8px;font-family:inherit;font-size:13px;background:#fff;color:var(--z-text)}
 .za-foot{padding:10px;border-top:1px solid var(--z-border);display:flex;gap:8px;background:#fff}
 .za-inp{flex:1;border:1.5px solid var(--z-border);border-radius:10px;padding:9px 12px;font-family:inherit;font-size:13px;color:var(--z-text);resize:none;max-height:80px}
 .za-inp:focus{outline:none;border-color:var(--z-teal)}
@@ -990,7 +1004,12 @@ const CLOUDINARY_PRESET = "zelo_consultoria";   // upload preset UNSIGNED
 const EMAILJS_SERVICE   = "service_3uv68w3";
 const EMAILJS_TEMPLATE  = "template_p66vskp";
 const EMAILJS_PUBLIC    = "eBaosKiJh8yqHfEWN";
-const NOTIFY_EMAILS     = ["vitort2210@gmail.com", "consultoria.zelo@gmail.com", "boninaestudio.contato@gmail.com"];
+// Quem recebe cada aviso. Antes tudo ia para os tres, entao a Bonina recebia
+// avisos destinados a Gabi e vice-versa. Agora cada fluxo tem o seu destino, com
+// o Vitor sempre em copia por coordenar o processo.
+const AVISAR_GABI    = [...CLIENTE_EMAILS, ...EDITOR_EMAILS];
+const AVISAR_BONINA  = [...VISUALIZADOR_EMAILS, ...EDITOR_EMAILS];
+const NOTIFY_EMAILS  = [...new Set([...EDITOR_EMAILS, ...CLIENTE_EMAILS, ...VISUALIZADOR_EMAILS])];
 const WHATSAPP_ALVOS    = [];   // WhatsApp cancelado por enquanto (código fica dormente)
 
 // ── ESTADO DA ABA COPY (cross-doc: grade do planejamento + conteúdo de copy) ──
@@ -1060,6 +1079,7 @@ const defaults = {
   planVersion: "",   // marca de migração dos ciclos (ver migrarCiclos)
   meta: { ultimaEdicao: { por:"", em:"", role:"" } },  // quem mexeu por último na Base de Dados
   atas: [],          // atas de reunião { id, data, titulo, texto }
+  ideias: [],        // brainstorming { id, data, autor, tipo, titulo, texto, usada }
   dadosEmpresa: {
     razaoSocial: "Zelo Consultoria em Educação e Desenvolvimento Infantil Ltda.",
     nomeFantasia: "Zelo Consultoria em Educação e Desenvolvimento Infantil",
@@ -1531,7 +1551,7 @@ function renderPlanIframe() {
 // Planejamento: avisa a Gabi que a grade do ciclo está pronta para validação (um aviso).
 window.avisarPlanCiclo = function(idx) {
   const p = (estado.planejamentos || [])[idx] || {};
-  notificarNovidades('Planejamento', ['Grade do ciclo pronta para validação'], p.periodo || '');
+  notificarNovidades('Planejamento', ['Grade do ciclo pronta para validação'], p.periodo || '', { destinos: AVISAR_GABI });
   showToast('🔔 A Gabi foi avisada sobre o planejamento deste ciclo.');
 };
 window.abrirPlan = function(idx, mode) { planOpen = { idx, mode }; renderTabContent(); navegou(); window.scrollTo(0, 0); };
@@ -1882,10 +1902,11 @@ function renderTabContent() {
   } else {
     if (ehVisualizador()) {
       subMode = 'vis'; // equipe de design só visualiza a Base de Dados
-      cont.innerHTML = `<div id="pend-wrap"></div><div id="atas-wrap"></div><div id="sub-content"></div>`;
+      cont.innerHTML = `<div id="pend-wrap"></div><div id="ideias-wrap"></div><div id="atas-wrap"></div><div id="sub-content"></div>`;
     } else {
       cont.innerHTML = `
         <div id="pend-wrap"></div>
+        <div id="ideias-wrap"></div>
         <div id="atas-wrap"></div>
         <div class="sub-bar">
           <button class="sub-btn${subMode==='vis'?' active':''}" onclick="setSubMode('vis')">👁 Visualização</button>
@@ -1895,6 +1916,7 @@ function renderTabContent() {
     }
     renderPendencias();
     renderSubContent();
+    renderIdeias();
     renderAtas();
   }
 }
@@ -2149,19 +2171,30 @@ function pendCalcular(){
     const des =(id)=>((c.design[id]||{}).statusDesign||'');
     const comDados=(id)=>postComDados(c.posts[id]);
 
-    // Só entra aqui o que JÁ EXISTE: copy escrito ou arte subida. Cobrar o que
-    // ainda nem foi montado só faria barulho — o painel é sobre material pronto
-    // que está parado esperando alguém.
+    // Cada pessoa vê só o que é trabalho DELA:
+    //  • Gabi   → material finalizado esperando a validação dela, e nada mais.
+    //  • Bonina → texto já aprovado (é o sinal verde para produzir) + ajustes.
+    //  • Vitor  → o processo inteiro, porque é quem coordena.
+    const planPendente = its.filter(it=>!c.estados[it.id]).length;
+    const textoPronto  = (id)=>temTexto(id) && !['aprovado','cancelado','revisao_necessaria'].includes(gabi(id));
+    const artePronta   = (id)=>temArte(id)  && !['aprovado','ajustes_necessarios'].includes(des(id));
+
     if (ehCliente()) {
-      add('✍️', 'Textos esperando sua validação', its.filter(it=>temTexto(it.id) && !['aprovado','cancelado','revisao_necessaria'].includes(gabi(it.id))).length, 'copy', c.docId, 'pendente', true);
-      add('🎨', 'Artes esperando sua validação', its.filter(it=>temArte(it.id) && !['aprovado','ajustes_necessarios'].includes(des(it.id))).length, 'design', c.docId, 'pendente', true);
+      add('📅', 'Planejamento do ciclo para validar', planPendente, 'plan', c.docId, null, true);
+      add('✍️', 'Textos prontos esperando sua validação', its.filter(it=>textoPronto(it.id)).length, 'copy', c.docId, 'pendente', true);
+      add('🎨', 'Artes e vídeos esperando sua validação', its.filter(it=>artePronta(it.id)).length, 'design', c.docId, 'pendente', true);
     } else if (ehVisualizador()) {
+      // Texto aprovado pela Gabi = liberado para produzir. É a fila da Bonina.
+      add('✅', 'Textos aprovados, prontos para produzir', its.filter(it=>gabi(it.id)==='aprovado' && !temArte(it.id)).length, 'copy', c.docId, 'aprovado', true);
       add('✏️', 'Artes com ajuste pedido pela Gabi', its.filter(it=>des(it.id)==='ajustes_necessarios').length, 'design', c.docId, 'ajustes', true);
     } else {
       add('✏️', 'Textos com ajuste pedido pela Gabi', its.filter(it=>gabi(it.id)==='revisao_necessaria').length, 'copy', c.docId, 'ajustes', true);
       add('✏️', 'Artes com ajuste pedido pela Gabi', its.filter(it=>des(it.id)==='ajustes_necessarios').length, 'design', c.docId, 'ajustes', true);
-      add('⏳', 'Textos esperando a Gabi validar', its.filter(it=>temTexto(it.id) && !['aprovado','cancelado','revisao_necessaria'].includes(gabi(it.id))).length, 'copy', c.docId, 'pendente', false);
-      add('⏳', 'Artes esperando a Gabi validar', its.filter(it=>temArte(it.id) && !['aprovado','ajustes_necessarios'].includes(des(it.id))).length, 'design', c.docId, 'pendente', false);
+      add('📝', 'Conteúdos ainda sem copy', its.filter(it=>!temTexto(it.id)).length, 'copy', c.docId, 'semtexto', false);
+      add('🖼', 'Textos aprovados ainda sem arte', its.filter(it=>gabi(it.id)==='aprovado' && !temArte(it.id)).length, 'design', c.docId, 'semtexto', false);
+      add('📅', 'Planejamento esperando a Gabi validar', planPendente, 'plan', c.docId, null, false);
+      add('⏳', 'Textos esperando a Gabi validar', its.filter(it=>textoPronto(it.id)).length, 'copy', c.docId, 'pendente', false);
+      add('⏳', 'Artes esperando a Gabi validar', its.filter(it=>artePronta(it.id)).length, 'design', c.docId, 'pendente', false);
       add('📊', 'Já postados e ainda sem métrica', its.filter(it=>pendDataPassou(it.data) && (temTexto(it.id)||temArte(it.id)) && !comDados(it.id)).length, 'metricas', c.docId, null, false);
     }
   });
@@ -2208,6 +2241,91 @@ window.irPend = function(i){
   else if(l.area==='metricas'){ tabAtivo='metricas'; copyCiclo=l.docId; metricaGranularity='posts'; }
   buildHub(); navegou(); window.scrollTo(0,0);
 };
+
+// ── BRAINSTORMING (Base de Dados) ─────────────────────────────────────────────
+// Mural de ideias soltas para conteúdo, campanha, arte e vídeo. Todo mundo
+// escreve — Vitor, Gabi e a equipe de design — porque boa ideia aparece de
+// qualquer lado. Quando vira pauta de verdade, marca como aproveitada e sai da
+// lista ativa (fica guardada, não some).
+const IDEIA_TIPOS = [
+  { k:'conteudo', ico:'💡', lbl:'Conteúdo' },
+  { k:'campanha', ico:'🎯', lbl:'Campanha' },
+  { k:'arte',     ico:'🎨', lbl:'Arte' },
+  { k:'video',    ico:'🎬', lbl:'Vídeo' },
+  { k:'outro',    ico:'🗒️', lbl:'Outro' },
+];
+const ideiaTipo = (k) => IDEIA_TIPOS.find(t=>t.k===k) || IDEIA_TIPOS[0];
+let ideiasPainelAberto = true, ideiaAbertaId = null, ideiasVerUsadas = false;
+function ideiasPodeEditar(){ return ROLE==='editor' || ROLE==='cliente' || ROLE==='visualizador'; }
+function nomeCurto(email){ const e=String(email||''); return e.split('@')[0] || 'alguém'; }
+function renderIdeias(){
+  const wrap=document.getElementById('ideias-wrap'); if(!wrap) return;
+  const todas=estado.ideias||[], pode=ideiasPodeEditar();
+  const ativas=todas.filter(i=>!i.usada), usadas=todas.filter(i=>i.usada);
+  const lista=(ideiasVerUsadas?usadas:ativas).slice().sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
+  const itens=lista.map(i=>{
+    const ab=ideiaAbertaId===i.id, t=ideiaTipo(i.tipo);
+    const head=`<div class="ata-item-head" onclick="toggleIdeia(${i.id})">
+        <span class="ideia-tipo" title="${t.lbl}">${t.ico}</span>
+        <span class="ata-titulo">${esc(i.titulo||'Ideia sem título')}</span>
+        <span class="ideia-autor">${esc(nomeCurto(i.autor))}</span>
+        <span class="ata-chev">${ab?'▾':'▸'}</span>
+      </div>`;
+    let body='';
+    if(ab){
+      body = pode
+        ? `<div class="ata-item-body">
+            <div class="ata-row"><label class="ata-lbl">Tipo</label>
+              <select onchange="updateIdeia(${i.id},'tipo',this.value)">${IDEIA_TIPOS.map(x=>`<option value="${x.k}"${x.k===(i.tipo||'conteudo')?' selected':''}>${x.ico} ${x.lbl}</option>`).join('')}</select></div>
+            <div class="ata-row"><label class="ata-lbl">Ideia</label><input type="text" value="${esc(i.titulo||'')}" placeholder="Ex.: série sobre adaptação escolar" oninput="updateIdeia(${i.id},'titulo',this.value)"></div>
+            <div class="ata-row"><label class="ata-lbl">Detalhes</label><textarea rows="4" placeholder="Ângulo, referência, para quando faria sentido…" oninput="updateIdeia(${i.id},'texto',this.value)">${esc(i.texto||'')}</textarea></div>
+            <div class="ideia-acts">
+              <button class="ideia-usada" onclick="toggleIdeiaUsada(${i.id})">${i.usada?'↩ Voltar para as ativas':'✓ Já virou pauta'}</button>
+              <button class="ata-del" onclick="removeIdeia(${i.id})">✕ Remover</button>
+            </div>
+            <div class="ideia-rodape">Sugerida por ${esc(i.autor||'—')} · ${esc(fmtDataAta(i.data))}</div>
+          </div>`
+        : `<div class="ata-item-body"><div class="ata-texto">${esc(i.texto||'(sem detalhes)')}</div>
+            <div class="ideia-rodape">Sugerida por ${esc(i.autor||'—')} · ${esc(fmtDataAta(i.data))}</div></div>`;
+    }
+    return `<div class="ata-item${ab?' open':''}${i.usada?' ideia-ok':''}">${head}${body}</div>`;
+  }).join('');
+  const addBtn = (pode && !ideiasVerUsadas) ? `<button class="ata-add" onclick="addIdeia()">+ Nova ideia</button>` : '';
+  const vazio = !lista.length
+    ? `<div class="ata-vazio">${ideiasVerUsadas?'Nenhuma ideia aproveitada ainda.':`Nenhuma ideia por aqui.${pode?' Jogue a primeira em “+ Nova ideia” — vale qualquer coisa, mesmo meia pronta.':''}`}</div>`
+    : '';
+  const abas = usadas.length ? `<div class="ideia-abas">
+      <button class="ideia-aba${!ideiasVerUsadas?' on':''}" onclick="setIdeiasVer(false)">Ativas <span class="mes-n">${ativas.length}</span></button>
+      <button class="ideia-aba${ideiasVerUsadas?' on':''}" onclick="setIdeiasVer(true)">Aproveitadas <span class="mes-n">${usadas.length}</span></button>
+    </div>` : '';
+  wrap.innerHTML=`<div class="atas-panel ideias-panel">
+      <div class="atas-head" onclick="toggleIdeiasPainel()"><span class="atas-ico">🧠</span><span class="atas-t">Brainstorming</span><span class="atas-count">${ativas.length}</span><span class="atas-chev">${ideiasPainelAberto?'▾':'▸'}</span></div>
+      ${ideiasPainelAberto?`<div class="atas-body">${abas}${vazio}${itens}${addBtn}</div>`:''}
+    </div>`;
+}
+window.toggleIdeiasPainel=function(){ ideiasPainelAberto=!ideiasPainelAberto; renderIdeias(); };
+window.toggleIdeia=function(id){ ideiaAbertaId=(ideiaAbertaId===id?null:id); renderIdeias(); };
+window.setIdeiasVer=function(v){ ideiasVerUsadas=!!v; ideiaAbertaId=null; renderIdeias(); };
+window.addIdeia=function(){
+  if(!ideiasPodeEditar()) return;
+  const nova={ id:Date.now()+Math.floor(Math.random()*1000), data:new Date().toISOString().slice(0,10),
+               autor:USER_EMAIL||ROLE, tipo:'conteudo', titulo:'', texto:'', usada:false };
+  estado.ideias=estado.ideias||[]; estado.ideias.unshift(nova);
+  ideiaAbertaId=nova.id; ideiasPainelAberto=true; ideiasVerUsadas=false;
+  agendarSalvamento(); renderIdeias();
+  setTimeout(()=>{ const inp=document.querySelector('.ideias-panel .ata-item.open input[type=text]'); if(inp) inp.focus(); },40);
+};
+window.updateIdeia=function(id,campo,val){
+  const i=(estado.ideias||[]).find(x=>x.id===id); if(!i) return;
+  i[campo]=val; agendarSalvamento();
+  // Mantém o cabeçalho em dia sem redesenhar (redesenhar tiraria o cursor).
+  const head=document.querySelector('.ideias-panel .ata-item.open .ata-item-head');
+  if(!head) return;
+  if(campo==='titulo'){ const h=head.querySelector('.ata-titulo'); if(h) h.textContent=val||'Ideia sem título'; }
+  if(campo==='tipo'){ const t=head.querySelector('.ideia-tipo'); const meta=ideiaTipo(val); if(t){ t.textContent=meta.ico; t.title=meta.lbl; } }
+};
+window.toggleIdeiaUsada=function(id){ const i=(estado.ideias||[]).find(x=>x.id===id); if(i){ i.usada=!i.usada; ideiaAbertaId=null; agendarSalvamento(); renderIdeias(); showToast(i.usada?'✓ Ideia marcada como aproveitada':'Ideia voltou para as ativas'); } };
+window.removeIdeia=function(id){ if(!ideiasPodeEditar()) return; if(!confirm('Remover esta ideia?')) return; estado.ideias=(estado.ideias||[]).filter(x=>x.id!==id); agendarSalvamento(); renderIdeias(); };
 
 // ── ATAS DE REUNIÃO (topo da Base de Dados) ───────────────────────────────────
 let atasPainelAberto = true, atasAbertaId = null;
@@ -2745,7 +2863,7 @@ window.avisarCopyCiclo = function() {
   });
   if(!novos.length){ showToast('Nenhum texto novo para avisar (tudo já avisado ou aprovado).'); return; }
   agendarSaveCopy();
-  notificarNovidades('Copy', novos);
+  notificarNovidades('Copy', novos, null, { destinos: AVISAR_GABI });
   showToast(`🔔 ${novos.length} texto(s) — a Gabi foi avisada uma vez.`);
 };
 
@@ -3613,7 +3731,13 @@ function tabelaRenderHTML(t){
   return `<table class="vtab">${linhas}</table>`;
 }
 window.setCopyStatus = function(id, which, val) { const c = ensureCopy(id); c[which] = (c[which]===val?'':val); agendarSaveCopy(); renderOneCard(id); };
-window.setGabiStatus = function(id, val) { const c = ensureCopy(id); c.statusGabi = (c.statusGabi===val?'':val); agendarSaveCopy(); renderOneCard(id); };
+window.setGabiStatus = function(id, val) {
+  const c = ensureCopy(id);
+  c.statusGabi = (c.statusGabi===val?'':val);
+  // Aprovou = sinal verde para a producao. Entra na fila do aviso consolidado.
+  if (c.statusGabi === 'aprovado') textoAprovadoParaProducao(id);
+  agendarSaveCopy(); renderOneCard(id);
+};
 window.resolverComentario = function(id, cid) { const c = ensureCopy(id); const cm = c.comentarios.find(x => x.id === cid); if (cm) cm.resolvido = true; agendarSaveCopy(); renderOneCard(id); };
 window.focarComentario = function(cid) {
   const el = document.getElementById('cmt-' + cid);
@@ -3990,9 +4114,33 @@ window.removeDesignMidia=function(id,i){ const d=ensureDesign(id); (d.midias||[]
 window.moveDesignMidia=function(id,i,dir){ const d=ensureDesign(id); const m=d.midias||[]; const j=i+dir; if(j<0||j>=m.length) return; [m[i],m[j]]=[m[j],m[i]]; carouselIdx[carKey(id,'ig')]=0; carouselIdx[carKey(id,'li')]=0; agendarSaveDesign(); renderDesignCard(id); };
 window.setDesignStatus=function(id,val){ const d=ensureDesign(id); d.statusDesign=(d.statusDesign===val?'':val); agendarSaveDesign(); renderDesignCard(id); };
 window.updateDesignComment=function(id,el){ const d=ensureDesign(id); d.comentarioDesign=el.value; agendarSaveDesign(); };
+// Envio de um email. Em condicoes normais usa o SDK; quando a aba esta fechando
+// o SDK nao termina a tempo, entao vai por sendBeacon (a REST do EmailJS aceita
+// o mesmo payload com o public key como user_id).
+function enviarEmailJS(params, usarBeacon){
+  if(!EMAILJS_SERVICE || !EMAILJS_TEMPLATE || !EMAILJS_PUBLIC) return Promise.resolve();
+  // Mesma trava da gravação: rodando em localhost (teste) não dispara email de
+  // verdade para ninguém — só registra no console o que teria sido enviado.
+  if(ehLocal()){ console.warn('🔧 Modo local — email NÃO enviado:', params.destino, '|', params.titulo); return Promise.resolve(); }
+  if(usarBeacon){
+    // fetch com keepalive, e não sendBeacon: o corpo precisa ir como
+    // application/json, o que exige preflight de CORS — e o sendBeacon não sabe
+    // fazer preflight, então a requisição morreria calada.
+    const corpo = JSON.stringify({ service_id:EMAILJS_SERVICE, template_id:EMAILJS_TEMPLATE,
+                                   user_id:EMAILJS_PUBLIC, template_params:params });
+    return fetch('https://api.emailjs.com/api/v1.0/email/send', {
+      method:'POST', keepalive:true, headers:{ 'Content-Type':'application/json' }, body:corpo
+    }).catch(e=>console.warn('Aviso de produção não saiu:', e));
+  }
+  if(window.emailjs) return window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, params, { publicKey:EMAILJS_PUBLIC });
+  return Promise.resolve();
+}
+
 // Envia UM email consolidado com a lista (não mais um por item). Reusado por
 // Conteúdos, Copy e Planejamento. area = rótulo; lista = array de strings.
-async function notificarNovidades(area, lista, cicloPeriodo){
+async function notificarNovidades(area, lista, cicloPeriodo, opts){
+  opts = opts || {};
+  const destinos = opts.destinos || NOTIFY_EMAILS;
   const ciclo = cicloPeriodo || (estado.planejamentos||[]).find(p=>cicloDocId(p)===copyCiclo)?.periodo || copyCiclo || '';
   const quem=USER_EMAIL||ROLE||'equipe';
   const link=location.href.split('?')[0];
@@ -4004,21 +4152,56 @@ async function notificarNovidades(area, lista, cicloPeriodo){
     ? 'O planejamento deste ciclo está pronto para a sua validação.'
     : `${n} ${area==='Copy'?'texto(s)':'conteúdo(s)'} ${n===1?'aguarda':'aguardam'} a sua validação.`;
   const listaTxt = ehPlan ? 'A grade do ciclo está montada — abra para revisar e validar.' : lista.map(s=>'• '+s).join('\n');
-  const titulo = ehPlan ? 'Planejamento pronto para validar' : `Novidades em ${area}`;
+  const titulo = opts.titulo || (ehPlan ? 'Planejamento pronto para validar' : `Novidades em ${area}`);
+  const txtResumo = opts.resumo || resumo;
   const assunto = `🔔 ${area} · ${ciclo}`;
-  const base = { assunto, area, titulo, ciclo, resumo, lista:listaTxt, quem, link, item:resumo };
+  const base = { assunto, area, titulo, ciclo, resumo:txtResumo, lista:listaTxt, quem, link, item:txtResumo };
   try{
-    if(window.emailjs && EMAILJS_SERVICE && EMAILJS_TEMPLATE && EMAILJS_PUBLIC){
-      for(const to of NOTIFY_EMAILS){
-        await window.emailjs.send(EMAILJS_SERVICE, EMAILJS_TEMPLATE, { ...base, destino:to }, { publicKey:EMAILJS_PUBLIC });
-      }
-    }
+    for(const to of destinos){ await enviarEmailJS({ ...base, destino:to }, opts.beacon); }
   }catch(e){ console.warn('Falha ao notificar por email', e); }
   const msg=`${assunto}%0A${resumo}%0A${ehPlan?'':lista.map(s=>'• '+s).join('%0A')}%0A${link}`;
   for(const a of WHATSAPP_ALVOS){
     try{ if(a.phone && a.apikey){ await fetch(`https://api.callmebot.com/whatsapp.php?phone=${encodeURIComponent(a.phone)}&text=${msg}&apikey=${encodeURIComponent(a.apikey)}`, { mode:'no-cors' }); } }catch(e){}
   }
 }
+// ── TEXTO APROVADO → AVISA A PRODUÇÃO ────────────────────────────────────────
+// Quando a Gabi aprova um texto, ele está liberado para a Bonina produzir. Isso
+// não pode depender de ela lembrar de apertar um botão — mas também não pode
+// virar um email por texto. Solução: junta as aprovações e manda UM aviso
+// quando ela para de mexer (90s), ou na hora em que fecha a aba (sendBeacon).
+const AVISO_ESPERA_MS = 90000;
+let aprovadosNaFila = [];
+let timerAvisoProducao = null;
+function agendarAvisoProducao(){
+  clearTimeout(timerAvisoProducao);
+  timerAvisoProducao = setTimeout(()=>enviarAvisoProducao(false), AVISO_ESPERA_MS);
+}
+function enviarAvisoProducao(fechando){
+  clearTimeout(timerAvisoProducao);
+  if(!aprovadosNaFila.length) return;
+  const lista = aprovadosNaFila.slice(); aprovadosNaFila = [];
+  const n = lista.length;
+  notificarNovidades('Copy aprovado', lista, null, {
+    destinos: AVISAR_BONINA,
+    titulo: 'Texto liberado para produção',
+    resumo: `A Gabi aprovou ${n} texto${n>1?'s':''} — já dá para começar a arte.`,
+    beacon: !!fechando,
+  });
+  if(!fechando) showToast(`🔔 A equipe de design foi avisada (${n} texto${n>1?'s':''} aprovado${n>1?'s':''}).`);
+}
+// A aba fechando ainda tem uma última chance de despachar o aviso.
+window.addEventListener('pagehide', ()=>enviarAvisoProducao(true));
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') enviarAvisoProducao(true); });
+function textoAprovadoParaProducao(id){
+  const it=(gradeItems||[]).find(x=>x.id===id); if(!it) return;
+  const c=ensureCopy(id);
+  if(c.avisadoProducao) return;                    // já contou uma vez
+  c.avisadoProducao=new Date().toISOString();
+  aprovadosNaFila.push(`${it.data||''} — ${it.titulo||'(sem título)'}`);
+  agendarAvisoProducao();
+  agendarSaveCopy();
+}
+
 // Conteúdos: envia de uma vez todas as artes novas (com mídia, não aprovadas e
 // ainda não avisadas). Uma notificação só, não uma por arte.
 window.enviarDesignCiclo=function(){
@@ -4035,7 +4218,7 @@ window.enviarDesignCiclo=function(){
   });
   if(!novos.length){ showToast('Nenhuma novidade — tudo já foi enviado ou aprovado.'); return; }
   agendarSaveDesign(); renderDesignCards();
-  notificarNovidades('Conteúdos', novos);
+  notificarNovidades('Conteúdos', novos, null, { destinos: AVISAR_GABI });
   showToast(`🔔 ${novos.length} conteúdo(s) enviado(s). A Gabi foi avisada uma vez.`);
 };
 
@@ -4801,9 +4984,11 @@ if(['localhost','127.0.0.1'].includes(location.hostname)){
         estados:{}, copy:{}, design:{}, posts:{} },
       { docId:'maio-junho-2027', idx:2, ano:2027, periodo:'Maio — Junho 2027', ciclo:'Ciclo 3 · Brincar é coisa séria',
         items:[ {id:4, data:'13/05', titulo:'O que a Zelo pensa sobre: brincar como direito', pilar:'Quadro Mensal', formato:'Blog Post', camada:'autoridade'},
+                {id:5, data:'20/05', titulo:'Texto aprovado esperando arte', pilar:'#FormaçãoZelo', formato:'Carrossel', camada:'autoridade'},
                 {id:12,data:'12/06', titulo:'Aprendendo com o brincar — Caixas sensoriais', pilar:'Quadro Mensal', formato:'Reels', camada:'comunidade'} ],
         estados:{4:'aprovado'},
-        copy:{12:{statusCopy:'finalizado', statusGabi:'em_validacao', legenda:'texto...', comentarios:[{texto:'Ajustar o gancho',resolvido:false}]}},
+        copy:{5:{statusCopy:'finalizado', statusGabi:'aprovado', legenda:'texto aprovado...'},
+              12:{statusCopy:'finalizado', statusGabi:'em_validacao', legenda:'texto...', comentarios:[{texto:'Ajustar o gancho',resolvido:false}]}},
         design:{4:{statusDesign:'ajustes_necessarios', enviadoEm:'x', imagens:[{url:'x'}], comentarioDesign:'Deixar a cor mais clara'}, 12:{statusDesign:'em_analise', enviadoEm:'x', video:{url:'x'}}},
         posts:{4:{alcance:8200,curtidas:410,comentarios:38,salvamentos:120,compartilhamentos:64}, 12:{alcance:15000,curtidas:900,comentarios:60,salvamentos:210,compartilhamentos:130}} } ] };
     metricasData={ snapshots:[
