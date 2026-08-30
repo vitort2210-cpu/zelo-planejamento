@@ -407,6 +407,10 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .ata-row input,.ata-row textarea{width:100%;box-sizing:border-box;border:1.5px solid var(--z-border);border-radius:8px;padding:8px 11px;font-family:inherit;font-size:13px;color:var(--z-text);resize:vertical}
 .ata-row input:focus,.ata-row textarea:focus{outline:none;border-color:var(--z-teal)}
 .ata-texto{font-size:13px;color:var(--z-text);line-height:1.55;white-space:pre-wrap}
+/* As anotações da ata usam o editor rico (mesmo da aba Copy). */
+.ata-doc .rt-editor{min-height:120px}
+.ata-doc .rt-editor.ro{border:none;background:none;padding:0;min-height:0}
+.ata-prog{display:block;font-size:11px;color:var(--z-teal);margin-top:4px;min-height:14px}
 .ata-del{margin-top:10px;background:none;border:1px solid var(--z-terra);color:var(--z-terra);border-radius:8px;padding:6px 12px;font-family:inherit;font-size:12px;font-weight:600;cursor:pointer}
 .ata-add{align-self:flex-start;margin-top:4px;background:var(--z-teal-light);border:1.5px dashed var(--z-teal);color:var(--z-teal);border-radius:9px;padding:9px 14px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer}
 /* Brainstorming: mesmo esqueleto das atas, com cara própria */
@@ -560,15 +564,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pd-total{font-size:11px;font-weight:800;background:var(--z-terra);color:#fff;border-radius:20px;padding:2px 9px}
 .pd-load{font-size:11px;color:var(--z-text-sec)}
 .pd-chev{font-size:11px;color:var(--z-text-sec)}
-.pd-body{padding:6px}
-.pd-janela-bar{font-size:10.5px;color:var(--z-text-sec);padding:6px 14px 0}
+.pd-body{padding:4px 6px 8px}
+/* Só aparece com o painel aberto — é a legenda da lista, não do cabeçalho. */
+.pd-janela-bar{font-size:10.5px;color:var(--z-text-sec);padding:7px 14px 5px;border-bottom:1px solid var(--z-border)}
 .pd-janela{font-size:10.5px;color:var(--z-text-sec)}
+/* Nome do ciclo como cabeçalho do grupo: antes ele se repetia em toda linha. */
+.pd-grupo{font-size:10.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--z-text-sec);padding:9px 10px 4px}
+.pd-grupo:first-child{padding-top:5px}
 .pd-row{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font-family:inherit;background:none;border:none;border-radius:8px;padding:8px 10px;cursor:pointer;transition:background .15s}
 .pd-row:hover{background:var(--z-bg)}
 .pd-n{flex:0 0 26px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:800;color:var(--z-text-sec);background:var(--z-bg);border-radius:20px}
 .pd-row.urg .pd-n{background:var(--z-terra);color:#fff}
 .pd-txt{flex:1;font-size:12.5px;color:var(--z-text);line-height:1.35}
-.pd-ciclo{display:block;font-size:10.5px;color:var(--z-text-sec)}
 .pd-go{font-size:13px;color:var(--z-text-sec)}
 .pd-row:hover .pd-go{color:var(--z-teal)}
 /* Busca por título + filtro por situação */
@@ -677,6 +684,9 @@ mark.cmt:hover{background:#f6d9c4}
 .fmt-emo-row{display:flex;flex-wrap:wrap;gap:2px}
 .fmt-emo{width:32px;height:30px;border:none;background:none;cursor:pointer;font-size:18px;border-radius:6px;line-height:1}
 .fmt-emo:hover{background:var(--z-teal-light)}
+/* Dentro de uma ata a barra fica no corpo do item — grudar no topo da página
+   faria ela flutuar por cima do painel inteiro. */
+.fmtbar.fmt-inline{position:static;box-shadow:none;margin-bottom:8px;background:var(--z-bg)}
 @media(max-width:620px){.fmt-hint{display:none}}
 .impc-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:3000;align-items:center;justify-content:center;padding:16px}
 .impc-box{background:#fff;border-radius:12px;padding:18px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.3)}
@@ -881,7 +891,7 @@ mark.cmt:hover{background:#f6d9c4}
   .tb-x{opacity:.45}                     /* sem hover no toque: alças sempre visíveis */
   .tb-acts{opacity:1}
   .tb-btn{min-height:34px}
-  #copy-cards .tb-edit textarea{min-height:38px;font-size:16px;padding:6px 7px}
+  .tb-edit textarea{min-height:38px;font-size:16px;padding:6px 7px}
   .vtab{font-size:12px}
   /* validação */
   .vblock{font-size:14px;padding:10px}
@@ -2242,19 +2252,44 @@ function renderPendencias(){
     wrap.innerHTML=`<div class="pd-panel ok"><div class="pd-head"><span class="pd-ico">✅</span><span class="pd-t">Tudo em dia por aqui</span>${janela?`<span class="pd-janela">${esc(janela)}</span>`:''}</div></div>`;
     return;
   }
-  const nomeCiclo=(docId)=>{ const p=(estado.planejamentos||[]).find(x=>cicloDocId(x)===docId); return p?(p.periodo||''):''; };
-  const corpo = pendAberto ? `<div class="pd-body">${linhas.map((l,i)=>
-    `<button class="pd-row${l.urg?' urg':''}" onclick="irPend(${i})">
-       <span class="pd-n">${l.n}</span>
-       <span class="pd-txt">${l.ico} ${esc(l.txt)}<span class="pd-ciclo">${esc(nomeCiclo(l.docId))}</span></span>
-       <span class="pd-go">→</span>
-     </button>`).join('')}</div>` : '';
+  // O nome vem do cadastro de planejamentos; se o ciclo ainda não estiver lá,
+  // usa o período que o próprio cache do assistente já conhece.
+  const doCache=new Map(ciclosDoPainel().map(c=>[c.docId, c.periodo||'']));
+  const nomeCiclo=(docId)=>{
+    const p=(estado.planejamentos||[]).find(x=>cicloDocId(x)===docId);
+    return (p && p.periodo) || doCache.get(docId) || '';
+  };
   window.__pend = linhas;
+  // Agrupa por ciclo: com dois ciclos na janela, repetir o nome embaixo de cada
+  // linha virava ruído. Agora o nome é o cabeçalho do grupo e a linha fica limpa.
+  let corpo = '';
+  if(pendAberto){
+    const ordem=[], porCiclo=new Map();
+    linhas.forEach((l,i)=>{
+      if(!porCiclo.has(l.docId)){ porCiclo.set(l.docId, []); ordem.push(l.docId); }
+      porCiclo.get(l.docId).push({l,i});
+    });
+    corpo = `<div class="pd-body">${ordem.map(docId=>{
+      const nome=nomeCiclo(docId);
+      const cab = nome ? `<div class="pd-grupo">${esc(nome)}</div>` : '';
+      return cab + porCiclo.get(docId).map(({l,i})=>
+        `<button class="pd-row${l.urg?' urg':''}" onclick="irPend(${i})">
+           <span class="pd-n">${l.n}</span>
+           <span class="pd-txt">${l.ico} ${esc(l.txt)}</span>
+           <span class="pd-go">→</span>
+         </button>`).join('');
+    }).join('')}</div>`;
+  }
+  // A faixa da janela explica por que só esses ciclos aparecem — é legenda da
+  // lista. Com o painel fechado ela sobrava sozinha embaixo do cabeçalho e era
+  // isso que deixava aquela faixa vazia.
+  const faixa = (pendAberto && janela)
+    ? `<div class="pd-janela-bar">Mostrando só o ciclo atual e o próximo</div>` : '';
   wrap.innerHTML=`<div class="pd-panel">
     <div class="pd-head" onclick="togglePend()">
       <span class="pd-ico">🧭</span><span class="pd-t">O que está esperando você</span>
       <span class="pd-total">${total}</span><span class="pd-chev">${pendAberto?'▾':'▸'}</span>
-    </div>${janela?`<div class="pd-janela-bar">Ciclo atual e o próximo — ${esc(janela)}</div>`:''}${corpo}</div>`;
+    </div>${faixa}${corpo}</div>`;
 }
 window.togglePend = function(){ pendAberto=!pendAberto; renderPendencias(); };
 window.irPend = function(i){
@@ -2357,26 +2392,55 @@ window.toggleIdeiaUsada=function(id){ const i=(estado.ideias||[]).find(x=>x.id==
 window.removeIdeia=function(id){ if(!ideiasPodeEditar()) return; if(!confirm('Remover esta ideia?')) return; estado.ideias=(estado.ideias||[]).filter(x=>x.id!==id); agendarSalvamento(); renderIdeias(); };
 
 // ── ATAS DE REUNIÃO (topo da Base de Dados) ───────────────────────────────────
+// As anotações usam o MESMO editor rico da aba Copy: negrito, tópico, emoji,
+// link, tabela e imagem no ponto do cursor. O que é guardado continua sendo uma
+// string pura com [tabela N]/[imagem N] marcando a posição — igualzinho ao copy.
 let atasPainelAberto = true, atasAbertaId = null;
 function atasPodeEditar(){ return ROLE==='editor' || ROLE==='cliente'; }
 function fmtDataAta(d){ if(!d) return '—'; const p=String(d).split('-'); return (p.length===3)?`${p[2]}/${p[1]}/${p[0]}`:d; }
+// A ata virou um documento rico: precisa das listas que o editor manipula.
+function ensureAtaDoc(id){
+  const a=(estado.atas||[]).find(x=>x.id===id) || { texto:'' };
+  if(typeof a.texto!=='string') a.texto='';
+  if(!Array.isArray(a.tabelas)) a.tabelas=[];
+  if(!Array.isArray(a.imagens)) a.imagens=[];
+  a.tabelas.forEach(t=>{
+    if(!Array.isArray(t.cols)) t.cols=[];
+    if(!Array.isArray(t.rows)) t.rows=[];
+    // Firestore não aceita array dentro de array: cada linha é {cels:[...]}.
+    t.rows=t.rows.map(r=>Array.isArray(r)?{cels:r.slice()}:(r&&Array.isArray(r.cels)?r:{cels:[]}));
+  });
+  return a;
+}
+// Redesenha só o corpo do editor da ata (usado quando a tabela muda de forma).
+function renderAtaDoc(id){
+  const el=document.getElementById('ata-doc-'+id); if(!el) return;
+  const a=ensureAtaDoc(id);
+  el.innerHTML=rtEditorHTML(id, a, 'texto', a.texto, 'Cole a transcrição da reunião ou escreva os pontos discutidos…', 'ata');
+  autoGrowScope(el);
+}
 function renderAtas(){
   const wrap=document.getElementById('atas-wrap'); if(!wrap) return;
   const atas=estado.atas||[], pode=atasPodeEditar();
   const lista=atas.slice().sort((a,b)=>String(b.data||'').localeCompare(String(a.data||'')));
-  const itens=lista.map(a=>{
-    const ab=atasAbertaId===a.id;
+  const itens=lista.map(a0=>{
+    const a=ensureAtaDoc(a0.id), ab=atasAbertaId===a.id;
     const head=`<div class="ata-item-head" onclick="toggleAta(${a.id})"><span class="ata-data">${esc(fmtDataAta(a.data))}</span><span class="ata-titulo">${esc(a.titulo||'Sem título')}</span><span class="ata-chev">${ab?'▾':'▸'}</span></div>`;
     let body='';
     if(ab){
+      const doc=`<div class="ata-doc" id="ata-doc-${a.id}">${
+        rtEditorHTML(a.id, a, 'texto', a.texto, 'Cole a transcrição da reunião ou escreva os pontos discutidos…', 'ata')}</div>`;
       body = pode
         ? `<div class="ata-item-body">
             <div class="ata-row"><label class="ata-lbl">Data</label><input type="date" value="${esc(a.data||'')}" onchange="updateAta(${a.id},'data',this.value)"></div>
             <div class="ata-row"><label class="ata-lbl">Título / assunto</label><input type="text" value="${esc(a.titulo||'')}" placeholder="Ex.: Alinhamento de junho" oninput="updateAta(${a.id},'titulo',this.value)"></div>
-            <div class="ata-row"><label class="ata-lbl">Anotações</label><textarea rows="6" placeholder="Cole a transcrição da reunião ou escreva os pontos discutidos…" oninput="updateAta(${a.id},'texto',this.value)">${esc(a.texto||'')}</textarea></div>
+            <div class="ata-row"><label class="ata-lbl">Anotações</label>
+              ${fmtbarHTML('ata','ata'+a.id,'selecione o texto e clique em N / I',true)}
+              ${doc}
+              <span class="ata-prog" id="ata-prog-${a.id}"></span></div>
             <button class="ata-del" onclick="removeAta(${a.id})">✕ Remover ata</button>
           </div>`
-        : `<div class="ata-item-body"><div class="ata-texto">${esc(a.texto||'(sem anotações)')}</div></div>`;
+        : `<div class="ata-item-body">${(a.texto||'').trim()?doc:'<div class="ata-texto">(sem anotações)</div>'}</div>`;
     }
     return `<div class="ata-item${ab?' open':''}">${head}${body}</div>`;
   }).join('');
@@ -2386,12 +2450,45 @@ function renderAtas(){
       <div class="atas-head" onclick="toggleAtasPainel()"><span class="atas-ico">📋</span><span class="atas-t">Atas de reunião</span><span class="atas-count">${atas.length}</span><span class="atas-chev">${atasPainelAberto?'▾':'▸'}</span></div>
       ${atasPainelAberto?`<div class="atas-body">${vazio}${itens}${addBtn}</div>`:''}
     </div>`;
+  // As células da tabela nascem na altura mínima: sem esta passada o texto some.
+  if(atasAbertaId!=null) autoGrowScope(document.getElementById('ata-doc-'+atasAbertaId));
 }
+// Imagem na ata: sem galeria à parte — o botão 🖼 já abre o seletor e a imagem
+// entra no ponto do cursor assim que o upload termina.
+window.ataEscolherArquivo = function(id, block){
+  if(!atasPodeEditar()) return;
+  if(!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET){ showToast('Upload ainda não configurado (Cloudinary).'); return; }
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='image/*';
+  inp.onchange=async ()=>{
+    const f=inp.files && inp.files[0]; if(!f) return;
+    const barra=barrarPorTamanho(f); if(barra){ showToast(barra); return; }
+    const prog=document.getElementById('ata-prog-'+id);
+    try{
+      const r=await uploadCloudinary(f,(pct)=>{ if(prog) prog.textContent=`Enviando ${f.name} — ${pct}%`; });
+      const a=ensureAtaDoc(id);
+      a.imagens.push({ url:r.url, publicId:r.publicId, legenda:'' });
+      agendarSalvamento();
+      rtInserirMarca(id, block, `[imagem ${a.imagens.length}]`, 'ata');
+    }catch(e){ console.error(e); showToast(`Não deu para enviar “${f.name}”: ${e.message}`); }
+    if(prog) prog.textContent='';
+  };
+  inp.click();
+};
 window.toggleAtasPainel=function(){ atasPainelAberto=!atasPainelAberto; renderAtas(); };
 window.toggleAta=function(id){ atasAbertaId=(atasAbertaId===id?null:id); renderAtas(); };
-window.addAta=function(){ if(!atasPodeEditar()) return; const nova={ id:Date.now()+Math.floor(Math.random()*1000), data:new Date().toISOString().slice(0,10), titulo:'', texto:'' }; estado.atas=estado.atas||[]; estado.atas.unshift(nova); atasAbertaId=nova.id; atasPainelAberto=true; agendarSalvamento(); renderAtas(); };
+window.addAta=function(){ if(!atasPodeEditar()) return; const nova={ id:Date.now()+Math.floor(Math.random()*1000), data:new Date().toISOString().slice(0,10), titulo:'', texto:'', tabelas:[], imagens:[] }; estado.atas=estado.atas||[]; estado.atas.unshift(nova); atasAbertaId=nova.id; atasPainelAberto=true; agendarSalvamento(); renderAtas(); };
 window.removeAta=function(id){ if(!atasPodeEditar()) return; if(!confirm('Remover esta ata de reunião?')) return; estado.atas=(estado.atas||[]).filter(a=>a.id!==id); agendarSalvamento(); renderAtas(); };
-window.updateAta=function(id,field,val){ const a=(estado.atas||[]).find(x=>x.id===id); if(a){ a[field]=val; agendarSalvamento(); } };
+window.updateAta=function(id,field,val){
+  const a=(estado.atas||[]).find(x=>x.id===id); if(!a) return;
+  a[field]=val; agendarSalvamento();
+  // Mantém o cabeçalho em dia sem redesenhar (redesenhar tiraria o cursor).
+  // Escopo em #atas-wrap: o brainstorming reusa as mesmas classes.
+  const head=document.querySelector('#atas-wrap .ata-item.open .ata-item-head');
+  if(!head) return;
+  if(field==='titulo'){ const h=head.querySelector('.ata-titulo'); if(h) h.textContent=val||'Sem título'; }
+  if(field==='data'){ const d=head.querySelector('.ata-data'); if(d) d.textContent=fmtDataAta(val); }
+};
 
 // ── WINDOW EVENT HANDLERS ─────────────────────────────────────────────────────
 window.updateField = function(el) {
@@ -2936,11 +3033,15 @@ function _unstyleStr(str){
   for(const ch of str){ out += _ehAcento(ch) ? ch : _unstyle(ch); }
   return out.normalize('NFC');   // recompõe "a"+til → "ã"
 }
-// Alvo da barra de formatação: o editor rico em que o cursor está.
-function copyFmtTarget(){
+// Alvo da barra de formatação: o editor rico em que o cursor está — seja ele da
+// aba Copy ou de uma ata. `escopo` restringe a barra ao seu próprio tipo, para a
+// barra da ata não escrever num campo de copy que ficou focado antes.
+function copyFmtTarget(escopo){
   const a=document.activeElement;
   const ed=a && a.closest ? a.closest('.rt-editor') : null;
-  return (ed && ed.isContentEditable && ed.closest('#copy-cards')) ? ed : null;
+  if(!ed || !ed.isContentEditable) return null;
+  if(escopo && (ed.dataset.rt||'copy') !== escopo) return null;
+  return ed;
 }
 // Escreve no editor pelo execCommand para não perder o cursor nem o desfazer.
 function rtEscrever(el, txt){
@@ -2954,9 +3055,9 @@ function rtTextoSelecionado(el){
   if(!el.contains(r.startContainer) || r.collapsed) return '';
   return sel.toString();
 }
-window.fmtCopy=function(ev,kind){
+window.fmtCopy=function(ev,kind,escopo){
   ev.preventDefault();
-  const el=copyFmtTarget(); if(!el){ showToast('Clique num campo de texto do copy primeiro.'); return; }
+  const el=copyFmtTarget(escopo); if(!el){ showToast('Clique no campo de texto primeiro.'); return; }
   if(kind==='bullet'){ rtEscrever(el, '\n• '); return; }
   if(kind==='link'){
     const url=(prompt('Cole o link (entra como texto — em legenda de rede social o link não fica clicável):')||'').trim();
@@ -2971,29 +3072,30 @@ window.fmtCopy=function(ev,kind){
   const limpo=_unstyleStr(trecho);              // tira o estilo atual (permite alternar N ↔ I)
   rtEscrever(el, jaTem ? limpo : _styleStr(limpo,kind));
 };
-// Tabela e imagem entram no ponto do cursor, e só no texto da arte.
-function fmtAlvoArte(qual){
-  const el=copyFmtTarget();
-  if(!el){ showToast(`Clique no texto da arte (slide ou reels) onde a ${qual} deve entrar.`); return null; }
+// Tabela e imagem entram no ponto do cursor — na aba Copy, só no texto da arte.
+function fmtAlvoArte(qual, escopo){
+  const el=copyFmtTarget(escopo);
+  if(!el){ showToast(`Clique no texto onde a ${qual} deve entrar.`); return null; }
+  const esc0=el.dataset.rt||'copy', f=rtEsc(esc0);
   const block=el.dataset.copyblock||'';
-  if(!blocoEhArte(block)){
-    showToast(`${qual==='tabela'?'A tabela':'A imagem'} é instrução de diagramação da arte — clique num slide (ou no roteiro do reels).`);
+  if(!f.aceitaWidget(block)){
+    showToast(`${qual==='tabela'?'A tabela':'A imagem'} é instrução de diagramação da arte — clique ${f.ondeWidget}.`);
     return null;
   }
-  return { el, id:+el.dataset.item, block };
+  return { el, id:+el.dataset.item, block, escopo:esc0 };
 }
-window.fmtTabela=function(ev){
+window.fmtTabela=function(ev,escopo){
   ev.preventDefault();
-  const a=fmtAlvoArte('tabela'); if(!a) return;
-  window.rtInserirTabela(ev, a.id, a.block);
+  const a=fmtAlvoArte('tabela',escopo); if(!a) return;
+  window.rtInserirTabela(ev, a.id, a.block, a.escopo);
 };
-window.fmtImagem=function(ev){
+window.fmtImagem=function(ev,escopo){
   ev.preventDefault();
-  const a=fmtAlvoArte('imagem'); if(!a) return;
-  window.rtInserirImagem(ev, a.id, a.block);
+  const a=fmtAlvoArte('imagem',escopo); if(!a) return;
+  window.rtInserirImagem(ev, a.id, a.block, a.escopo);
 };
-window.fmtEmojiToggle=function(ev){ ev.preventDefault(); const el=document.getElementById('fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'block':'none'); };
-window.fmtEmoji=function(ev,emo){ ev.preventDefault(); const el=copyFmtTarget(); if(!el){ showToast('Clique num campo de texto do copy primeiro.'); return; } rtEscrever(el, emo); };
+window.fmtEmojiToggle=function(ev,alvo){ ev.preventDefault(); const el=document.getElementById(alvo||'fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'block':'none'); };
+window.fmtEmoji=function(ev,emo,escopo){ ev.preventDefault(); const el=copyFmtTarget(escopo); if(!el){ showToast('Clique no campo de texto primeiro.'); return; } rtEscrever(el, emo); };
 // Emojis agrupados: os de tópico/seta ficam primeiro porque são os mais usados
 // para montar lista em legenda (o Instagram não tem marcador nativo).
 const FMT_EMOJI_GRUPOS=[
@@ -3005,22 +3107,30 @@ const FMT_EMOJI_GRUPOS=[
   ['Trabalho e dados', ['📊','📈','📉','🗓️','📅','⏰','⏳','🕐','💼','🧠','🗣️','👀','👥','🌍','🌱','♻️','⚖️','🏛️','💰','📌','🔗','🧭']],
 ];
 const FMT_EMOJIS=FMT_EMOJI_GRUPOS.reduce((a,g)=>a.concat(g[1]),[]);
-function copyFmtbarHTML(){
-  return `<div class="fmtbar">
-    <button class="fmtb" title="Negrito (funciona ao colar no Instagram/LinkedIn)" onmousedown="fmtCopy(event,'bold')"><strong>N</strong></button>
-    <button class="fmtb" title="Itálico" onmousedown="fmtCopy(event,'italic')"><em style="font-family:Georgia,serif">I</em></button>
-    <button class="fmtb" title="Marcador (•)" onmousedown="fmtCopy(event,'bullet')">•</button>
-    <button class="fmtb" title="Tabela no ponto do cursor (só no texto da arte)" onmousedown="fmtTabela(event)">⊞</button>
-    <button class="fmtb" title="Imagem no ponto do cursor (só no texto da arte)" onmousedown="fmtImagem(event)">🖼</button>
-    <button class="fmtb" title="Inserir link (como texto)" onmousedown="fmtCopy(event,'link')">🔗</button>
-    <button class="fmtb" title="Emojis" onmousedown="fmtEmojiToggle(event)">😀</button>
-    <span class="fmt-hint">selecione o texto e clique em N / I</span>
-    <div class="fmt-emojis" id="fmt-emojis" style="display:none">${FMT_EMOJI_GRUPOS.map(([lbl,lista])=>
+// Uma barra por editor. `escopo` diz em quem ela escreve e `chave` dá um id
+// próprio ao painel de emoji — senão duas barras na mesma tela brigariam pelo
+// mesmo elemento.
+function fmtbarHTML(escopo, chave, dica, inline){
+  const eid = 'fmt-emojis-' + chave;
+  const s = escopo ? `,'${escopo}'` : '';
+  const dicaTab = escopo==='ata' ? 'Tabela no ponto do cursor' : 'Tabela no ponto do cursor (só no texto da arte)';
+  const dicaImg = escopo==='ata' ? 'Imagem no ponto do cursor' : 'Imagem no ponto do cursor (só no texto da arte)';
+  return `<div class="fmtbar${inline?' fmt-inline':''}">
+    <button class="fmtb" title="Negrito (funciona ao colar no Instagram/LinkedIn)" onmousedown="fmtCopy(event,'bold'${s})"><strong>N</strong></button>
+    <button class="fmtb" title="Itálico" onmousedown="fmtCopy(event,'italic'${s})"><em style="font-family:Georgia,serif">I</em></button>
+    <button class="fmtb" title="Marcador (•)" onmousedown="fmtCopy(event,'bullet'${s})">•</button>
+    <button class="fmtb" title="${dicaTab}" onmousedown="fmtTabela(event${s})">⊞</button>
+    <button class="fmtb" title="${dicaImg}" onmousedown="fmtImagem(event${s})">🖼</button>
+    <button class="fmtb" title="Inserir link (como texto)" onmousedown="fmtCopy(event,'link'${s})">🔗</button>
+    <button class="fmtb" title="Emojis" onmousedown="fmtEmojiToggle(event,'${eid}')">😀</button>
+    <span class="fmt-hint">${dica||'selecione o texto e clique em N / I'}</span>
+    <div class="fmt-emojis" id="${eid}" style="display:none">${FMT_EMOJI_GRUPOS.map(([lbl,lista])=>
       `<div class="fmt-emo-grupo"><div class="fmt-emo-lbl">${lbl}</div><div class="fmt-emo-row">${
-        lista.map(e=>`<button type="button" class="fmt-emo" title="${e}" onmousedown="fmtEmoji(event,'${e}')">${e}</button>`).join('')
+        lista.map(e=>`<button type="button" class="fmt-emo" title="${e}" onmousedown="fmtEmoji(event,'${e}'${s})">${e}</button>`).join('')
       }</div></div>`).join('')}</div>
   </div>`;
 }
+function copyFmtbarHTML(){ return fmtbarHTML('copy', 'copy'); }
 
 function renderCopyCards() {
   const cont = document.getElementById('copy-cards');
@@ -3090,7 +3200,7 @@ function statusRowEdit(it, c) {
   </div>`;
 }
 // ══════════════════════════════════════════════════════════════════════════════
-// EDITOR RICO DO COPY — o texto da arte é um documento só
+// EDITOR RICO — o texto é um documento só
 // ══════════════════════════════════════════════════════════════════════════════
 // O designer precisa ler o slide de cima a baixo: título, subtítulo, a tabela na
 // posição em que ela entra, o texto de apoio, o CTA. Então tabela e imagem são
@@ -3100,10 +3210,41 @@ function statusRowEdit(it, c) {
 // marcando a posição. É isso que mantém de pé (a) os comentários da Gabi, que são
 // posições de caractere, e (b) o colar da legenda no Instagram. A marca nunca
 // aparece para quem escreve: no lugar dela vai o widget de verdade.
-function rtEditavel(){ return copyMode==='edit' && ROLE==='editor'; }
+//
+// O editor nasceu na aba Copy, mas ata de reunião pede exatamente a mesma coisa.
+// Em vez de um segundo editor, o que muda é só a FONTE do documento: quem sabe
+// achar o objeto (texto + tabelas + imagens), gravar e redesenhar. O escopo viaja
+// no DOM (data-rt), então cada handler descobre sozinho com quem está falando.
+const RT_ESCOPOS = {
+  copy: {
+    doc:        (id) => ensureCopy(id),
+    texto:      (id, block) => blockText(getCopy(id), block),
+    gravar:     (id, block, txt) => rtGravarTexto(id, block, txt),
+    salvar:     () => agendarSaveCopy(),
+    redesenhar: (id) => renderOneCard(id),
+    raiz:       (id) => document.getElementById('copy-card-' + id),
+    editavel:   () => copyMode === 'edit' && ROLE === 'editor',
+    // Tabela e imagem são instrução de diagramação da arte: em legenda e blog
+    // não existe imagem no meio do texto em rede social nenhuma.
+    aceitaWidget: (block) => /^(slide:|reels$)/.test(block || ''),
+    ondeWidget: 'no texto da arte (slide ou roteiro do reels)',
+  },
+  ata: {
+    doc:        (id) => ensureAtaDoc(id),
+    texto:      (id) => ensureAtaDoc(id).texto || '',
+    gravar:     (id, block, txt) => { ensureAtaDoc(id).texto = txt; },
+    salvar:     () => agendarSalvamento(),
+    redesenhar: (id) => renderAtaDoc(id),
+    raiz:       (id) => document.getElementById('ata-doc-' + id),
+    editavel:   () => atasPodeEditar(),
+    aceitaWidget: () => true,          // na ata o texto é um só: vale em qualquer ponto
+    ondeWidget: 'nas anotações da ata',
+  },
+};
+const rtEsc = (nome) => RT_ESCOPOS[nome] || RT_ESCOPOS.copy;
 // Um widget (tabela/imagem) é atômico: contenteditable=false, o cursor pula por cima.
-function rtWidgetTabela(id, ti, t, editavel){
-  const corpo = editavel ? tabelaEditorHTML(id, t, ti) : tabelaRenderHTML(t);
+function rtWidgetTabela(id, ti, t, editavel, escopo){
+  const corpo = editavel ? tabelaEditorHTML(id, t, ti, escopo) : tabelaRenderHTML(t);
   return `<div class="rt-w rt-w-tab" contenteditable="false" data-marca="tabela" data-n="${ti+1}">${corpo}</div>`;
 }
 function rtWidgetImagem(id, ii, im, editavel){
@@ -3112,8 +3253,9 @@ function rtWidgetImagem(id, ii, im, editavel){
   return `<div class="rt-w rt-w-img" contenteditable="false" data-marca="imagem" data-n="${ii+1}">${del}<img src="${esc(im.url)}" alt="${esc(im.legenda||('imagem '+(ii+1)))}">${cap}</div>`;
 }
 // texto (com marcas) → HTML do editor
-function rtHTML(id, c, texto){
-  const editavel = rtEditavel();
+function rtHTML(id, c, texto, escopo){
+  escopo = escopo || 'copy';
+  const editavel = rtEsc(escopo).editavel();
   let out = '';
   const re = /\[(tabela|imagem) (\d+)\]/g;
   let last = 0, m;
@@ -3121,7 +3263,7 @@ function rtHTML(id, c, texto){
   while ((m = re.exec(txt)) !== null) {
     out += esc(txt.slice(last, m.index));
     const n = +m[2] - 1;
-    if (m[1] === 'tabela' && (c.tabelas||[])[n])      out += rtWidgetTabela(id, n, c.tabelas[n], editavel);
+    if (m[1] === 'tabela' && (c.tabelas||[])[n])      out += rtWidgetTabela(id, n, c.tabelas[n], editavel, escopo);
     else if (m[1] === 'imagem' && (c.imagens||[])[n]) out += rtWidgetImagem(id, n, c.imagens[n], editavel);
     else out += esc(m[0]);                       // marca sem dono: mostra crua para dar para apagar
     last = m.index + m[0].length;
@@ -3157,19 +3299,18 @@ function rtSerializar(el){
   anda(el);
   return out.replace(/\u00a0/g, ' ');   // &nbsp; do contenteditable → espaço normal
 }
-function rtEditorHTML(id, c, block, texto, placeholder){
-  const editavel = rtEditavel();
+function rtEditorHTML(id, c, block, texto, placeholder, escopo){
+  escopo = escopo || 'copy';
+  const editavel = rtEsc(escopo).editavel();
   return `<div class="rt-editor${editavel?'':' ro'}" ${editavel?'contenteditable="true"':''} spellcheck="true"
-      data-copyblock="${block}" data-item="${id}" data-ph="${esc(placeholder||'')}"
+      data-rt="${escopo}" data-copyblock="${block}" data-item="${id}" data-ph="${esc(placeholder||'')}"
       oninput="rtInput(this)" onkeydown="rtKeydown(event,this)" onpaste="rtPaste(event,this)"
-    >${rtHTML(id, c, texto)}</div>`;
+    >${rtHTML(id, c, texto, escopo)}</div>`;
 }
-// Tabela e imagem são instruções de diagramação para o design — valem só no
-// texto da arte. Em legenda e blog não existe imagem no meio do texto em rede
-// social nenhuma, então os botões nem se aplicam ali.
 function blocoEhArte(block){ return /^(slide:|reels$)/.test(block||''); }
-function rtEditorDoBloco(id, block){
-  return document.querySelector(`#copy-card-${id} .rt-editor[data-copyblock="${block}"]`);
+function rtEditorDoBloco(id, block, escopo){
+  const raiz = rtEsc(escopo||'copy').raiz(id);
+  return raiz ? raiz.querySelector(`.rt-editor[data-copyblock="${block}"]`) : null;
 }
 // Guarda a posição do cursor como offset no TEXTO (não no DOM) para reinserir
 // depois de redesenhar o editor.
@@ -3210,22 +3351,19 @@ function rtPorCursor(el, offset){
   r.selectNodeContents(el); r.collapse(false); sel.removeAllRanges(); sel.addRange(r);
 }
 // Redesenha o editor mantendo o cursor (usado ao inserir/remover widget).
-function rtRedesenhar(id, block, offset){
-  const el = rtEditorDoBloco(id, block); if(!el) return;
-  const c = getCopy(id);
-  el.innerHTML = rtHTML(id, c, blockText(c, block));
+function rtRedesenhar(id, block, offset, escopo){
+  escopo = escopo || 'copy';
+  const f = rtEsc(escopo);
+  const el = rtEditorDoBloco(id, block, escopo); if(!el) return;
+  el.innerHTML = rtHTML(id, f.doc(id), f.texto(id, block), escopo);
   autoGrowScope(el);          // as células da tabela crescem conforme o texto
   rtPorCursor(el, offset);
 }
 window.rtInput = function(el){
-  const id = +el.dataset.item, block = el.dataset.copyblock;
-  const c = ensureCopy(id);
-  const txt = rtSerializar(el);
-  if(block === 'reels') c.reels = txt;
-  else if(block === 'legenda') c.legenda = txt;
-  else if(block === 'blog') c.blog = txt;
-  else if(block.startsWith('slide:')) { const i = +block.split(':')[1]; if(c.slides[i]) c.slides[i].texto = txt; }
-  agendarSaveCopy();
+  const escopo = el.dataset.rt || 'copy';
+  const f = rtEsc(escopo);
+  f.gravar(+el.dataset.item, el.dataset.copyblock, rtSerializar(el));
+  f.salvar();
 };
 window.rtKeydown = function(ev, el){
   // O Enter fica com o comportamento nativo do navegador (ele cria <div>/<br>);
@@ -3244,19 +3382,21 @@ window.rtPaste = function(ev, el){
   el.dispatchEvent(new Event('input', {bubbles:true}));
 };
 // Insere a marca na posição do cursor do editor (ou no fim, se não houver cursor).
-function rtInserirMarca(id, block, marca){
-  const el = rtEditorDoBloco(id, block); if(!el) return;
+function rtInserirMarca(id, block, marca, escopo){
+  escopo = escopo || 'copy';
+  const f = rtEsc(escopo);
+  const el = rtEditorDoBloco(id, block, escopo); if(!el) return;
   const sel = window.getSelection();
   const dentro = sel && sel.rangeCount && el.contains(sel.getRangeAt(0).startContainer);
   if(!dentro){ el.focus(); const r=document.createRange(); r.selectNodeContents(el); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); }
-  const off = rtOffsetCursor(el) ?? blockText(getCopy(id), block).length;
-  const txt = blockText(getCopy(id), block);
+  const txt = f.texto(id, block);
+  const off = rtOffsetCursor(el) ?? txt.length;
   // A marca fica sempre na sua própria linha, sem criar linha em branco à toa.
   const pre = (off>0 && txt[off-1] !== '\n') ? '\n' : '';
   const pos = (txt[off] !== '\n' ) ? '\n' : '';
-  const novo = txt.slice(0,off) + pre + marca + pos + txt.slice(off);
-  rtGravarTexto(id, block, novo);
-  rtRedesenhar(id, block, off + pre.length + marca.length + pos.length);
+  f.gravar(id, block, txt.slice(0,off) + pre + marca + pos + txt.slice(off));
+  f.salvar();
+  rtRedesenhar(id, block, off + pre.length + marca.length + pos.length, escopo);
 }
 function rtGravarTexto(id, block, txt){
   const c = ensureCopy(id);
@@ -3264,22 +3404,31 @@ function rtGravarTexto(id, block, txt){
   else if(block === 'legenda') c.legenda = txt;
   else if(block === 'blog') c.blog = txt;
   else if(block.startsWith('slide:')) { const i = +block.split(':')[1]; if(c.slides[i]) c.slides[i].texto = txt; }
-  agendarSaveCopy();
 }
-window.rtInserirTabela = function(ev, id, block){
+window.rtInserirTabela = function(ev, id, block, escopo){
   ev.preventDefault();
-  const c = ensureCopy(id);
-  c.tabelas.push(tabelaVazia());
-  const ti = c.tabelas.length - 1;
-  rtInserirMarca(id, block, `[tabela ${ti+1}]`);
-  setTimeout(()=>{ const inp=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] .tb-edit input`); if(inp){ inp.focus(); inp.select(); } }, 40);
+  escopo = escopo || 'copy';
+  const f = rtEsc(escopo), d = f.doc(id);
+  if(!Array.isArray(d.tabelas)) d.tabelas = [];
+  d.tabelas.push(tabelaVazia());
+  const ti = d.tabelas.length - 1;
+  rtInserirMarca(id, block, `[tabela ${ti+1}]`, escopo);
+  setTimeout(()=>{
+    const raiz = f.raiz(id);
+    const inp = raiz && raiz.querySelector(`.tb-card[data-ti="${ti}"] .tb-edit textarea`);
+    if(inp){ inp.focus(); inp.select(); }
+  }, 40);
 };
-window.rtInserirImagem = function(ev, id, block){
+window.rtInserirImagem = function(ev, id, block, escopo){
   ev.preventDefault();
+  escopo = escopo || 'copy';
+  // Na ata não existe galeria: o botão já abre o seletor de arquivo e a imagem
+  // entra no ponto do cursor assim que sobe.
+  if(escopo === 'ata'){ ataEscolherArquivo(id, block); return; }
   const c = ensureCopy(id);
   const imgs = c.imagens || [];
   if(!imgs.length){ showToast('Suba a imagem primeiro em 🖼 Imagens do conteúdo.'); rolarParaImagens(id); return; }
-  if(imgs.length === 1){ rtInserirMarca(id, block, '[imagem 1]'); return; }
+  if(imgs.length === 1){ rtInserirMarca(id, block, '[imagem 1]', escopo); return; }
   rtEscolherImagem(id, block, imgs);
 };
 function rolarParaImagens(id){
@@ -3306,13 +3455,15 @@ window.rtEscolhida = function(id, block, n){
 window.rtRemoverWidget = function(ev, id, tipo, n){
   ev.preventDefault(); ev.stopPropagation();
   const w = ev.target.closest('.rt-w'); const el = w && w.closest('.rt-editor'); if(!el) return;
+  const escopo = el.dataset.rt || 'copy', f = rtEsc(escopo);
   const block = el.dataset.copyblock;
-  const txt = blockText(getCopy(id), block);
+  const txt = f.texto(id, block);
   const marca = `[${tipo} ${n}]`;
   const at = txt.indexOf(marca);
   if(at < 0) return;
-  rtGravarTexto(id, block, (txt.slice(0, at) + txt.slice(at + marca.length)).replace(/\n{3,}/g,'\n\n'));
-  rtRedesenhar(id, block, at);
+  f.gravar(id, block, (txt.slice(0, at) + txt.slice(at + marca.length)).replace(/\n{3,}/g,'\n\n'));
+  f.salvar();
+  rtRedesenhar(id, block, at, escopo);
 };
 function slidesHTML(id, c) {
   return c.slides.map((s, i) => `
@@ -3551,8 +3702,11 @@ let _agResize = null;
 function reajustarAlturas(){
   clearTimeout(_agResize);
   _agResize = setTimeout(() => {
-    const c = document.getElementById('copy-cards');
-    if (c) autoGrowScope(c);
+    // Todo lugar que tem tabela: os cards de copy e as atas de reunião.
+    ['copy-cards','atas-wrap'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) autoGrowScope(el);
+    });
   }, 150);
 }
 window.addEventListener('resize', reajustarAlturas);
@@ -3667,10 +3821,11 @@ function copyImagensHTML(id, c){
 // Sem `block`: a posição da tabela é a marca [tabela N] que rtInserirMarca põe no
 // texto. `block` só existe em dado antigo, e migrarTabelasParaArte o converte.
 function tabelaVazia(){ return { titulo:'', cols:['Coluna A','Coluna B'], rows:[{cels:['','']},{cels:['','']}] }; }
-function ensureTab(id, ti){ const c=ensureCopy(id); return c.tabelas[ti]; }
+function ensureTab(id, ti, escopo){ const d=rtEsc(escopo||'copy').doc(id); return (d.tabelas||[])[ti]; }
 function celsDa(r){ return (r && Array.isArray(r.cels)) ? r.cels : (Array.isArray(r) ? r : []); }
 const COPY_BLOCOS = (c) => ['reels','legenda','blog'].concat((c.slides||[]).map((_,i)=>'slide:'+i));
 // Reescreve as marcas de todos os campos de texto (usado ao remover imagem/tabela).
+// A ata tem um campo só; o copy tem legenda, blog, reels e os slides.
 function reescreverMarcas(c, tipo, fn){
   const re=new RegExp('\\[' + tipo + ' (\\d+)\\]','g');
   const sub=(s)=>{
@@ -3679,6 +3834,7 @@ function reescreverMarcas(c, tipo, fn){
     re.lastIndex=0;
     return antes.replace(re,(m,n)=>fn(+n,m)).replace(/\n{3,}/g,'\n\n');
   };
+  if('texto' in c && !('slides' in c)){ c.texto=sub(c.texto); return; }   // ata
   c.reels=sub(c.reels); c.legenda=sub(c.legenda); c.blog=sub(c.blog);
   (c.slides||[]).forEach(s=>{ s.texto=sub(s.texto); });
 }
@@ -3687,12 +3843,13 @@ function reescreverMarcas(c, tipo, fn){
 function removerMarcaERenumerar(c, tipo, idx){
   reescreverMarcas(c, tipo, (n,m) => (n-1===idx) ? '' : (n-1>idx ? `[${tipo} ${n-1}]` : m));
 }
-window.removeTabela = function(id, ti){
-  const c=ensureCopy(id);
+window.removeTabela = function(id, ti, escopo){
+  escopo = escopo || 'copy';
+  const f=rtEsc(escopo), d=f.doc(id);
   if(!confirm('Remover esta tabela? Ela sai do texto e as outras são renumeradas.')) return;
-  c.tabelas.splice(ti,1);
-  removerMarcaERenumerar(c,'tabela',ti);
-  agendarSaveCopy(); renderOneCard(id);
+  (d.tabelas||[]).splice(ti,1);
+  removerMarcaERenumerar(d,'tabela',ti);
+  f.salvar(); f.redesenhar(id);
 };
 // A tabela é uma GRADE simples, igual à do Google Docs: todas as células iguais,
 // sem cabeçalho especial, sem título, sem numeração. A primeira linha é `cols`
@@ -3704,54 +3861,56 @@ function tabCelula(t, r, c, val){
   if(val===undefined) return linha[c] || '';
   linha[c] = val;
 }
-window.updateTabCelula = function(id,ti,r,c,el){
-  const t=ensureTab(id,ti); if(!t) return;
+window.updateTabCelula = function(id,ti,r,c,el,escopo){
+  const t=ensureTab(id,ti,escopo); if(!t) return;
   tabCelula(t,r,c,el.value);
   autoGrow(el);
-  agendarSaveCopy();
+  rtEsc(escopo||'copy').salvar();
 };
-window.addTabLinha = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.rows.push({cels:t.cols.map(()=>'')}); agendarSaveCopy(); renderOneCard(id); } };
-window.addTabCol = function(id,ti){ const t=ensureTab(id,ti); if(t){ t.cols.push(''); t.rows.forEach(r=>celsDa(r).push('')); agendarSaveCopy(); renderOneCard(id); } };
-window.removeTabLinha = function(id,ti,r){
-  const t=ensureTab(id,ti); if(!t) return;
+const _tabRefaz = (id,escopo)=>{ const f=rtEsc(escopo||'copy'); f.salvar(); f.redesenhar(id); };
+window.addTabLinha = function(id,ti,escopo){ const t=ensureTab(id,ti,escopo); if(t){ t.rows.push({cels:t.cols.map(()=>'')}); _tabRefaz(id,escopo); } };
+window.addTabCol = function(id,ti,escopo){ const t=ensureTab(id,ti,escopo); if(t){ t.cols.push(''); t.rows.forEach(r=>celsDa(r).push('')); _tabRefaz(id,escopo); } };
+window.removeTabLinha = function(id,ti,r,escopo){
+  const t=ensureTab(id,ti,escopo); if(!t) return;
   if(tabGrade(t).length<=1){ showToast('A tabela precisa de pelo menos uma linha.'); return; }
   if(r===0){ t.cols = celsDa(t.rows[0]).slice(); t.rows.shift(); }   // 1ª linha some: a de baixo vira ela
   else t.rows.splice(r-1,1);
-  agendarSaveCopy(); renderOneCard(id);
+  _tabRefaz(id,escopo);
 };
-window.removeTabCol = function(id,ti,ci){
-  const t=ensureTab(id,ti); if(!t) return;
+window.removeTabCol = function(id,ti,ci,escopo){
+  const t=ensureTab(id,ti,escopo); if(!t) return;
   if(t.cols.length<=1){ showToast('A tabela precisa de pelo menos uma coluna.'); return; }
   t.cols.splice(ci,1); t.rows.forEach(r=>celsDa(r).splice(ci,1));
-  agendarSaveCopy(); renderOneCard(id);
+  _tabRefaz(id,escopo);
 };
-function tabelaEditorHTML(id, t, ti){
+function tabelaEditorHTML(id, t, ti, escopo){
+  const e = escopo ? `,'${escopo}'` : '';
   const g = tabGrade(t);
   const nc = t.cols.length;
   // alças de coluna: aparecem no hover, para remover a coluna
-  const alcas = t.cols.map((_,ci)=>`<td class="tb-alca"><button class="tb-x" title="Remover coluna" onclick="removeTabCol(${id},${ti},${ci})">✕</button></td>`).join('');
+  const alcas = t.cols.map((_,ci)=>`<td class="tb-alca"><button class="tb-x" title="Remover coluna" onclick="removeTabCol(${id},${ti},${ci}${e})">✕</button></td>`).join('');
   const linhas = g.map((linha, r) => `<tr>${
     t.cols.map((_,c)=>`<td><textarea rows="1" data-r="${r}" data-c="${c}"
-        oninput="updateTabCelula(${id},${ti},${r},${c},this)"
+        oninput="updateTabCelula(${id},${ti},${r},${c},this${e})"
         onfocus="autoGrow(this)"
-        onkeydown="tbKey(event,${id},${ti})"
-        onpaste="tbPaste(event,${id},${ti},${r},${c})">${esc(linha[c]||'')}</textarea></td>`).join('')
-    }<td class="tb-alca"><button class="tb-x" title="Remover linha" onclick="removeTabLinha(${id},${ti},${r})">✕</button></td></tr>`).join('');
+        onkeydown="tbKey(event,${id},${ti}${e})"
+        onpaste="tbPaste(event,${id},${ti},${r},${c}${e})">${esc(linha[c]||'')}</textarea></td>`).join('')
+    }<td class="tb-alca"><button class="tb-x" title="Remover linha" onclick="removeTabLinha(${id},${ti},${r}${e})">✕</button></td></tr>`).join('');
   // Cada coluna precisa de ~160px para o texto respirar. Com muitas colunas a
   // tabela passa da largura do card e rola de lado, em vez de espremer tudo.
   const minW = Math.max(280, nc * 160);
   return `<div class="tb-card" data-ti="${ti}" data-ncols="${nc}">
     <table class="tb-edit" style="min-width:${minW}px">${linhas}<tr class="tb-alcas">${alcas}<td></td></tr></table>
     <div class="tb-acts">
-      <button class="tb-btn" onclick="addTabLinha(${id},${ti})">+ linha</button>
-      <button class="tb-btn" onclick="addTabCol(${id},${ti})">+ coluna</button>
-      <button class="tb-btn tb-del-btn" onclick="removeTabela(${id},${ti})">✕ tabela</button>
+      <button class="tb-btn" onclick="addTabLinha(${id},${ti}${e})">+ linha</button>
+      <button class="tb-btn" onclick="addTabCol(${id},${ti}${e})">+ coluna</button>
+      <button class="tb-btn tb-del-btn" onclick="removeTabela(${id},${ti}${e})">✕ tabela</button>
     </div>
   </div>`;
 }
 // Tab anda entre as células (e no fim cria linha). O Enter fica valendo dentro
 // da célula: no Docs a célula tem várias linhas, e é assim que se monta o slide.
-window.tbKey = function(ev, id, ti){
+window.tbKey = function(ev, id, ti, escopo){
   if(ev.key!=='Tab') return;
   const inp=ev.target, card=inp.closest('.tb-card'); if(!card) return;
   const cels=[...card.querySelectorAll('.tb-edit textarea')];
@@ -3760,17 +3919,21 @@ window.tbKey = function(ev, id, ti){
   const alvo = ev.shiftKey ? cels[pos-1] : cels[pos+1];
   if(alvo){ alvo.focus(); alvo.select(); return; }
   if(!ev.shiftKey){
-    addTabLinha(id,ti);
-    setTimeout(()=>{ const n=document.querySelector(`#copy-card-${id} .tb-card[data-ti="${ti}"] .tb-edit tr:nth-last-child(2) textarea`); if(n) n.focus(); },30);
+    addTabLinha(id,ti,escopo);
+    setTimeout(()=>{
+      const raiz=rtEsc(escopo||'copy').raiz(id);
+      const n=raiz && raiz.querySelector(`.tb-card[data-ti="${ti}"] .tb-edit tr:nth-last-child(2) textarea`);
+      if(n) n.focus();
+    },30);
   }
 };
 // Colar do Sheets/Excel: TSV com várias linhas preenche a tabela a partir da célula.
-window.tbPaste = function(ev, id, ti, ri, ci){
+window.tbPaste = function(ev, id, ti, ri, ci, escopo){
   const txt=(ev.clipboardData||window.clipboardData).getData('text')||'';
   if(!/[\t\n]/.test(txt)) return;               // texto simples: comportamento normal
   ev.preventDefault();
   const linhas=txt.replace(/\r/g,'').replace(/\n+$/,'').split('\n').map(l=>l.split('\t'));
-  const t=ensureTab(id,ti); if(!t) return;
+  const t=ensureTab(id,ti,escopo); if(!t) return;
   const nCols=Math.max(t.cols.length, ci + Math.max(...linhas.map(l=>l.length)));
   while(t.cols.length<nCols) t.cols.push('');
   t.rows.forEach(r=>{ const cel=celsDa(r); while(cel.length<nCols) cel.push(''); });
@@ -3779,7 +3942,7 @@ window.tbPaste = function(ev, id, ti, ri, ci){
     while(tabGrade(t).length<=alvoR) t.rows.push({cels:t.cols.map(()=>'')});
     linha.forEach((v,k)=>{ if(ci+k<nCols) tabCelula(t, alvoR, ci+k, v); });
   });
-  agendarSaveCopy(); renderOneCard(id);
+  _tabRefaz(id,escopo);
   showToast(`Tabela preenchida com ${linhas.length} linha(s) coladas.`);
 };
 // A mesma grade renderizada (validação e leitura). Sem cabeçalho especial: as
@@ -3795,9 +3958,15 @@ window.setGabiStatus = function(id, val) {
   c.statusGabi = (c.statusGabi===val?'':val);
   // Aprovou = sinal verde para a producao. Entra na fila do aviso consolidado.
   if (c.statusGabi === 'aprovado') textoAprovadoParaProducao(id);
+  registrarAtividadeGabi('copy', id, c.statusGabi ? `marcou como “${gabiLabel(c.statusGabi)}”` : 'tirou a marcação de status');
   agendarSaveCopy(); renderOneCard(id);
 };
-window.resolverComentario = function(id, cid) { const c = ensureCopy(id); const cm = c.comentarios.find(x => x.id === cid); if (cm) cm.resolvido = true; agendarSaveCopy(); renderOneCard(id); };
+window.resolverComentario = function(id, cid) {
+  const c = ensureCopy(id); const cm = c.comentarios.find(x => x.id === cid);
+  if (cm) cm.resolvido = true;
+  registrarAtividadeGabi('copy', id, 'resolveu um comentário');
+  agendarSaveCopy(); renderOneCard(id);
+};
 window.focarComentario = function(cid) {
   const el = document.getElementById('cmt-' + cid);
   if (el) { el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('cmt-flash'); setTimeout(() => el.classList.remove('cmt-flash'), 1500); }
@@ -3817,6 +3986,7 @@ window.salvarCmt = function() {
     texto: txt, autor: 'Gabi', resolvido: false, ts: Date.now()
   });
   const id = pendingSel.itemId;
+  registrarAtividadeGabi('copy', id, 'pediu ajuste num trecho');
   agendarSaveCopy();
   hideCmtPopover();
   window.getSelection().removeAllRanges();
@@ -4173,8 +4343,18 @@ window.onDesignFiles=async function(id,input){
 };
 window.removeDesignMidia=function(id,i){ const d=ensureDesign(id); (d.midias||[]).splice(i,1); agendarSaveDesign(); renderDesignCard(id); };
 window.moveDesignMidia=function(id,i,dir){ const d=ensureDesign(id); const m=d.midias||[]; const j=i+dir; if(j<0||j>=m.length) return; [m[i],m[j]]=[m[j],m[i]]; carouselIdx[carKey(id,'ig')]=0; carouselIdx[carKey(id,'li')]=0; agendarSaveDesign(); renderDesignCard(id); };
-window.setDesignStatus=function(id,val){ const d=ensureDesign(id); d.statusDesign=(d.statusDesign===val?'':val); agendarSaveDesign(); renderDesignCard(id); };
-window.updateDesignComment=function(id,el){ const d=ensureDesign(id); d.comentarioDesign=el.value; agendarSaveDesign(); };
+window.setDesignStatus=function(id,val){
+  const d=ensureDesign(id); d.statusDesign=(d.statusDesign===val?'':val);
+  registrarAtividadeGabi('design', id, d.statusDesign ? `marcou a arte como “${designLabel(d.statusDesign)}”` : 'tirou a marcação da arte');
+  agendarSaveDesign(); renderDesignCard(id);
+};
+window.updateDesignComment=function(id,el){
+  const d=ensureDesign(id); d.comentarioDesign=el.value;
+  // oninput dispara a cada tecla — a fila é por conteúdo, então isto só renova
+  // o prazo dos 90s em vez de empilhar aviso.
+  if(el.value.trim()) registrarAtividadeGabi('design', id, 'escreveu um comentário na arte');
+  agendarSaveDesign();
+};
 // Envio de um email. Em condicoes normais usa o SDK; quando a aba esta fechando
 // o SDK nao termina a tempo, entao vai por sendBeacon (a REST do EmailJS aceita
 // o mesmo payload com o public key como user_id).
@@ -4182,7 +4362,13 @@ function enviarEmailJS(params, usarBeacon){
   if(!EMAILJS_SERVICE || !EMAILJS_TEMPLATE || !EMAILJS_PUBLIC) return Promise.resolve();
   // Mesma trava da gravação: rodando em localhost (teste) não dispara email de
   // verdade para ninguém — só registra no console o que teria sido enviado.
-  if(ehLocal()){ console.warn('🔧 Modo local — email NÃO enviado:', params.destino, '|', params.titulo); return Promise.resolve(); }
+  if(ehLocal()){
+    // Em teste o email não sai; mostra o que teria saído, inteiro, para dar
+    // para conferir a diagramação e a lista sem mandar nada para ninguém.
+    console.warn('🔧 Modo local — email NÃO enviado:', params.destino, '|', params.titulo, '\n' + params.lista);
+    (window.__emailsLocais = window.__emailsLocais || []).push(params);
+    return Promise.resolve();
+  }
   if(usarBeacon){
     // fetch com keepalive, e não sendBeacon: o corpo precisa ir como
     // application/json, o que exige preflight de CORS — e o sendBeacon não sabe
@@ -4242,8 +4428,11 @@ function enviarAvisoProducao(fechando){
   if(!aprovadosNaFila.length) return;
   const lista = aprovadosNaFila.slice(); aprovadosNaFila = [];
   const n = lista.length;
+  // Só a equipe de design. O Vitor não entra aqui: quando quem aprovou foi a
+  // Gabi, a mesma aprovação já vai no email de atividade dela; quando foi ele
+  // mesmo, receber a própria ação de volta é só ruído.
   notificarNovidades('Copy aprovado', lista, null, {
-    destinos: AVISAR_BONINA,
+    destinos: VISUALIZADOR_EMAILS,
     titulo: 'Texto liberado para produção',
     resumo: `A Gabi aprovou ${n} texto${n>1?'s':''} — já dá para começar a arte.`,
     beacon: !!fechando,
@@ -4262,6 +4451,69 @@ function textoAprovadoParaProducao(id){
   agendarAvisoProducao();
   agendarSaveCopy();
 }
+
+// ── A GABI MEXEU EM ALGUMA COISA → AVISA ─────────────────────────────────────
+// O Vitor coordena o processo e quer saber de tudo que ela toca (copy,
+// planejamento e artes); a Bonina só precisa saber das artes. O risco óbvio é
+// virar enxurrada: ela abre a validação, mexe em dez conteúdos e dispara dez
+// emails. Por isso a fila é POR CONTEÚDO, não por clique — cada conteúdo entra
+// uma vez só, acumulando o que ela fez nele, e sai UM email quando ela para de
+// mexer (90s) ou fecha a aba.
+let ativFila = new Map();          // chave "area#id" → { area, rotulo, oque:Set }
+let timerAtividade = null;
+const ATIV_AREAS = { copy:'Copy', design:'Artes', plan:'Planejamento' };
+function rotuloDoItem(area, id, docId){
+  const it=(gradeItems||[]).find(x=>x.id===id);
+  if(it) return `${it.data||''} — ${it.titulo||'(sem título)'}`;
+  // Vindo do planejador (iframe) a grade pode não ser a mesma que está na tela.
+  return docId ? `${docId} · conteúdo ${id}` : `conteúdo ${id}`;
+}
+// area: 'copy' | 'design' | 'plan'. `oque` é a frase curta do que ela fez.
+function registrarAtividadeGabi(area, id, oque, docId){
+  if(!ehCliente()) return;                       // só a Gabi alimenta esta fila
+  const chave = area + '#' + id + '#' + (docId||copyCiclo||'');
+  let reg = ativFila.get(chave);
+  if(!reg){ reg = { area, rotulo: rotuloDoItem(area, id, docId), oque: new Set() }; ativFila.set(chave, reg); }
+  reg.oque.add(oque);
+  clearTimeout(timerAtividade);
+  timerAtividade = setTimeout(()=>despacharAtividadeGabi(false), AVISO_ESPERA_MS);
+}
+function despacharAtividadeGabi(fechando){
+  clearTimeout(timerAtividade);
+  if(!ativFila.size) return;
+  const regs = [...ativFila.values()]; ativFila.clear();
+  const linha = (r) => `${ATIV_AREAS[r.area]||r.area} · ${r.rotulo} — ${[...r.oque].join('; ')}`;
+  const todas = regs.map(linha);
+  const artes = regs.filter(r=>r.area==='design').map(linha);
+  const n = todas.length;
+  // Vitor: tudo. Sempre um email só, com uma linha por conteúdo.
+  notificarNovidades('Atividade da Gabi', todas, null, {
+    destinos: EDITOR_EMAILS,
+    titulo: 'A Gabi mexeu no HUB',
+    resumo: `${n} novidade${n>1?'s':''} da Gabi — uma linha por conteúdo.`,
+    beacon: !!fechando,
+  });
+  // Bonina: só o que é arte, e só se houver.
+  if(artes.length){
+    notificarNovidades('Artes', artes, null, {
+      destinos: VISUALIZADOR_EMAILS,
+      titulo: 'A Gabi avaliou artes',
+      resumo: `${artes.length} arte${artes.length>1?'s':''} com retorno da Gabi.`,
+      beacon: !!fechando,
+    });
+  }
+  if(!fechando) showToast(`🔔 Aviso enviado (${n} conteúdo${n>1?'s':''}).`);
+}
+window.addEventListener('pagehide', ()=>despacharAtividadeGabi(true));
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') despacharAtividadeGabi(true); });
+// O planejamento roda num iframe (../planejador/). Ele avisa o HUB do que a Gabi
+// fez lá dentro e o aviso entra na MESMA fila — senão seriam dois canais soltos.
+window.addEventListener('message', (ev)=>{
+  if(ev.origin !== location.origin) return;                    // só o nosso iframe
+  const m = ev.data;
+  if(!m || m.tipo !== 'zelo:atividade-gabi') return;
+  registrarAtividadeGabi('plan', m.id, String(m.oque||'mexeu no planejamento').slice(0,80), m.docId);
+});
 
 // Conteúdos: envia de uma vez todas as artes novas (com mídia, não aprovadas e
 // ainda não avisadas). Uma notificação só, não uma por arte.

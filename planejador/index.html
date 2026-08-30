@@ -1018,9 +1018,24 @@ function atualizarCardsValidacao() {
   atualizarStats();
 }
 
+// ─── AVISO AO HUB ─────────────────────────────────────────────────────────────
+// O planejador roda dentro de um iframe do HUB. Quando a Gabi mexe aqui, quem
+// junta e manda o email é o HUB — assim o aviso do planejamento entra na MESMA
+// fila do copy e das artes, e não vira um segundo canal solto mandando email
+// por clique. Fora do iframe (aberto direto) o parent é a própria janela e a
+// mensagem simplesmente não encontra ouvinte.
+const LBL_ESTADO = { aprovado:'aprovou', ajuste:'pediu ajuste', bloqueado:'bloqueou', redirecionado:'redirecionou' };
+function avisarHub(id, oque) {
+  if (!isValidacao) return;                 // só o modo de validação é da Gabi
+  try {
+    window.parent.postMessage({ tipo:'zelo:atividade-gabi', id, oque, docId: DOC_ID }, window.location.origin);
+  } catch (e) { /* sem parent acessível: não é erro, só não há a quem avisar */ }
+}
+
 window.setStatus = function(id, status) {
   const prev = estados[id];
   if (prev === status) { estados[id] = ''; } else { estados[id] = status; }
+  avisarHub(id, estados[id] ? (LBL_ESTADO[estados[id]] || 'marcou') + ' no planejamento' : 'tirou a marcação no planejamento');
   const s = estados[id]||'';
   const card = document.getElementById('cc-'+id);
   if (!card) return;
@@ -1039,6 +1054,7 @@ window.setStatus = function(id, status) {
 
 window.saveObs = function(id) {
   observacoes[id] = document.getElementById('ta-'+id).value;
+  if ((observacoes[id]||'').trim()) avisarHub(id, 'escreveu uma observação no planejamento');
   agendarSalvamento();
 }
 
@@ -1057,6 +1073,7 @@ window.saveGabiField = function(id, field, value) {
   }
   const si = document.getElementById('si-'+id);
   if (si) { si.classList.add('show'); setTimeout(()=>si.classList.remove('show'),2000); }
+  avisarHub(id, 'editou o conteúdo no planejamento');
   agendarSalvamento();
 }
 
