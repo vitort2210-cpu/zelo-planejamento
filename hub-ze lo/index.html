@@ -2166,7 +2166,11 @@ function buildDocView() {
 // Lê o cache que o assistente já monta (todos os ciclos) e responde a uma única
 // pergunta: o que está esperando por MIM? Cada linha leva direto ao lugar certo,
 // já com o filtro aplicado. Substitui o e-mail automático que o Vitor desligou.
-let pendAberto = true;
+// Os três painéis do topo da Base de Dados abrem fechados: a aba é a porta de
+// entrada do HUB e três listas abertas de uma vez empurram todo o resto da
+// página para baixo. Quem quer ver, clica — e o número no cabeçalho já diz se
+// vale a pena.
+let pendAberto = false;
 let filtroPendente = null;   // status a aplicar assim que a aba de destino montar
 function pendDataPassou(d, ano){
   const m=String(d||'').match(/^(\d{1,2})\/(\d{1,2})/); if(!m) return false;
@@ -2319,7 +2323,7 @@ const IDEIA_TIPOS = [
   { k:'outro',    ico:'🗒️', lbl:'Outro' },
 ];
 const ideiaTipo = (k) => IDEIA_TIPOS.find(t=>t.k===k) || IDEIA_TIPOS[0];
-let ideiasPainelAberto = true, ideiaAbertaId = null, ideiasVerUsadas = false;
+let ideiasPainelAberto = false, ideiaAbertaId = null, ideiasVerUsadas = false;
 function ideiasPodeEditar(){ return ROLE==='editor' || ROLE==='cliente' || ROLE==='visualizador'; }
 function nomeCurto(email){ const e=String(email||''); return e.split('@')[0] || 'alguém'; }
 function renderIdeias(){
@@ -2395,7 +2399,7 @@ window.removeIdeia=function(id){ if(!ideiasPodeEditar()) return; if(!confirm('Re
 // As anotações usam o MESMO editor rico da aba Copy: negrito, tópico, emoji,
 // link, tabela e imagem no ponto do cursor. O que é guardado continua sendo uma
 // string pura com [tabela N]/[imagem N] marcando a posição — igualzinho ao copy.
-let atasPainelAberto = true, atasAbertaId = null;
+let atasPainelAberto = false, atasAbertaId = null;
 function atasPodeEditar(){ return ROLE==='editor' || ROLE==='cliente'; }
 function fmtDataAta(d){ if(!d) return '—'; const p=String(d).split('-'); return (p.length===3)?`${p[2]}/${p[1]}/${p[0]}`:d; }
 // A ata virou um documento rico: precisa das listas que o editor manipula.
