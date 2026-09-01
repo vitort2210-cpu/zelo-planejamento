@@ -2651,15 +2651,16 @@ function itensDoMes() {
   if (!mesFiltro) return gradeItems || [];
   return (gradeItems || []).filter(it => { const m = mesDoItem(it); return !m || m === mesFiltro; });
 }
-// Ao abrir um ciclo: se o mês de hoje está no ciclo, começa nele; senão, "Todos".
-function ajustarMesFiltroInicial() {
-  const ms = mesesDoCiclo();
-  const hoje = new Date().getMonth() + 1;
-  mesFiltro = ms.includes(hoje) ? hoje : null;
+// Ao abrir um ciclo, começa SEMPRE no ciclo inteiro. Abrir já filtrado no mês de
+// hoje escondia metade do bimestre sem avisar: a Gabi validava setembro inteiro,
+// via a lista acabar e não tinha como desconfiar que outubro existia. Filtrar é
+// escolha de quem está olhando — os chips estão ali para isso.
+function zerarFiltros() {
+  mesFiltro = null;
   statusFiltro = 'todos';
   buscaFiltro = '';
   // Vindo do painel de pendências: mostra o ciclo inteiro já na gaveta pedida.
-  if (filtroPendente) { statusFiltro = filtroPendente; mesFiltro = null; filtroPendente = null; }
+  if (filtroPendente) { statusFiltro = filtroPendente; filtroPendente = null; }
 }
 function mesBarHTML() {
   const ms = mesesDoCiclo();
@@ -3022,7 +3023,7 @@ function buildCopyTab() {
     : '';
   const fmtbar = (copyMode === 'edit') ? copyFmtbarHTML() : '';
   copyExpanded.clear();
-  ajustarMesFiltroInicial();
+  zerarFiltros();
   cont.innerHTML = `${bar}${hint}${fmtbar}${mesBarHTML()}${filtroBarHTML()}<div id="copy-cards"></div>`;
   renderCopyCards();
 }
@@ -4312,7 +4313,7 @@ function buildDesignTab(){
     ? `<div class="copy-hint" style="background:var(--z-teal-light);border-color:var(--z-teal)">📎 <strong>Toque num conteúdo</strong> para abrir e subir as artes (salvam sozinhas). Ao terminar, clique <strong>🔔 Avisar a Gabi das novidades</strong> uma vez — ela recebe <strong>um</strong> aviso com tudo, não um por arte.</div>`
     : `<div class="copy-hint"><strong>Toque num conteúdo</strong> para abrir, ver a arte e validar.</div>`;
   designExpanded.clear();
-  ajustarMesFiltroInicial();
+  zerarFiltros();
   cont.innerHTML=`${bar}${hint}${mesBarHTML()}${filtroBarHTML()}<div id="design-cards"></div>`;
   renderDesignCards();
 }

@@ -476,7 +476,7 @@ async function carregarDoFirebase() {
     for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); if (el) el.addEventListener('input', agendarSalvamento); }
   }
   document.getElementById("loading").classList.add("hidden");
-  ajustarMesInicial();   // abre já no mês de hoje, se ele fizer parte do ciclo
+  ajustarMesInicial();   // abre no bimestre inteiro, sem mês pré-selecionado
 
   if (isValidacao) {
     document.getElementById('gabi-banner').style.display = 'block';
@@ -568,10 +568,11 @@ function itemsDoMes() {
   if (!planMesFiltro) return items;
   return items.filter(it => { const d = parseDate(it.data || ''); return !d || d.mes === planMesFiltro; });
 }
+// Abre sempre no bimestre inteiro. Começar filtrado no mês de hoje escondia a
+// segunda metade do ciclo sem avisar — quem valida via a lista acabar e não
+// tinha como desconfiar que faltava mês. O filtro fica à disposição nos chips.
 function ajustarMesInicial() {
-  const ms = getMeses();
-  const hoje = new Date().getMonth() + 1;
-  planMesFiltro = ms.includes(hoje) ? hoje : null;
+  planMesFiltro = null;
 }
 function renderMesBars() {
   const ms = getMeses();
