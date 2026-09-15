@@ -284,7 +284,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .save-bar-ico{font-size:13px}
 .save-bar.saved{background:var(--z-teal-light);color:var(--z-teal);border-color:rgba(17,128,140,.3)}
 .save-bar.saving{background:var(--z-ocre-light);color:var(--z-ocre-dark);border-color:var(--z-ocre)}
-.save-bar.error{background:var(--z-terra-light);color:var(--z-terra);border-color:var(--z-terra)}
+.save-bar.error,.save-bar.erro{background:var(--z-terra-light);color:var(--z-terra);border-color:var(--z-terra)}
+/* Faixa de "não consegui ler a Base de Dados" — fica acima de tudo, porque
+   enquanto ela estiver na tela nada do que for digitado está sendo salvo. */
+.base-erro{position:fixed;top:0;left:0;right:0;z-index:5000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#B4472F;color:#fff;font-size:13px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.base-erro button{font-family:inherit;font-size:12px;font-weight:700;padding:6px 13px;border-radius:7px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer}
+.base-erro button:hover{background:#fff;color:#B4472F}
 /* ── VISUALIZAÇÃO DASHBOARD (Base de Dados) ─────────────────────────── */
 .dv-hero{background:linear-gradient(135deg,var(--z-teal),#0c5f68);color:#fff;border-radius:14px;padding:22px;margin-bottom:16px}
 .dv-hero-slogan{font-size:20px;font-weight:800;line-height:1.3}
@@ -735,7 +740,10 @@ mark.cmt:hover{background:#f6d9c4}
 .dz-erro-ico{font-size:13px;flex:0 0 auto}
 .dz-erro-x{margin-left:auto;border:none;background:none;color:#7A3B18;font-size:12px;cursor:pointer;padding:0 2px;line-height:1}
 .prev-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:.3rem 0 .5rem}
-@media(max-width:620px){.prev-grid{grid-template-columns:1fr}}
+/* Preview único: centraliza e deixa a arte crescer até um tamanho em que dá
+   para julgar o material, em vez de duas miniaturas lado a lado. */
+.prev-grid.um{grid-template-columns:minmax(0,440px);justify-content:center}
+@media(max-width:620px){.prev-grid,.prev-grid.um{grid-template-columns:1fr}}
 .car-block{min-width:0}
 .car-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--z-text-sec);margin-bottom:5px}
 .car-frame{background:#fff;border:0.5px solid var(--z-border);border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
@@ -1243,20 +1251,75 @@ function agendarSalvamento() {
 }
 
 // ── FIREBASE ─────────────────────────────────────────────────────────────────
+// TRAVA CONTRA PERDA DE DADOS. `salvarNoFirebase` faz setDoc do objeto `estado`
+// INTEIRO, ou seja, substitui o documento todo. Se a leitura inicial falhar,
+// `estado` fica com os valores padrão escritos aqui no código — e o primeiro
+// salvamento depois disso grava esses padrões por cima de tudo: materiais de
+// apoio, atas e brainstorming somem, e o que foi removido (concorrente, rede
+// social) reaparece. Foi exatamente isso em 13/09/2026, sem ninguém clicar em
+// nada: a leitura falhou e o migrarCiclos() logo abaixo disparou o salvamento
+// sozinho. Enquanto o documento não tiver sido lido com sucesso, NADA é gravado.
+let baseCarregada = false;
 async function carregarDoFirebase() {
-  try {
-    const snap = await getDoc(DOC_REF);
-    if (snap.exists()) {
-      const data = snap.data();
-      for (const key of Object.keys(data)) {
-        if (key in estado) estado[key] = data[key];
+  // Três tentativas: a falha típica é transitória (rede oscilando, token de
+  // sessão ainda sendo emitido, regra do Firestore negando por um instante).
+  for (let tentativa = 1; tentativa <= 3; tentativa++) {
+    try {
+      const snap = await getDoc(DOC_REF);
+      if (snap.exists()) {
+        const data = snap.data();
+        for (const key of Object.keys(data)) {
+          if (key in estado) estado[key] = data[key];
+        }
       }
+      baseCarregada = true;      // leu o servidor: agora dá para gravar com segurança
+      return true;
+    } catch (e) {
+      console.warn(`Falha ao ler a Base de Dados (tentativa ${tentativa}/3)`, e);
+      if (tentativa < 3) await new Promise(r => setTimeout(r, 700 * tentativa));
     }
-  } catch (e) {
-    console.warn('Firebase load failed, using defaults', e);
   }
+  baseCarregada = false;
+  return false;
 }
+// Faixa vermelha no topo: some com a dúvida de "será que salvou?".
+function avisarBaseNaoCarregada() {
+  let el = document.getElementById('base-erro');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'base-erro';
+    el.className = 'base-erro';
+    document.body.prepend(el);
+  }
+  el.innerHTML = `<span>⚠ <strong>Não consegui ler a Base de Dados.</strong> Para não apagar o que está salvo, as alterações desta aba NÃO estão sendo gravadas.</span>
+    <button onclick="recarregarBase()">Tentar de novo</button>`;
+  el.style.display = 'flex';
+}
+window.recarregarBase = async function(){
+  const el = document.getElementById('base-erro');
+  if (el) el.innerHTML = '<span>Lendo de novo…</span>';
+  if (await carregarDoFirebase()) {
+    if (el) el.style.display = 'none';
+    buildHub();
+    showToast('✓ Base de Dados carregada. Já dá para editar.');
+  } else {
+    avisarBaseNaoCarregada();
+  }
+};
 async function salvarNoFirebase() {
+  // Esta checagem vem ANTES da trava de localhost de propósito: é a que protege
+  // o documento de verdade, e deixá-la em primeiro lugar permite exercitá-la em
+  // teste. Sem leitura confirmada, gravar significaria escrever os padrões do
+  // código por cima do documento real.
+  if (!baseCarregada) {
+    console.error('Gravação da Base de Dados bloqueada: o documento não foi lido com sucesso.');
+    const el = document.getElementById('save-status');
+    if (el) { el.textContent = '⚠ não salvo'; el.classList.remove('saving'); }
+    const bar = document.getElementById('save-bar');
+    if (bar) { bar.className = 'save-bar erro'; bar.innerHTML = '<span class="save-bar-ico">⚠</span> Não salvo — a Base de Dados não foi carregada'; }
+    avisarBaseNaoCarregada();
+    return;
+  }
   if (bloqueiaGravacaoLocal()) return;
   try {
     // Registra quem salvou — a Visualização mostra isso numa faixa no topo, para
@@ -4388,7 +4451,8 @@ function carouselHTML(id,plat,d){
   const foot=(imgs.length>1)
     ? `<div class="car-foot"><div class="car-dots">${imgs.map((_,i)=>`<span class="car-dot${i===0?' on':''}"></span>`).join('')}</div><span class="car-counter">1/${imgs.length}</span></div>`
     : '';
-  const label = plat==='ig' ? '📷 Instagram' : '💼 LinkedIn';
+  const n = imgs.length;
+  const label = n ? `🖼 Arte${n>1?`s — ${n} peças`:''}` : '🖼 Arte';
   return `<div class="car-block">
     <div class="car-label">${label}</div>
     <div class="car-frame ${plat==='ig'?'frame-ig':'frame-li'}" id="car-${id}-${plat}">${head}<div class="car-stage">${body}</div>${foot}</div>
@@ -4416,7 +4480,10 @@ function designCardInner(it,d){
       </div>
       <div class="cc-head-right">${miniDesignStatus(d)}${openHint('Ver a arte')}</div>
     </div>`;
-  const previews=`<div class="prev-grid">${carouselHTML(it.id,'ig',d)}${carouselHTML(it.id,'li',d)}</div>`;
+  // Um preview só. Antes havia Instagram e LinkedIn lado a lado, mas a arte é a
+  // mesma nos dois — eram duas cópias do mesmo arquivo ocupando o dobro do
+  // espaço e nenhuma das duas dava para ver direito. Com uma só, ela cabe maior.
+  const previews=`<div class="prev-grid um">${carouselHTML(it.id,'ig',d)}</div>`;
   const baixar=baixarAreaHTML(it.id,d);
   let corpo;
   if(designMode==='edit'){
@@ -4522,7 +4589,10 @@ window.onDesignFiles=async function(id,input){
   if(prog) prog.textContent='';
   agendarSaveDesign(); renderDesignCard(id);
   if(erro) mostrarErroUpload(id, erro);
-  if(ok) showToast(`✓ ${ok} arquivo(s) enviado(s)`);
+  if(ok){
+    showToast(`✓ ${ok} arquivo(s) enviado(s)`);
+    registrarAtividadeBonina(id, `subiu ${ok} arquivo${ok>1?'s':''}`);
+  }
 };
 window.removeDesignMidia=function(id,i){ const d=ensureDesign(id); (d.midias||[]).splice(i,1); agendarSaveDesign(); renderDesignCard(id); };
 window.moveDesignMidia=function(id,i,dir){ const d=ensureDesign(id); const m=d.midias||[]; const j=i+dir; if(j<0||j>=m.length) return; [m[i],m[j]]=[m[j],m[i]]; carouselIdx[carKey(id,'ig')]=0; carouselIdx[carKey(id,'li')]=0; agendarSaveDesign(); renderDesignCard(id); };
@@ -4689,6 +4759,39 @@ function despacharAtividadeGabi(fechando){
 }
 window.addEventListener('pagehide', ()=>despacharAtividadeGabi(true));
 document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') despacharAtividadeGabi(true); });
+
+// ── A BONINA SUBIU ARTE → AVISA O VITOR ──────────────────────────────────────
+// Espelho exato da fila da Gabi. Antes, subir arquivo não avisava ninguém: só
+// existia o botão "🔔 Enviar", que depende de alguém lembrar de apertar — e
+// enquanto não apertassem, o material ficava pronto no HUB sem ninguém saber.
+// Mesma regra de sempre: uma linha por conteúdo, um email só.
+let bonFila = new Map();
+let timerBonina = null;
+function registrarAtividadeBonina(id, oque){
+  if(!ehVisualizador()) return;               // só a equipe de design alimenta esta fila
+  const chave = id + '#' + (copyCiclo||'');
+  let reg = bonFila.get(chave);
+  if(!reg){ reg = { rotulo: rotuloDoItem('design', id, copyCiclo), oque: new Set() }; bonFila.set(chave, reg); }
+  reg.oque.add(oque);
+  clearTimeout(timerBonina);
+  timerBonina = setTimeout(()=>despacharAtividadeBonina(false), AVISO_ESPERA_MS);
+}
+function despacharAtividadeBonina(fechando){
+  clearTimeout(timerBonina);
+  if(!bonFila.size) return;
+  const regs = [...bonFila.values()]; bonFila.clear();
+  const lista = regs.map(r => `${r.rotulo} — ${[...r.oque].join('; ')}`);
+  const n = lista.length;
+  notificarNovidades('Artes novas', lista, null, {
+    destinos: EDITOR_EMAILS,
+    titulo: 'A Bonina subiu material',
+    resumo: `${n} conteúdo${n>1?'s':''} com arte nova no HUB.`,
+    beacon: !!fechando,
+  });
+  if(!fechando) showToast(`🔔 Vitor avisado (${n} conteúdo${n>1?'s':''}).`);
+}
+window.addEventListener('pagehide', ()=>despacharAtividadeBonina(true));
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='hidden') despacharAtividadeBonina(true); });
 // O planejamento roda num iframe (../planejador/). Ele avisa o HUB do que a Gabi
 // fez lá dentro e o aviso entra na MESMA fila — senão seriam dois canais soltos.
 window.addEventListener('message', (ev)=>{
@@ -5523,9 +5626,11 @@ async function iniciarHub(role, email) {
   ROLE = role; USER_EMAIL = email;
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('loading').classList.remove('hide');
-  await carregarDoFirebase();
-  // Cadastra/normaliza os 6 ciclos temáticos de 2027 (uma vez, salvo pelo editor).
-  if (role === 'editor' && migrarCiclos()) agendarSalvamento();
+  const leu = await carregarDoFirebase();
+  // Só normaliza os ciclos se o documento foi lido de verdade. Rodando sobre os
+  // valores padrão, esta linha salvava sozinha e apagava a Base de Dados inteira.
+  if (leu && role === 'editor' && migrarCiclos()) agendarSalvamento();
+  if (!leu) avisarBaseNaoCarregada();
   document.getElementById('loading').classList.add('hide');
   buildHub();
   // ponto de partida do histórico: daqui para trás, o voltar sai do HUB
