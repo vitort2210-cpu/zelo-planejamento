@@ -565,6 +565,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pd-panel.ok{border-color:var(--z-border)}
 .pd-head{display:flex;align-items:center;gap:9px;padding:11px 14px;cursor:pointer;background:var(--z-terra-light)}
 .pd-panel.ok .pd-head{background:var(--z-bg);cursor:default}
+.pd-panel.calmo{border-color:var(--z-border)}
+.pd-panel.calmo .pd-head{background:var(--z-bg)}
 .pd-ico{font-size:15px}
 .pd-t{font-size:13px;font-weight:800;color:var(--z-text);flex:1}
 .pd-total{font-size:11px;font-weight:800;background:var(--z-terra);color:#fff;border-radius:20px;padding:2px 9px}
@@ -584,6 +586,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pd-txt{flex:1;font-size:12.5px;color:var(--z-text);line-height:1.35}
 .pd-go{font-size:13px;color:var(--z-text-sec)}
 .pd-row:hover .pd-go{color:var(--z-teal)}
+.pd-secao{font-size:11px;font-weight:800;color:var(--z-text-sec);padding:12px 10px 2px;margin-top:4px;border-top:1px dashed var(--z-border)}
+.pd-secao span{font-weight:600}
+.pd-row.outro .pd-txt{color:var(--z-text-sec)}
+.pd-row.outro .pd-n{background:transparent;border:1px solid var(--z-border)}
+.pd-quem{font-weight:700;color:var(--z-text)}
+.pd-vazio{font-size:12.5px;color:var(--z-text-sec);padding:9px 10px}
+.pd-outros{font-size:10.5px;font-weight:700;color:var(--z-text-sec);border:1px solid var(--z-border);border-radius:20px;padding:2px 8px;background:#fff}
 /* Busca por título + filtro por situação */
 .filtro-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 1rem}
 .busca-wrap{position:relative;display:flex;align-items:center;flex:1 1 240px;max-width:340px}
@@ -705,6 +714,9 @@ mark.cmt.cmt-flash{background:#F6C9A8;box-shadow:0 0 0 2px var(--z-terra)}
 .fmt-emo-row{display:flex;flex-wrap:wrap;gap:2px}
 .fmt-emo{width:32px;height:30px;border:none;background:none;cursor:pointer;font-size:18px;border-radius:6px;line-height:1}
 .fmt-emo:hover{background:var(--z-teal-light)}
+.fmt-emo-busca{width:100%;box-sizing:border-box;font:inherit;font-size:12.5px;padding:6px 9px;border:1px solid var(--z-border);border-radius:7px;margin-bottom:6px;position:sticky;top:0;background:#fff;z-index:1}
+.fmt-emo-busca:focus{outline:none;border-color:var(--z-teal)}
+.fmt-emojis [id$="-res"]:not(:empty),.fmt-emojis [id$="-rec"]:not(:empty){margin-bottom:6px}
 /* Dentro de uma ata a barra fica no corpo do item — grudar no topo da página
    faria ela flutuar por cima do painel inteiro. */
 .fmtbar.fmt-inline{position:static;box-shadow:none;margin-bottom:8px;background:var(--z-bg)}
@@ -2159,9 +2171,12 @@ function buildDocView() {
 // vale a pena.
 let pendAberto = false;
 let filtroPendente = null;   // status a aplicar assim que a aba de destino montar
-function pendDataPassou(d, ano){
+// A métrica só é cobrada depois de uma semana no ar: antes disso o número ainda está
+// mudando, e o Vitor espera de propósito. Regra dele, não da plataforma.
+const DIAS_CARENCIA_METRICA = 7;
+function pendDataPassou(d, ano, carencia){
   const m=String(d||'').match(/^(\d{1,2})\/(\d{1,2})/); if(!m) return false;
-  const hoje=new Date(); const alvo=new Date(ano || anoAtivo, +m[2]-1, +m[1]);
+  const hoje=new Date(); const alvo=new Date(ano || anoAtivo, +m[2]-1, +m[1] + (carencia||0));
   return alvo <= hoje;
 }
 // ── Janela do painel: só o ciclo de agora e o seguinte ────────────────────────
@@ -2191,7 +2206,8 @@ function ciclosDoPainel(){
 }
 function pendCalcular(){
   const linhas=[];
-  const add=(ico,txt,n,area,docId,filtro,urg)=>{ if(n>0) linhas.push({ico,txt,n,area,docId,filtro,urg}); };
+  // `dono`: 'voce' quando quem age é quem está olhando; senão, o nome de quem age.
+  const add=(ico,txt,n,area,docId,filtro,urg,dono)=>{ if(n>0) linhas.push({ico,txt,n,area,docId,filtro,urg,dono:dono||'voce'}); };
   ciclosDoPainel().forEach(c=>{
     const its=c.items||[];
     const temTexto=(id)=>{ const x=c.copy[id]; return x && (x.legenda||x.reels||x.blog||(Array.isArray(x.slides)&&x.slides.some(s=>s.texto))); };
@@ -2217,14 +2233,17 @@ function pendCalcular(){
       add('✅', 'Textos aprovados, prontos para produzir', its.filter(it=>gabi(it.id)==='aprovado' && !temArte(it.id)).length, 'copy', c.docId, 'aprovado', true);
       add('✏️', 'Artes com ajuste pedido pela Gabi', its.filter(it=>des(it.id)==='ajustes_necessarios').length, 'design', c.docId, 'ajustes', true);
     } else {
+      // O Vitor coordena, então vê o processo inteiro — mas separado: o que está NA MÃO
+      // dele conta no número; o que está com a Gabi ou com a Bonina fica numa fila à
+      // parte. Misturar as duas fazia a fila dos outros parecer cobrança para ele.
       add('✏️', 'Textos com ajuste pedido pela Gabi', its.filter(it=>gabi(it.id)==='revisao_necessaria').length, 'copy', c.docId, 'ajustes', true);
-      add('✏️', 'Artes com ajuste pedido pela Gabi', its.filter(it=>des(it.id)==='ajustes_necessarios').length, 'design', c.docId, 'ajustes', true);
       add('📝', 'Conteúdos ainda sem copy', its.filter(it=>!temTexto(it.id)).length, 'copy', c.docId, 'semtexto', false);
-      add('🖼', 'Textos aprovados ainda sem arte', its.filter(it=>gabi(it.id)==='aprovado' && !temArte(it.id)).length, 'design', c.docId, 'semtexto', false);
-      add('📅', 'Planejamento esperando a Gabi validar', planPendente, 'plan', c.docId, null, false);
-      add('⏳', 'Textos esperando a Gabi validar', its.filter(it=>textoPronto(it.id)).length, 'copy', c.docId, 'pendente', false);
-      add('⏳', 'Artes esperando a Gabi validar', its.filter(it=>artePronta(it.id)).length, 'design', c.docId, 'pendente', false);
-      add('📊', 'Já postados e ainda sem métrica', its.filter(it=>pendDataPassou(it.data, c.ano) && (temTexto(it.id)||temArte(it.id)) && !comDados(it.id)).length, 'metricas', c.docId, null, false);
+      add('📊', `No ar há mais de ${DIAS_CARENCIA_METRICA} dias e ainda sem métrica`, its.filter(it=>pendDataPassou(it.data, c.ano, DIAS_CARENCIA_METRICA) && (temTexto(it.id)||temArte(it.id)) && !comDados(it.id)).length, 'metricas', c.docId, null, false);
+      add('📅', 'planejamento para validar', planPendente, 'plan', c.docId, null, false, 'Gabi');
+      add('⏳', 'textos para validar', its.filter(it=>textoPronto(it.id)).length, 'copy', c.docId, 'pendente', false, 'Gabi');
+      add('⏳', 'artes para validar', its.filter(it=>artePronta(it.id)).length, 'design', c.docId, 'pendente', false, 'Gabi');
+      add('🖼', 'textos aprovados ainda sem arte', its.filter(it=>gabi(it.id)==='aprovado' && !temArte(it.id)).length, 'design', c.docId, 'semtexto', false, 'Bonina');
+      add('✏️', 'artes com ajuste pedido pela Gabi', its.filter(it=>des(it.id)==='ajustes_necessarios').length, 'design', c.docId, 'ajustes', false, 'Bonina');
     }
   });
   linhas.sort((a,b)=>(b.urg?1:0)-(a.urg?1:0));
@@ -2237,9 +2256,11 @@ function renderPendencias(){
     return;
   }
   const linhas=pendCalcular();
-  const total=linhas.reduce((a,l)=>a+l.n,0);
+  // O número do cabeçalho é só o que está na mão de quem olha; o resto é contexto.
+  const total=linhas.filter(l=>l.dono==='voce').reduce((a,l)=>a+l.n,0);
+  const totalOutros=linhas.filter(l=>l.dono!=='voce').reduce((a,l)=>a+l.n,0);
   const janela = ciclosDoPainel().map(c=>c.periodo).filter(Boolean).join(' · ');
-  if(!total){
+  if(!total && !totalOutros){
     wrap.innerHTML=`<div class="pd-panel ok"><div class="pd-head"><span class="pd-ico">✅</span><span class="pd-t">Tudo em dia por aqui</span>${janela?`<span class="pd-janela">${esc(janela)}</span>`:''}</div></div>`;
     return;
   }
@@ -2255,31 +2276,42 @@ function renderPendencias(){
   // linha virava ruído. Agora o nome é o cabeçalho do grupo e a linha fica limpa.
   let corpo = '';
   if(pendAberto){
-    const ordem=[], porCiclo=new Map();
-    linhas.forEach((l,i)=>{
-      if(!porCiclo.has(l.docId)){ porCiclo.set(l.docId, []); ordem.push(l.docId); }
-      porCiclo.get(l.docId).push({l,i});
-    });
-    corpo = `<div class="pd-body">${ordem.map(docId=>{
-      const nome=nomeCiclo(docId);
-      const cab = nome ? `<div class="pd-grupo">${esc(nome)}</div>` : '';
-      return cab + porCiclo.get(docId).map(({l,i})=>
-        `<button class="pd-row${l.urg?' urg':''}" onclick="irPend(${i})">
+    // `i` é o índice em __pend, que é o que irPend usa — por isso agrupa guardando-o.
+    const grupos = (filtro) => {
+      const ordem=[], porCiclo=new Map();
+      linhas.forEach((l,i)=>{
+        if(!filtro(l)) return;
+        if(!porCiclo.has(l.docId)){ porCiclo.set(l.docId, []); ordem.push(l.docId); }
+        porCiclo.get(l.docId).push({l,i});
+      });
+      return ordem.map(docId=>{
+        const nome=nomeCiclo(docId);
+        const cab = nome ? `<div class="pd-grupo">${esc(nome)}</div>` : '';
+        return cab + porCiclo.get(docId).map(({l,i})=>{
+          const outro = l.dono!=='voce';
+          const txt = outro ? `${l.ico} <span class="pd-quem">${esc(l.dono)}</span> · ${esc(l.txt)}` : `${l.ico} ${esc(l.txt)}`;
+          return `<button class="pd-row${l.urg&&!outro?' urg':''}${outro?' outro':''}" onclick="irPend(${i})">
            <span class="pd-n">${l.n}</span>
-           <span class="pd-txt">${l.ico} ${esc(l.txt)}</span>
+           <span class="pd-txt">${txt}</span>
            <span class="pd-go">→</span>
-         </button>`).join('');
-    }).join('')}</div>`;
+         </button>`;
+        }).join('');
+      }).join('');
+    };
+    const minhas = total ? grupos(l=>l.dono==='voce') : `<div class="pd-vazio">✅ Nada na sua mão agora.</div>`;
+    const outras = totalOutros ? `<div class="pd-secao">Com os outros <span>— não depende de você</span></div>` + grupos(l=>l.dono!=='voce') : '';
+    corpo = `<div class="pd-body">${minhas}${outras}</div>`;
   }
   // A faixa da janela explica por que só esses ciclos aparecem — é legenda da
   // lista. Com o painel fechado ela sobrava sozinha embaixo do cabeçalho e era
   // isso que deixava aquela faixa vazia.
   const faixa = (pendAberto && janela)
     ? `<div class="pd-janela-bar">Mostrando só o ciclo atual e o próximo</div>` : '';
-  wrap.innerHTML=`<div class="pd-panel">
+  wrap.innerHTML=`<div class="pd-panel${total?'':' calmo'}">
     <div class="pd-head" onclick="togglePend()">
-      <span class="pd-ico">🧭</span><span class="pd-t">O que está esperando você</span>
-      <span class="pd-total">${total}</span><span class="pd-chev">${pendAberto?'▾':'▸'}</span>
+      <span class="pd-ico">${total?'🧭':'✅'}</span><span class="pd-t">${total?'O que está esperando você':'Nada na sua mão agora'}</span>
+      ${totalOutros?`<span class="pd-outros" title="Itens com a Gabi ou com a Bonina">${totalOutros} com os outros</span>`:''}
+      ${total?`<span class="pd-total">${total}</span>`:''}<span class="pd-chev">${pendAberto?'▾':'▸'}</span>
     </div>${faixa}${corpo}</div>`;
 }
 window.togglePend = function(){ pendAberto=!pendAberto; renderPendencias(); };
@@ -3194,6 +3226,19 @@ window.fmtCopy=function(ev,kind,escopo){
   ev.preventDefault();
   const el=copyFmtTarget(escopo); if(!el){ showToast('Clique no campo de texto primeiro.'); return; }
   if(kind==='bullet'){ rtEscrever(el, '\n• '); return; }
+  // A linha que separa título de texto nos slides — o mesmo traço que já se usava à mão.
+  if(kind==='linha'){ rtEscrever(el, '\n' + '─'.repeat(27) + '\n'); return; }
+  // Sublinhado: o caractere combinante U+0332 depois de cada letra. Como o negrito, é
+  // texto puro — sobrevive ao colar no Instagram e no LinkedIn. E combina com negrito e
+  // itálico: a conversão deles preserva marcas combinantes.
+  if(kind==='underline'){
+    const trecho=rtTextoSelecionado(el);
+    if(!trecho){ showToast('Selecione o texto para sublinhar.'); return; }
+    rtEscrever(el, trecho.includes('̲')
+      ? trecho.split('̲').join('')
+      : [...trecho].map(ch => (ch === '\n' || _ehAcento(ch)) ? ch : ch + '̲').join(''));
+    return;
+  }
   if(kind==='link'){
     const url=(prompt('Cole o link (entra como texto — em legenda de rede social o link não fica clicável):')||'').trim();
     if(!url) return;
@@ -3229,8 +3274,76 @@ window.fmtImagem=function(ev,escopo){
   const a=fmtAlvoArte('imagem',escopo); if(!a) return;
   window.rtInserirImagem(ev, a.id, a.block, a.escopo);
 };
-window.fmtEmojiToggle=function(ev,alvo){ ev.preventDefault(); const el=document.getElementById(alvo||'fmt-emojis'); if(el) el.style.display=(el.style.display==='none'?'block':'none'); };
-window.fmtEmoji=function(ev,emo,escopo){ ev.preventDefault(); const el=copyFmtTarget(escopo); if(!el){ showToast('Clique no campo de texto primeiro.'); return; } rtEscrever(el, emo); };
+window.fmtEmojiToggle=function(ev,alvo,escopo){
+  ev.preventDefault();
+  const el=document.getElementById(alvo||'fmt-emojis'); if(!el) return;
+  const abrir = el.style.display==='none';
+  el.style.display = abrir ? 'block' : 'none';
+  if(abrir) desenharRecentes(alvo, escopo);
+};
+// ── Emojis: recentes e busca ──────────────────────────────────────────────────
+// A busca vai no catálogo inteiro (≈1.900 emojis com nome em português, do
+// emojibase-data), baixado só na primeira busca. A grade fixa fica para os de sempre.
+const EMOJI_CATALOGO_URL = 'https://cdn.jsdelivr.net/npm/emojibase-data@15.3.1/pt/compact.json';
+const EMOJI_RECENTES_KEY = 'zelo-hub-emojis-recentes';
+let emojiCatalogo = null, emojiCarregando = null;
+function carregarCatalogoEmoji(){
+  if (emojiCatalogo) return Promise.resolve(emojiCatalogo);
+  if (!emojiCarregando) emojiCarregando = fetch(EMOJI_CATALOGO_URL).then(r => r.json()).then(d => {
+    emojiCatalogo = d.filter(e => e.unicode && e.label).map(e => ({ u: e.unicode, k: normTxt(e.label + ' ' + (e.tags || []).join(' ')) }));
+    return emojiCatalogo;
+  }).catch(err => { emojiCarregando = null; throw err; });
+  return emojiCarregando;
+}
+function emojisRecentes(){ try { return JSON.parse(localStorage.getItem(EMOJI_RECENTES_KEY) || '[]'); } catch(e){ return []; } }
+function guardarEmojiRecente(emo){
+  try { localStorage.setItem(EMOJI_RECENTES_KEY, JSON.stringify([emo, ...emojisRecentes().filter(x => x !== emo)].slice(0, 16))); } catch(e){}
+}
+function botaoEmoji(emo, escopo){
+  const s = escopo ? `,'${escopo}'` : '';
+  return `<button type="button" class="fmt-emo" title="${esc(emo)}" onmousedown="fmtEmoji(event,'${emo}'${s})">${emo}</button>`;
+}
+function desenharRecentes(eid, escopo){
+  const box = document.getElementById(eid + '-rec'); if(!box) return;
+  const l = emojisRecentes();
+  box.innerHTML = l.length ? `<div class="fmt-emo-lbl">Recentes</div><div class="fmt-emo-row">${l.map(e => botaoEmoji(e, escopo)).join('')}</div>` : '';
+}
+// Clicar na caixa de busca tira o foco do texto. Guarda o editor e a posição do cursor
+// ANTES disso, para o emoji escolhido na busca entrar onde o cursor estava.
+let fmtCursor = null;
+window.fmtGuardarCursor = function(){
+  const a = document.activeElement, ed = a && a.closest ? a.closest('.rt-editor') : null;
+  const sel = window.getSelection();
+  if (ed && sel.rangeCount) fmtCursor = { ed, range: sel.getRangeAt(0).cloneRange() };
+};
+window.fmtEmojiBuscar = function(inp, eid, escopo){
+  const q = normTxt(inp.value).trim();
+  const res = document.getElementById(eid + '-res'); if(!res) return;
+  if (!q) { res.innerHTML = ''; return; }
+  if (!emojiCatalogo) res.innerHTML = '<div class="fmt-emo-lbl">Buscando…</div>';
+  carregarCatalogoEmoji().then(cat => {
+    if (normTxt(inp.value).trim() !== q) return;   // o texto mudou enquanto carregava
+    const termos = q.split(/\s+/);
+    const achados = cat.filter(e => termos.every(t => e.k.includes(t))).slice(0, 56);
+    res.innerHTML = achados.length
+      ? `<div class="fmt-emo-row">${achados.map(e => botaoEmoji(e.u, escopo)).join('')}</div>`
+      : `<div class="fmt-emo-lbl">Nenhum emoji para “${esc(inp.value)}”.</div>`;
+  }).catch(() => { res.innerHTML = '<div class="fmt-emo-lbl">Não consegui carregar a busca agora — use a grade abaixo.</div>'; });
+};
+window.fmtEmoji=function(ev,emo,escopo){
+  ev.preventDefault();
+  let el=copyFmtTarget(escopo);
+  // Veio da busca: o foco está na caixa, então volta para o texto onde o cursor estava.
+  if(!el && fmtCursor && fmtCursor.ed.isConnected && (!escopo || (fmtCursor.ed.dataset.rt||'copy') === escopo)){
+    el = fmtCursor.ed; el.focus({ preventScroll:true });
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(fmtCursor.range);
+  }
+  if(!el){ showToast('Clique no campo de texto primeiro.'); return; }
+  rtEscrever(el, emo);
+  guardarEmojiRecente(emo);
+  const sel = window.getSelection();
+  if (sel.rangeCount) fmtCursor = { ed: el, range: sel.getRangeAt(0).cloneRange() };
+};
 // Emojis agrupados: os de tópico/seta ficam primeiro porque são os mais usados
 // para montar lista em legenda (o Instagram não tem marcador nativo).
 const FMT_EMOJI_GRUPOS=[
@@ -3253,13 +3366,18 @@ function fmtbarHTML(escopo, chave, dica, inline){
   return `<div class="fmtbar${inline?' fmt-inline':''}">
     <button class="fmtb" title="Negrito (funciona ao colar no Instagram/LinkedIn)" onmousedown="fmtCopy(event,'bold'${s})"><strong>N</strong></button>
     <button class="fmtb" title="Itálico" onmousedown="fmtCopy(event,'italic'${s})"><em style="font-family:Georgia,serif">I</em></button>
+    <button class="fmtb" title="Sublinhado (funciona ao colar no Instagram/LinkedIn) — Ctrl+U" onmousedown="fmtCopy(event,'underline'${s})"><u>S</u></button>
     <button class="fmtb" title="Marcador (•)" onmousedown="fmtCopy(event,'bullet'${s})">•</button>
+    <button class="fmtb" title="Linha separadora (entre título e texto)" onmousedown="fmtCopy(event,'linha'${s})">―</button>
     <button class="fmtb" title="${dicaTab}" onmousedown="fmtTabela(event${s})">⊞</button>
     <button class="fmtb" title="${dicaImg}" onmousedown="fmtImagem(event${s})">🖼</button>
     <button class="fmtb" title="Inserir link (como texto)" onmousedown="fmtCopy(event,'link'${s})">🔗</button>
-    <button class="fmtb" title="Emojis" onmousedown="fmtEmojiToggle(event,'${eid}')">😀</button>
-    <span class="fmt-hint">${dica||'selecione o texto e clique em N / I'}</span>
-    <div class="fmt-emojis" id="${eid}" style="display:none">${FMT_EMOJI_GRUPOS.map(([lbl,lista])=>
+    <button class="fmtb" title="Emojis" onmousedown="fmtEmojiToggle(event,'${eid}'${s})">😀</button>
+    <span class="fmt-hint">${dica||'selecione o texto e clique em N / I / S'}</span>
+    <div class="fmt-emojis" id="${eid}" style="display:none">
+      <input type="search" class="fmt-emo-busca" id="${eid}-q" placeholder="Buscar emoji — ex.: seta, coração, livro" autocomplete="off"
+             onmousedown="fmtGuardarCursor()" oninput="fmtEmojiBuscar(this,'${eid}'${s})">
+      <div id="${eid}-res"></div><div id="${eid}-rec"></div>${FMT_EMOJI_GRUPOS.map(([lbl,lista])=>
       `<div class="fmt-emo-grupo"><div class="fmt-emo-lbl">${lbl}</div><div class="fmt-emo-row">${
         lista.map(e=>`<button type="button" class="fmt-emo" title="${e}" onmousedown="fmtEmoji(event,'${e}'${s})">${e}</button>`).join('')
       }</div></div>`).join('')}</div>
@@ -3620,7 +3738,7 @@ window.rtKeydown = function(ev, el){
   // viraria <b> e não sobreviveria ao colar no Instagram).
   if((ev.ctrlKey || ev.metaKey) && !ev.altKey){
     const k = ev.key.toLowerCase();
-    if(k === 'b' || k === 'i'){ fmtCopy(ev, k === 'b' ? 'bold' : 'italic'); }
+    if(k === 'b' || k === 'i' || k === 'u'){ fmtCopy(ev, { b:'bold', i:'italic', u:'underline' }[k]); }
   }
 };
 window.rtPaste = function(ev, el){
