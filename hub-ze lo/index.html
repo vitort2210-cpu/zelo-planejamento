@@ -603,6 +603,28 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .data-ou{font-size:11.5px;color:var(--z-text-sec);margin:16px 0 6px;text-align:center}
 .data-nota{font-size:11.5px;color:var(--z-text-sec);margin:14px 0 0}
 .data-fechar{display:block;margin:10px 0 0 auto;font:inherit;font-size:12.5px;background:none;border:none;color:var(--z-text-sec);cursor:pointer;text-decoration:underline}
+.rt-w-col{display:block;margin:6px 0}
+.col-card{border:1px solid var(--z-teal);border-radius:10px;padding:10px;background:var(--z-teal-light)}
+.col-grid{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:8px}
+.col-col{background:#fff;border-radius:8px;padding:8px 9px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.col-num{display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--z-teal)}
+.col-x{background:none;border:none;color:var(--z-text-sec);cursor:pointer;font-size:11px;padding:0 2px;opacity:.6}
+.col-x:hover{opacity:1;color:#B4472F}
+.col-lbl{display:flex;flex-direction:column;gap:3px;font-size:10.5px;font-weight:700;color:var(--z-text-sec)}
+.col-lbl textarea{font:inherit;font-size:12.5px;font-weight:400;color:var(--z-text);border:1px solid var(--z-border);border-radius:6px;padding:5px 7px;resize:none;overflow:hidden;min-height:30px;width:100%;box-sizing:border-box;line-height:1.4}
+.col-lbl textarea:focus{outline:none;border-color:var(--z-teal)}
+/* o campo de texto do card de copy tem min-height de 64px por um seletor com id; o
+   campo de coluna é curto (ícone, título) e precisa da mesma força para ficar baixo */
+#copy-cards .col-lbl textarea{min-height:32px;padding:5px 7px;font-size:12.5px}
+@media (max-width:640px){ .col-grid{grid-template-columns:1fr} }
+.vcol-wrap{display:block}
+.vcol{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:10px;margin:8px 0;padding:12px;border:1px dashed var(--z-teal);border-radius:10px;background:var(--z-teal-light)}
+.vcol-c{display:flex;flex-direction:column;align-items:center;text-align:center;gap:3px;min-width:0}
+.vcol-ico{font-size:13px;color:var(--z-teal);font-weight:700;min-height:22px;overflow-wrap:anywhere}
+.vcol-vazio{font-size:10px;color:var(--z-text-sec);border:1px dashed #C9C9C9;border-radius:5px;padding:2px 6px;font-weight:400}
+.vcol-t{font-size:13px;font-weight:800;color:var(--z-text);overflow-wrap:anywhere}
+.vcol-s{font-size:11.5px;font-weight:600;color:var(--z-teal);overflow-wrap:anywhere}
+.vcol-a{font-size:11.5px;color:var(--z-text-sec);line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
 .pd-panel.calmo{border-color:var(--z-border)}
 .pd-panel.calmo .pd-head{background:var(--z-bg)}
 .pd-ico{font-size:15px}
@@ -3298,7 +3320,7 @@ function fmtAlvoArte(qual, escopo){
   const esc0=el.dataset.rt||'copy', f=rtEsc(esc0);
   const block=el.dataset.copyblock||'';
   if(!f.aceitaWidget(block)){
-    showToast(`${qual==='tabela'?'A tabela':'A imagem'} é instrução de diagramação da arte — clique ${f.ondeWidget}.`);
+    showToast(`${{tabela:'A tabela', imagem:'A imagem', colunas:'O bloco de colunas'}[qual]||'Isso'} é instrução de diagramação da arte — clique ${f.ondeWidget}.`);
     return null;
   }
   return { el, id:+el.dataset.item, block, escopo:esc0 };
@@ -3307,6 +3329,11 @@ window.fmtTabela=function(ev,escopo){
   ev.preventDefault();
   const a=fmtAlvoArte('tabela',escopo); if(!a) return;
   window.rtInserirTabela(ev, a.id, a.block, a.escopo);
+};
+window.fmtColunas=function(ev,escopo){
+  ev.preventDefault();
+  const a=fmtAlvoArte('colunas',escopo); if(!a) return;
+  window.rtInserirColunas(ev, a.id, a.block, a.escopo);
 };
 window.fmtImagem=function(ev,escopo){
   ev.preventDefault();
@@ -3408,6 +3435,7 @@ function fmtbarHTML(escopo, chave, dica, inline){
     <button class="fmtb" title="Sublinhado (funciona ao colar no Instagram/LinkedIn) — Ctrl+U" onmousedown="fmtCopy(event,'underline'${s})"><u>S</u></button>
     <button class="fmtb" title="Marcador (•)" onmousedown="fmtCopy(event,'bullet'${s})">•</button>
     <button class="fmtb" title="Linha separadora (entre título e texto)" onmousedown="fmtCopy(event,'linha'${s})">―</button>
+    ${escopo==='copy' ? `<button class="fmtb" title="Colunas para a arte — ícone, título, subtítulo e texto de apoio (só no texto da arte)" onmousedown="fmtColunas(event${s})">▥</button>` : ''}
     <button class="fmtb" title="${dicaTab}" onmousedown="fmtTabela(event${s})">⊞</button>
     <button class="fmtb" title="${dicaImg}" onmousedown="fmtImagem(event${s})">🖼</button>
     <button class="fmtb" title="Inserir link (como texto)" onmousedown="fmtCopy(event,'link'${s})">🔗</button>
@@ -3699,13 +3727,14 @@ function rtHTML(id, c, texto, escopo, grifos){
     }
     if (pos < b) out += esc(txt.slice(pos, b));
   };
-  const re = /\[(tabela|imagem) (\d+)\]/g;
+  const re = /\[(tabela|imagem|colunas) (\d+)\]/g;
   let last = 0, m;
   while ((m = re.exec(txt)) !== null) {
     escreve(last, m.index);
     const n = +m[2] - 1;
     if (m[1] === 'tabela' && (c.tabelas||[])[n])      out += rtWidgetTabela(id, n, c.tabelas[n], editavel, escopo);
     else if (m[1] === 'imagem' && (c.imagens||[])[n]) out += rtWidgetImagem(id, n, c.imagens[n], editavel);
+    else if (m[1] === 'colunas' && (c.colunas||[])[n]) out += rtWidgetColunas(id, n, c.colunas[n], editavel, escopo);
     else out += esc(m[0]);                       // marca sem dono: mostra crua para dar para apagar
     last = m.index + m[0].length;
   }
@@ -4070,6 +4099,7 @@ function vblockHTML(id, c, block, label, text) {
   let corpo = renderComentado(text||'', comments);
   corpo = inlineImagens(corpo, c);      // imagem na posição em que foi inserida
   corpo = inlineTabelasRef(corpo, c);   // tabela na posição em que foi inserida
+  corpo = inlineColunasRef(corpo, c);   // bloco de colunas, idem
   corpo = inlineTabelas(corpo);         // compatibilidade: tabela escrita em texto com |
   // Só quem valida (Gabi/Vitor) seleciona para comentar — a equipe de design só lê.
   const podeCmt = ehCliente();
@@ -4475,6 +4505,94 @@ function tabelaRenderHTML(t){
   const linhas=tabGrade(t).map(linha =>
     '<tr>'+t.cols.map((_,ci)=>`<td>${esc(linha[ci]||'')}</td>`).join('')+'</tr>').join('');
   return `<table class="vtab">${linhas}</table>`;
+}
+
+// ── Bloco de colunas (texto da arte) ──────────────────────────────────────────
+// Para a arte com 2, 3 ou 4 colunas lado a lado, cada uma com ícone, título,
+// subtítulo e texto de apoio. Era o que se montava com a tabela, que não servia:
+// célula anônima não diz à Bonina qual texto é título e qual é apoio. Mora no texto
+// como a tabela — a marca [colunas N] na posição, o conteúdo em c.colunas[N-1].
+const COL_CAMPOS = [['icone','Ícone','ex.: livro aberto, 📚'], ['titulo','Título',''], ['subtitulo','Subtítulo',''], ['apoio','Texto de apoio','']];
+function colunaVazia(){ return { icone:'', titulo:'', subtitulo:'', apoio:'' }; }
+function ensureColunas(id, bi, escopo){ const d = rtEsc(escopo||'copy').doc(id); return (d.colunas||[])[bi]; }
+function rtWidgetColunas(id, bi, b, editavel, escopo){
+  const corpo = editavel ? colunasEditorHTML(id, b, bi, escopo) : colunasRenderHTML(b);
+  return `<div class="rt-w rt-w-col" contenteditable="false" data-marca="colunas" data-n="${bi+1}">${corpo}</div>`;
+}
+window.rtInserirColunas = function(ev, id, block, escopo){
+  ev.preventDefault();
+  escopo = escopo || 'copy';
+  const f = rtEsc(escopo), d = f.doc(id);
+  if (!Array.isArray(d.colunas)) d.colunas = [];
+  d.colunas.push({ itens: [colunaVazia(), colunaVazia()] });
+  const bi = d.colunas.length - 1;
+  rtInserirMarca(id, block, `[colunas ${bi+1}]`, escopo);
+  setTimeout(() => {
+    const raiz = f.raiz(id);
+    const inp = raiz && raiz.querySelector(`.col-card[data-bi="${bi}"] textarea`);
+    if (inp) inp.focus();
+  }, 40);
+};
+function colunasEditorHTML(id, b, bi, escopo){
+  const e = escopo ? `,'${escopo}'` : '';
+  const itens = (b && b.itens) || [];
+  const n = itens.length;
+  return `<div class="col-card" data-bi="${bi}">
+    <div class="col-grid" style="--n:${n || 1}">${itens.map((col, ci) => `
+      <div class="col-col">
+        <div class="col-num">Coluna ${ci+1}${n > 1 ? `<button type="button" class="col-x" title="Remover a coluna ${ci+1}" onclick="removeColuna(${id},${bi},${ci}${e})">✕</button>` : ''}</div>
+        ${COL_CAMPOS.map(([k, lbl, ph]) => `<label class="col-lbl">${lbl}
+          <textarea rows="1" placeholder="${esc(ph)}" oninput="updateColuna(${id},${bi},${ci},'${k}',this${e})" onfocus="autoGrow(this)">${esc(col[k]||'')}</textarea></label>`).join('')}
+      </div>`).join('')}
+    </div>
+    <div class="tb-acts">
+      ${n < 4 ? `<button type="button" class="tb-btn" onclick="addColuna(${id},${bi}${e})">+ coluna</button>` : ''}
+      <button type="button" class="tb-btn tb-del-btn" onclick="removeColunas(${id},${bi}${e})">✕ bloco de colunas</button>
+    </div>
+  </div>`;
+}
+// Na validação e na leitura: uma prévia do layout, com cada campo no seu papel.
+function colunasRenderHTML(b){
+  const itens = (b && b.itens) || [];
+  return `<div class="vcol" style="--n:${itens.length || 1}">${itens.map(col => `
+    <div class="vcol-c">
+      <div class="vcol-ico">${col.icone ? esc(col.icone) : '<span class="vcol-vazio">ícone</span>'}</div>
+      ${col.titulo ? `<div class="vcol-t">${esc(col.titulo)}</div>` : ''}
+      ${col.subtitulo ? `<div class="vcol-s">${esc(col.subtitulo)}</div>` : ''}
+      ${col.apoio ? `<div class="vcol-a">${esc(col.apoio)}</div>` : ''}
+    </div>`).join('')}</div>`;
+}
+window.updateColuna = function(id, bi, ci, k, el, escopo){
+  const b = ensureColunas(id, bi, escopo); if (!b || !b.itens[ci]) return;
+  b.itens[ci][k] = el.value; autoGrow(el); rtEsc(escopo||'copy').salvar();
+};
+const _colRefaz = (id, escopo) => { const f = rtEsc(escopo||'copy'); f.salvar(); f.redesenhar(id); };
+window.addColuna = function(id, bi, escopo){
+  const b = ensureColunas(id, bi, escopo);
+  if (b && b.itens.length < 4) { b.itens.push(colunaVazia()); _colRefaz(id, escopo); }
+};
+window.removeColuna = function(id, bi, ci, escopo){
+  const b = ensureColunas(id, bi, escopo); if (!b || b.itens.length <= 1) return;
+  const col = b.itens[ci] || {};
+  if ((col.icone || col.titulo || col.subtitulo || col.apoio) && !confirm(`Remover a coluna ${ci+1} e o que está escrito nela?`)) return;
+  b.itens.splice(ci, 1); _colRefaz(id, escopo);
+};
+window.removeColunas = function(id, bi, escopo){
+  escopo = escopo || 'copy';
+  const f = rtEsc(escopo), d = f.doc(id);
+  if (!confirm('Remover este bloco de colunas? Ele sai do texto e os outros são renumerados.')) return;
+  (d.colunas || []).splice(bi, 1);
+  removerMarcaERenumerar(d, 'colunas', bi);
+  f.salvar(); f.redesenhar(id);
+};
+// [colunas N] → a prévia, exatamente na posição marcada. O texto-fonte fica num span
+// escondido, como na tabela: offsetInBlock conta só ele, para os comentários da Gabi.
+function inlineColunasRef(html, c){
+  const blocos = c.colunas || [];
+  return html.replace(/\[colunas (\d+)\]/g, (m, n) => {
+    const b = blocos[+n-1]; if (!b) return m;
+    return `<span class="vsrc">${m}</span><span class="vrender vcol-wrap">${colunasRenderHTML(b)}</span>`;
+  });
 }
 window.setCopyStatus = function(id, which, val) { const c = ensureCopy(id); c[which] = (c[which]===val?'':val); agendarSaveCopy(); renderOneCard(id); };
 window.setGabiStatus = function(id, val) {
