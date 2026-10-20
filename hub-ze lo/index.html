@@ -287,7 +287,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .save-bar.error,.save-bar.erro{background:var(--z-terra-light);color:var(--z-terra);border-color:var(--z-terra)}
 /* Faixa de "não consegui ler a Base de Dados" — fica acima de tudo, porque
    enquanto ela estiver na tela nada do que for digitado está sendo salvo. */
-.base-erro{position:fixed;top:0;left:0;right:0;z-index:5000;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#B4472F;color:#fff;font-size:13px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+#avisos-topo{position:fixed;top:0;left:0;right:0;z-index:5000;display:flex;flex-direction:column}
+.base-erro{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;padding:10px 16px;background:#B4472F;color:#fff;font-size:13px;font-weight:600;box-shadow:0 2px 10px rgba(0,0,0,.25)}
 .base-erro button{font-family:inherit;font-size:12px;font-weight:700;padding:6px 13px;border-radius:7px;border:1px solid #fff;background:transparent;color:#fff;cursor:pointer}
 .base-erro button:hover{background:#fff;color:#B4472F}
 /* ── VISUALIZAÇÃO DASHBOARD (Base de Dados) ─────────────────────────── */
@@ -998,7 +999,7 @@ mark.cmt.cmt-flash{background:#F6C9A8;box-shadow:0 0 0 2px var(--z-terra)}
 <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, updateDoc, deleteField, FieldPath } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -1064,6 +1065,9 @@ let copySaveTimer = null;
 let pendingSel = null;        // seleção pendente para comentário da Gabi
 // Estado da aba Design
 let designData = { itens:{} };
+// Retrato do que está no banco, por peça (ver gravarPecas) — e se a leitura falhou.
+let copyBase = {}, designBase = {}, postsBase = {}, postsCicloBase = '';
+let copyFalhou = false, designFalhou = false, postsFalhou = false;
 let designMode = null;        // null = lista de ciclos | 'edit' | 'valida'
 let designExpanded = new Set(); // ids dos conteúdos de design abertos (sanfona)
 let designUnsub = null;
@@ -1224,13 +1228,20 @@ async function carregarDoFirebase() {
   return false;
 }
 // Faixa vermelha no topo: some com a dúvida de "será que salvou?".
+// Os avisos de leitura (Base de Dados, ciclo) empilham num contêiner fixo só —
+// cada um fixo no topo, sozinho, cobria o outro quando os dois falhavam juntos.
+function avisosTopo() {
+  let w = document.getElementById('avisos-topo');
+  if (!w) { w = document.createElement('div'); w.id = 'avisos-topo'; document.body.prepend(w); }
+  return w;
+}
 function avisarBaseNaoCarregada() {
   let el = document.getElementById('base-erro');
   if (!el) {
     el = document.createElement('div');
     el.id = 'base-erro';
     el.className = 'base-erro';
-    document.body.prepend(el);
+    avisosTopo().appendChild(el);
   }
   el.innerHTML = `<span>⚠ <strong>Não consegui ler a Base de Dados.</strong> Para não apagar o que está salvo, as alterações desta aba NÃO estão sendo gravadas.</span>
     <button onclick="recarregarBase()">Tentar de novo</button>`;
@@ -2729,24 +2740,40 @@ async function carregarCiclo(docId) {
     const gsnap = await getDoc(doc(db, 'planejamentos', docId));
     if (gsnap.exists() && Array.isArray(gsnap.data().items)) gradeItems = gsnap.data().items;
   } catch(e){ console.warn('Falha ao carregar grade do planejamento', e); }
+  // Leitura que falha NÃO pode virar ciclo vazio: a parte que não foi lida fica com a
+  // gravação travada (ver gravarPecas) até o listener conseguir ou a página recarregar.
+  copyFalhou = designFalhou = postsFalhou = false;
+  // A copy é normalizada antes do retrato: o render normaliza no lugar, e sem isso toda
+  // peça desenhada pareceria "mudada" e iria no primeiro salvamento.
+  const normCopy = (itens) => { Object.values(itens).forEach(it => { if (it && typeof it === 'object') normalizeCopy(it); }); return itens; };
   try {
     const csnap = await getDoc(copyRef(docId));
-    if (csnap.exists()) copyData = { itens: csnap.data().itens || {} };
-  } catch(e){ console.warn('Falha ao carregar copies', e); }
+    if (csnap.exists()) copyData = { itens: normCopy(csnap.data().itens || {}) };
+  } catch(e){ console.warn('Falha ao carregar copies', e); copyFalhou = true; }
+  copyBase = retrato(copyData.itens);
   designData = { itens:{} };
   try {
     const dsnap = await getDoc(designRef(docId));
     if (dsnap.exists()) designData = { itens: dsnap.data().itens || {} };
-  } catch(e){ console.warn('Falha ao carregar design', e); }
+  } catch(e){ console.warn('Falha ao carregar design', e); designFalhou = true; }
+  designBase = retrato(designData.itens);
   postsData = { itens:{}, ciclo:{} };
   try {
     const psnap = await getDoc(postsRef(docId));
     if (psnap.exists()) postsData = { itens: psnap.data().itens || {}, ciclo: psnap.data().ciclo || {} };
-  } catch(e){ console.warn('Falha ao carregar métricas por post', e); }
+  } catch(e){ console.warn('Falha ao carregar métricas por post', e); postsFalhou = true; }
+  postsBase = retrato(postsData.itens); postsCicloBase = estavel(postsData.ciclo || {});
+  avisarCicloNaoCarregado();
   if (copyUnsub) { copyUnsub(); copyUnsub = null; }
   copyUnsub = onSnapshot(copyRef(docId), (snap) => {
-    if (!snap.exists()) return;
-    copyData = { itens: snap.data().itens || {} };
+    const remotos = normCopy(snap.exists() ? (snap.data().itens || {}) : {});
+    if (copyFalhou) {   // a leitura tinha falhado e o listener conseguiu: vale o banco
+      copyFalhou = false; copyData = { itens: remotos }; copyBase = retrato(remotos); avisarCicloNaoCarregado();
+    } else {
+      if (!snap.exists()) return;
+      const r = mesclarDoBanco(copyData.itens || {}, copyBase, remotos);
+      copyData = { itens: r.itens }; copyBase = r.base;
+    }
     if (tabAtivo === 'copy' && document.getElementById('copy-cards')) {
       const ae = document.activeElement;
       if (!ae || !ae.closest || !ae.closest('#copy-cards')) renderCopyCards();
@@ -2754,8 +2781,14 @@ async function carregarCiclo(docId) {
   }, (err)=>console.warn('Copy listener:', err.code));
   if (designUnsub) { designUnsub(); designUnsub = null; }
   designUnsub = onSnapshot(designRef(docId), (snap) => {
-    if (!snap.exists()) return;
-    designData = { itens: snap.data().itens || {} };
+    const remotos = snap.exists() ? (snap.data().itens || {}) : {};
+    if (designFalhou) {
+      designFalhou = false; designData = { itens: remotos }; designBase = retrato(remotos); avisarCicloNaoCarregado();
+    } else {
+      if (!snap.exists()) return;
+      const r = mesclarDoBanco(designData.itens || {}, designBase, remotos);
+      designData = { itens: r.itens }; designBase = r.base;
+    }
     if (tabAtivo === 'design' && document.getElementById('design-cards')) {
       const ae = document.activeElement;
       if (!ae || !ae.closest || !ae.closest('#design-cards')) renderDesignCards();
@@ -2763,8 +2796,18 @@ async function carregarCiclo(docId) {
   }, (err)=>console.warn('Design listener:', err.code));
   if (postsUnsub) { postsUnsub(); postsUnsub = null; }
   postsUnsub = onSnapshot(postsRef(docId), (snap) => {
-    if (!snap.exists()) return;
-    postsData = { itens: snap.data().itens || {}, ciclo: snap.data().ciclo || {} };
+    const dado = snap.exists() ? snap.data() : {};
+    const remotos = dado.itens || {}, cicloRem = dado.ciclo || {};
+    if (postsFalhou) {
+      postsFalhou = false; postsData = { itens: remotos, ciclo: cicloRem };
+      postsBase = retrato(remotos); postsCicloBase = estavel(cicloRem); avisarCicloNaoCarregado();
+    } else {
+      if (!snap.exists()) return;
+      const r = mesclarDoBanco(postsData.itens || {}, postsBase, remotos);
+      const cicloLocalMudou = estavel(postsData.ciclo || {}) !== postsCicloBase;
+      postsData = { itens: r.itens, ciclo: cicloLocalMudou ? postsData.ciclo : cicloRem };
+      postsBase = r.base; postsCicloBase = estavel(cicloRem);
+    }
     if (tabAtivo === 'metricas' && document.getElementById('metricas-body')) {
       const ae = document.activeElement;
       if (!ae || !ae.closest || !ae.closest('#metricas-body')) buildMetricasTab();
@@ -2854,6 +2897,83 @@ function gabiLabel(s) {
   }[s] || s;
 }
 
+// ── Gravação por peça (copy, design e métricas por post) ──────────────────────
+// Antes, cada salvamento gravava o mapa `itens` INTEIRO com setDoc sem merge. Duas
+// pessoas em peças diferentes do mesmo ciclo apagavam uma o trabalho da outra; e se a
+// leitura falhasse, o mapa ficava vazio e o primeiro salvamento apagaria o ciclo todo.
+// Agora cada documento guarda um retrato do que está no banco (base) e só grava as
+// peças que diferem dele, cada uma no seu caminho itens.{id}.
+function estavel(v) {   // JSON com chaves em ordem: mudar a ordem não conta como mudança
+  if (Array.isArray(v)) return '[' + v.map(estavel).join(',') + ']';
+  if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + estavel(v[k])).join(',') + '}';
+  return JSON.stringify(v === undefined ? null : v);
+}
+function retrato(itens) { const b = {}; for (const id in (itens || {})) b[id] = estavel(itens[id]); return b; }
+function pecasMudadas(itens, base) {
+  const mud = [], del = [];
+  for (const id in (itens || {})) if (estavel(itens[id]) !== base[id]) mud.push(id);
+  for (const id in base) if (!(id in (itens || {}))) del.push(id);
+  return { mud, del };
+}
+// Chegou versão nova do banco. Peça sem alteração local: vale a do banco. Peça com
+// alteração local ainda não gravada: campo a campo, vale o que mudou aqui e o resto vem
+// do banco — o status que a Gabi marcou não apaga a legenda que você está digitando.
+function mesclarDoBanco(locais, base, remotos) {
+  const itens = {}, novaBase = {};
+  for (const id in remotos) {
+    novaBase[id] = estavel(remotos[id]);
+    const loc = locais[id];
+    if (loc === undefined || estavel(loc) === base[id]) { itens[id] = remotos[id]; continue; }
+    const antes = base[id] ? JSON.parse(base[id]) : {};
+    const m = { ...remotos[id] };
+    for (const k of new Set([...Object.keys(loc), ...Object.keys(antes)]))
+      if (estavel(loc[k]) !== estavel(antes[k])) { if (k in loc) m[k] = loc[k]; else delete m[k]; }
+    itens[id] = m;
+  }
+  for (const id in locais) if (!(id in remotos) && !(id in base)) itens[id] = locais[id];   // criada aqui, ainda não gravada
+  return { itens, base: novaBase };
+}
+// Grava só as peças que mudaram; `extras` são campos de topo que também mudaram. A
+// base recebe o que FOI gravado — não o estado atual, que pode ter ganhado mais
+// digitação durante a espera e ainda precisa ir no próximo salvamento.
+async function gravarPecas(ref, itens, base, extras) {
+  const { mud, del } = pecasMudadas(itens, base);
+  const ext = extras || {};
+  if (!mud.length && !del.length && !Object.keys(ext).length) return;
+  const agora = new Date().toISOString();
+  const gravado = {}; mud.forEach(id => { gravado[id] = estavel(itens[id]); });
+  const args = [];
+  mud.forEach(id => args.push(new FieldPath('itens', String(id)), itens[id]));
+  del.forEach(id => args.push(new FieldPath('itens', String(id)), deleteField()));
+  for (const k in ext) args.push(k, ext[k]);
+  try {
+    await updateDoc(ref, ...args, 'updatedAt', agora);
+  } catch (e) {
+    if (!e || e.code !== 'not-found') throw e;
+    const so = {}; mud.forEach(id => { so[id] = itens[id]; });   // ciclo novo: o doc ainda não existe
+    await setDoc(ref, { itens: so, ...ext, updatedAt: agora }, { merge: true });
+  }
+  for (const id in gravado) base[id] = gravado[id];
+  del.forEach(id => { delete base[id]; });
+}
+// Leitura do ciclo que falhou: avisa e trava a gravação daquela parte.
+function avisarCicloNaoCarregado() {
+  const falhas = [copyFalhou && 'as copies', designFalhou && 'as artes', postsFalhou && 'as métricas por post'].filter(Boolean);
+  let el = document.getElementById('ciclo-erro');
+  if (!falhas.length) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'ciclo-erro'; el.className = 'base-erro'; avisosTopo().appendChild(el); }
+  const lista = falhas.length > 1 ? falhas.slice(0, -1).join(', ') + ' e ' + falhas[falhas.length - 1] : falhas[0];
+  el.innerHTML = `<span>⚠ <strong>Não consegui ler ${lista} deste ciclo.</strong> Para não apagar o que está salvo, essas alterações NÃO estão sendo gravadas.</span>
+    <button onclick="location.reload()">Recarregar</button>`;
+  el.style.display = 'flex';
+}
+function gravacaoBloqueada(oque) {
+  console.error(`Gravação de ${oque} bloqueada: o documento do ciclo não foi lido com sucesso.`);
+  avisarCicloNaoCarregado();
+  const el = document.getElementById('save-status');
+  if (el) { el.textContent = '⚠ não salvo'; el.classList.remove('saving'); }
+}
+
 // ── Salvamento (doc de copies) ────────────────────────────────────────────────
 function agendarSaveCopy() {
   const el = document.getElementById('save-status');
@@ -2862,11 +2982,13 @@ function agendarSaveCopy() {
   copySaveTimer = setTimeout(salvarCopy, 1200);
 }
 async function salvarCopy() {
-  if (!copyCiclo || bloqueiaGravacaoLocal()) return;
+  if (!copyCiclo) return;
+  if (copyFalhou) { gravacaoBloqueada('copy'); return; }
+  if (bloqueiaGravacaoLocal()) return;
   // Blindagem: o Firestore rejeita array dentro de array (linhas de tabela).
   Object.values(copyData.itens || {}).forEach(it => { if (it && typeof it === 'object') normalizeCopy(it); });
   try {
-    await setDoc(copyRef(copyCiclo), { itens: copyData.itens, updatedAt: new Date().toISOString() });
+    await gravarPecas(copyRef(copyCiclo), copyData.itens, copyBase);
     const el = document.getElementById('save-status');
     if (el) { el.textContent = '✓ Salvo'; el.classList.remove('saving'); }
     setTimeout(() => { const e2 = document.getElementById('save-status'); if (e2) e2.textContent = ''; }, 2500);
@@ -3887,13 +4009,13 @@ window.onCopyImgFiles = async function(id, input){
   const files=[...input.files]; input.value='';
   if(!files.length) return;
   if(!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET){ showToast('Upload ainda não configurado (Cloudinary).'); return; }
-  const c=ensureCopy(id); const prog=document.getElementById('ci-prog-'+id); let ok=0; let erro='';
+  ensureCopy(id); const prog=document.getElementById('ci-prog-'+id); let ok=0; let erro='';
   for(const f of files){
     const barra=barrarPorTamanho(f);
     if(barra){ erro=barra; continue; }
     try{
       const r=await uploadCloudinary(f, (pct)=>{ if(prog) prog.textContent=`Enviando ${f.name} — ${pct}%`; });
-      c.imagens.push({ url:r.url, publicId:r.publicId, legenda:'' }); ok++;
+      ensureCopy(id).imagens.push({ url:r.url, publicId:r.publicId, legenda:'' }); ok++;   // de novo após o envio (ver onDesignFiles)
     }
     catch(e){ console.error(e); erro=`Não deu para enviar “${f.name}”: ${e.message}`; }
   }
@@ -4234,9 +4356,11 @@ function agendarSaveDesign(){
   clearTimeout(designSaveTimer); designSaveTimer=setTimeout(salvarDesign,1000);
 }
 async function salvarDesign(){
-  if(!copyCiclo || bloqueiaGravacaoLocal()) return;
+  if(!copyCiclo) return;
+  if(designFalhou){ gravacaoBloqueada('artes'); return; }
+  if(bloqueiaGravacaoLocal()) return;
   try{
-    await setDoc(designRef(copyCiclo), { itens: designData.itens, updatedAt:new Date().toISOString() });
+    await gravarPecas(designRef(copyCiclo), designData.itens, designBase);
     const el=document.getElementById('save-status'); if(el){ el.textContent='✓ Salvo'; el.classList.remove('saving'); }
     setTimeout(()=>{ const e2=document.getElementById('save-status'); if(e2)e2.textContent=''; },2500);
   }catch(e){ showToast('Erro ao salvar design.'); console.error(e); }
@@ -4540,6 +4664,9 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
   // Monta um cache de ciclos qualquer, para conferir a janela do painel.
   window.__seedCiclos = (lista) => { asstCache = { carregado:true, cycles:lista }; renderPendencias(); return ciclosDoPainel().map(c=>c.periodo); };
   window.__serial = (el) => rtSerializar(el);
+  // Chama a gravação por peça de verdade contra o Firestore. Sem login, a resposta
+  // certa é permission-denied — prova que o SDK aceitou os argumentos e enviou.
+  window.__gravarPecas = (docId, itens, base) => gravarPecas(copyRef(docId), itens, base || {}, null);
   // Popula grade + métricas por post para conferir gráfico/filtro de mês sem login.
   window.__seedCiclo = (items, posts) => {
     gradeItems = items || [];
@@ -4560,16 +4687,19 @@ window.onDesignFiles=async function(id,input){
   const files=[...input.files]; input.value='';
   if(!files.length) return;
   if(!CLOUDINARY_CLOUD || !CLOUDINARY_PRESET){ showToast('Upload ainda não configurado (Cloudinary).'); return; }
-  const prog=document.getElementById('dz-prog-'+id); const d=ensureDesign(id); let ok=0; let erro='';
+  const prog=document.getElementById('dz-prog-'+id); ensureDesign(id); let ok=0; let erro='';
   for(let n=0; n<files.length; n++){
     const f=files[n];
     const barra=barrarPorTamanho(f);
     if(barra){ erro=barra; if(prog) prog.textContent=''; console.warn('Arquivo grande demais:', f.name, f.size); continue; }
     try{
       const r=await uploadCloudinary(f, (pct)=>{ if(prog) prog.textContent=`Enviando ${f.name} — ${pct}%`; });
-      if(r.resource_type==='video') d.midias.push({ type:'video', url:r.url, publicId:r.publicId });
-      else d.midias.push({ type:'image', url:r.url, publicId:r.publicId, w:r.w, h:r.h });
-      d.notificadoEm=''; // arte nova/alterada volta a contar como novidade
+      // Busca a peça de novo DEPOIS do envio: se alguém salvou durante o upload, o
+      // listener trocou o objeto, e o `d` de antes ficaria solto — a arte se perderia.
+      const dd=ensureDesign(id); if(!Array.isArray(dd.midias)) dd.midias=desMidias(dd).slice();
+      if(r.resource_type==='video') dd.midias.push({ type:'video', url:r.url, publicId:r.publicId });
+      else dd.midias.push({ type:'image', url:r.url, publicId:r.publicId, w:r.w, h:r.h });
+      dd.notificadoEm=''; // arte nova/alterada volta a contar como novidade
       ok++;
     }catch(e){ console.error(e); erro=`Não deu para enviar “${f.name}”: ${e.message}`; }
   }
@@ -5012,7 +5142,15 @@ window.mxTip = function(ev, box){
   tip.style.display = 'block';
 };
 function agendarSavePosts(){ const el=document.getElementById('save-status'); if(el){el.textContent='● Salvando...';el.classList.add('saving');} clearTimeout(postsSaveTimer); postsSaveTimer=setTimeout(salvarPosts,1000); }
-async function salvarPosts(){ if(!copyCiclo || bloqueiaGravacaoLocal()) return; try{ await setDoc(postsRef(copyCiclo),{itens:postsData.itens,ciclo:postsData.ciclo||{},updatedAt:new Date().toISOString()}); const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
+async function salvarPosts(){
+  if(!copyCiclo) return;
+  if(postsFalhou){ gravacaoBloqueada('métricas por post'); return; }
+  if(bloqueiaGravacaoLocal()) return;
+  try{
+    const ciclo = postsData.ciclo || {}, cicloEscrito = estavel(ciclo);
+    await gravarPecas(postsRef(copyCiclo), postsData.itens, postsBase, cicloEscrito !== postsCicloBase ? { ciclo } : null);
+    postsCicloBase = cicloEscrito;
+    const el=document.getElementById('save-status'); if(el){el.textContent='✓ Salvo';el.classList.remove('saving');} setTimeout(()=>{const e2=document.getElementById('save-status'); if(e2)e2.textContent='';},2500); }catch(e){ showToast('Erro ao salvar métricas por post.'); console.error(e); } }
 function postsMetricasHTML(){
   const plist=ciclosDoAno().map(x=>x.p);
   const cur=plist.find(p=>cicloDocId(p)===copyCiclo)||plist[0]||{};
