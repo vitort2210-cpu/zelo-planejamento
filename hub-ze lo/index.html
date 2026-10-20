@@ -565,6 +565,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .pd-panel.ok{border-color:var(--z-border)}
 .pd-head{display:flex;align-items:center;gap:9px;padding:11px 14px;cursor:pointer;background:var(--z-terra-light)}
 .pd-panel.ok .pd-head{background:var(--z-bg);cursor:default}
+.feed-abrir{display:flex;align-items:center;gap:13px;width:100%;text-align:left;font-family:inherit;background:#fff;border:1px solid var(--z-border);border-radius:12px;padding:12px 15px;margin-bottom:1rem;cursor:pointer;transition:border-color .15s}
+.feed-abrir:hover{border-color:var(--z-teal)}
+.feed-abrir b{display:block;font-size:13.5px;color:var(--z-text);margin-bottom:2px}
+.feed-abrir span span{font-size:12px;color:var(--z-text-sec);line-height:1.4}
+.feed-abrir-ico{font-size:24px;color:var(--z-teal);flex-shrink:0}
+.feed-legenda{font-size:12px;color:var(--z-text-sec);margin:4px auto 12px;max-width:560px;line-height:1.5}
+.feed-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;max-width:560px;margin:0 auto}
+.feed-tile{position:relative;aspect-ratio:3/4;padding:0;border:none;background:var(--z-bg);cursor:pointer;overflow:hidden;display:block;font-family:inherit}
+.feed-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.feed-tile:hover img{opacity:.88}
+.feed-tile:focus-visible{outline:3px solid var(--z-teal);outline-offset:-3px}
+.feed-tile.futuro::after{content:'agendado';position:absolute;top:6px;left:6px;font-size:9.5px;font-weight:700;background:rgba(17,128,140,.92);color:#fff;border-radius:20px;padding:2px 7px}
+.feed-tile.vazio{border:1px dashed #C9C9C9;background:#fff}
+.feed-sem{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:10px 8px;text-align:center}
+.feed-sem b{font-size:11px;color:var(--z-text);font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:5;-webkit-box-orient:vertical;overflow:hidden}
+.feed-sem em{font-size:10px;color:var(--z-terra);font-style:normal;font-weight:700}
+.feed-ico{position:absolute;top:6px;right:7px;color:#fff;font-size:14px;line-height:1;text-shadow:0 1px 3px rgba(0,0,0,.65)}
+.feed-tile.vazio .feed-ico{display:none}
+.feed-data{position:absolute;bottom:5px;left:6px;font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:4px;padding:1px 5px}
+.feed-tile.vazio .feed-data{background:var(--z-bg);color:var(--z-text-sec)}
 .pd-panel.calmo{border-color:var(--z-border)}
 .pd-panel.calmo .pd-head{background:var(--z-bg)}
 .pd-ico{font-size:15px}
@@ -1081,6 +1101,7 @@ let designData = { itens:{} };
 let copyBase = {}, designBase = {}, postsBase = {}, postsCicloBase = '';
 let copyFalhou = false, designFalhou = false, postsFalhou = false;
 let designMode = null;        // null = lista de ciclos | 'edit' | 'valida'
+let designView = null;        // com designMode null: null = lista de ciclos | 'feed'
 let designExpanded = new Set(); // ids dos conteúdos de design abertos (sanfona)
 let designUnsub = null;
 let designSaveTimer = null;
@@ -1794,7 +1815,7 @@ function anoBarHTML() {
 window.setAno = function(a) {
   if (anoAtivo === a) return;
   anoAtivo = a;
-  planOpen = null; planView = null; copyMode = null; designMode = null;
+  planOpen = null; planView = null; copyMode = null; designMode = null;   // o feed fica: trocar o ano troca o feed
   renderTabContent(); navegou(); window.scrollTo(0, 0);
 };
 
@@ -1805,7 +1826,7 @@ window.setAno = function(a) {
 // frente e só sai do HUB quando não há mais para onde voltar.
 let navPronto = false;
 function snapNav(){
-  return { tabAtivo, subMode, planOpen, planView, copyMode, designMode,
+  return { tabAtivo, subMode, planOpen, planView, copyMode, designMode, designView,
            copyCiclo, anoAtivo, metricaGranularity, mesFiltro, statusFiltro, buscaFiltro };
 }
 function navegou(){
@@ -1816,7 +1837,7 @@ function aplicarNav(s){
   if(!s) return;
   tabAtivo = s.tabAtivo; subMode = s.subMode;
   planOpen = s.planOpen; planView = s.planView;
-  copyMode = s.copyMode; designMode = s.designMode;
+  copyMode = s.copyMode; designMode = s.designMode; designView = s.designView || null;
   copyCiclo = s.copyCiclo; anoAtivo = s.anoAtivo;
   if(s.metricaGranularity) metricaGranularity = s.metricaGranularity;
   mesFiltro = s.mesFiltro ?? null;
@@ -1901,7 +1922,7 @@ function renderTabContent() {
     }
     carregarCiclo(docId).then(() => { if (tabAtivo === 'copy' && copyMode !== null) buildCopyTab(); });
   } else if (tabAtivo === 'design') {
-    if (designMode === null) { buildDesignCiclos(); return; }
+    if (designMode === null) { if (designView === 'feed') renderFeed(); else buildDesignCiclos(); return; }
     cont.innerHTML = `<div style="font-size:13px;color:var(--z-text-sec);padding:8px 0">Carregando artes...</div>`;
     const docId = copyCiclo || cicloDocId((estado.planejamentos||[])[0]);
     if (!docId) {
@@ -2321,7 +2342,7 @@ window.irPend = function(i){
   const idx=plist.findIndex(x=>cicloDocId(x)===l.docId);
   if(idx>=0) anoAtivo=anoCiclo(plist[idx]);
   filtroPendente = l.filtro;
-  planOpen=null; planView=null; copyMode=null; designMode=null;
+  planOpen=null; planView=null; copyMode=null; designMode=null; designView=null;
   if(l.area==='plan'){ tabAtivo='plan'; planOpen={ idx, mode: ehCliente()?'valida':'edit' }; }
   else if(l.area==='copy'){ tabAtivo='copy'; copyCiclo=l.docId; copyMode = ehCliente()?'valida':'edit'; }
   else if(l.area==='design'){ tabAtivo='design'; copyCiclo=l.docId; designMode = ehCliente()?'valida':'edit'; }
@@ -2625,7 +2646,7 @@ window.copiarLink = function() {
 window.setTab = function(t) {
   tabAtivo = t;
   // toda aba abre na lista de ciclos
-  planOpen = null; planView = null; copyMode = null; designMode = null;
+  planOpen = null; planView = null; copyMode = null; designMode = null; designView = null;
   buildHub(); navegou();
   window.scrollTo(0, 0);
 };
@@ -4568,7 +4589,11 @@ function buildDesignCiclos(){
     cont.innerHTML=anoBarHTML()+`<p style="font-size:13px;color:var(--z-text-sec)">Nenhum ciclo em ${anoAtivo}. Adicione um ciclo na aba Planejamento.</p>`;
     return;
   }
-  cont.innerHTML=anoBarHTML()+lista.map(({p})=>{
+  const feed = `<button type="button" class="feed-abrir" onclick="abrirFeed()">
+      <span class="feed-abrir-ico">▦</span>
+      <span><b>Ver como feed do Instagram</b><span>As capas de ${anoAtivo} em grade, da mais recente para a mais antiga — para ver a identidade e pegar peças parecidas lado a lado.</span></span>
+    </button>`;
+  cont.innerHTML=anoBarHTML()+feed+lista.map(({p})=>{
     const docId=cicloDocId(p);
     const btns=[];
     if(podeSubirDesign())   btns.push(`<button class="plan-link plan-vitor" onclick="abrirCicloDesign('${esc(docId)}','edit')">✏ Subir / Editar</button>`);
@@ -4583,6 +4608,70 @@ function buildDesignCiclos(){
       <div class="plan-links">${links}</div>
     </div>`;
   }).join('');
+}
+
+// ── Feed do Instagram ──────────────────────────────────────────────────────────
+// O grid do perfil como ele vai ficar: a capa de cada peça, da mais recente para a
+// mais antiga, atravessando os ciclos do ano — para a Bonina ver a identidade e o
+// Vitor pegar peças parecidas demais lado a lado. Story não entra: não aparece no
+// grid do perfil. Usa o cache que o painel e o assistente já carregam.
+function feedThumb(m){
+  let u = String((m && m.url) || ''); const at = u.indexOf('/upload/');
+  if (at < 0) return u;
+  // miniatura 3:4 do próprio Cloudinary — a arte cheia tem ~1 MB, a miniatura ~40 KB
+  const tr = m.type === 'video' ? 'so_0,c_fill,w_360,h_480,q_auto' : 'c_fill,g_auto,w_360,h_480,q_auto,f_auto';
+  u = u.slice(0, at + 8) + tr + '/' + u.slice(at + 8);
+  return m.type === 'video' ? u.replace(/\.[a-z0-9]+(\?.*)?$/i, '.jpg') : u;   // vídeo: o primeiro quadro
+}
+function dataDoItem(d, ano){ const m = String(d||'').match(/^(\d{1,2})\/(\d{1,2})/); return m ? new Date(ano, +m[2]-1, +m[1]) : null; }
+window.abrirFeed = function(){
+  designView = 'feed'; renderTabContent(); navegou(); window.scrollTo(0, 0);
+  // mostra o que já está em cache e atualiza por baixo, porque arte nova pode ter subido
+  if (asstCache.carregado) carregarTudoAssistente().then(() => { if (tabAtivo === 'design' && designView === 'feed' && designMode === null) renderFeed(); });
+};
+window.fecharFeed = function(){ designView = null; renderTabContent(); navegou(); window.scrollTo(0, 0); };
+window.feedAbrirPeca = function(docId, id){
+  const mode = ROLE === 'cliente' ? 'valida' : (podeSubirDesign() ? 'edit' : 'valida');
+  setTab('design'); abrirCicloDesign(docId, mode);
+  setTimeout(() => zaDestacar('design-card-' + id), 950);
+};
+function renderFeed(){
+  const cont = document.getElementById('tab-content'); if (!cont) return;
+  const barra = `<div class="cycle-open-bar">
+      <button class="back-ciclos" onclick="fecharFeed()">← Voltar aos ciclos</button>
+      <div class="cycle-open-info"><span class="cycle-open-modo">▦ Feed do Instagram</span></div>
+    </div>`;
+  if (!asstCache.carregado) { cont.innerHTML = anoBarHTML() + barra + `<p class="feed-legenda">Carregando as artes de todos os ciclos…</p>`; return; }
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const pecas = [];
+  (asstCache.cycles || []).filter(c => c.ano === anoAtivo).forEach(c => (c.items || []).forEach(it => {
+    if (/story/i.test(it.formato || '')) return;
+    const mid = desMidias(c.design[it.id]);
+    pecas.push({ c, it, capa: mid[0] || null, n: mid.length, quando: dataDoItem(it.data, c.ano) });
+  }));
+  pecas.sort((a, b) => (b.quando ? b.quando.getTime() : -1) - (a.quando ? a.quando.getTime() : -1));
+  const tile = (p) => {
+    const futuro = p.quando && p.quando > hoje;
+    const titulo = p.it.titulo || '(sem título)';
+    const st = (p.c.design[p.it.id] || {}).statusDesign;
+    const dica = `${p.it.data || 'sem data'} · ${titulo}${futuro ? ' · agendado' : ''}${st ? ' · ' + designLabel(st) : ''}`;
+    const marca = p.capa && p.capa.type === 'video' ? '<span class="feed-ico" aria-label="vídeo">▶</span>'
+                : (p.n > 1 ? '<span class="feed-ico" aria-label="carrossel">❐</span>' : '');
+    const corpo = p.capa
+      ? `<img loading="lazy" src="${esc(feedThumb(p.capa))}" alt="${esc(titulo)}">`
+      : `<span class="feed-sem"><b>${esc(titulo)}</b><em>sem arte</em></span>`;
+    return `<button type="button" class="feed-tile${p.capa ? '' : ' vazio'}${futuro ? ' futuro' : ''}" title="${esc(dica)}"
+      onclick="feedAbrirPeca('${esc(p.c.docId)}', ${+p.it.id})">${corpo}${marca}<span class="feed-data">${esc(p.it.data || '')}</span></button>`;
+  };
+  // Sem linha separando agendados de publicados: ela quebraria a grade e mudaria quem
+  // fica ao lado de quem — que é justamente o que o feed serve para conferir. O selo
+  // "agendado" em cada peça já diz isso sem mexer nas posições.
+  const grade = pecas.map(tile).join('');
+  const semArte = pecas.filter(p => !p.capa).length;
+  cont.innerHTML = anoBarHTML() + barra + (pecas.length
+    ? `<p class="feed-legenda">${pecas.length} peças de ${anoAtivo}${semArte ? ` · ${semArte} ainda sem arte` : ''} · da mais recente para a mais antiga · story não aparece no grid · ❐ carrossel · ▶ vídeo · toque numa peça para abri-la</p>
+       <div class="feed-grid">${grade}</div>`
+    : `<p class="feed-legenda">Nenhuma peça de feed em ${anoAtivo} ainda.</p>`);
 }
 
 // ── Render da aba (ciclo aberto) ───────────────────────────────────────────────
