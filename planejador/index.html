@@ -445,28 +445,64 @@ let observacoes = {};
 let gabiEdits = {};
 let saveTimeout = null;
 
+// ─── TRAVA DE GRAVAÇÃO ────────────────────────────────────────────────────────
+// salvarNoFirebase faz setDoc SEM merge: substitui o documento inteiro. Se a leitura
+// falhar, items/estados ficam vazios — e a primeira gravação (um clique de status, uma
+// letra no contexto) apagaria o ciclo real. Foi esse padrão que destruiu a Base de
+// Dados do HUB em setembro. Só grava depois de uma leitura bem-sucedida.
+let baseCarregada = false;   // houve leitura bem-sucedida (getDoc ou listener)
+let leituraFalhou = false;   // a leitura inicial terminou sem conseguir ler
+let ultimoSnap = null;       // o que o listener já trouxe, se chegou antes do getDoc
+function avisarGradeNaoCarregada() {
+  if (document.getElementById('aviso-grade')) return;
+  const d = document.createElement('div');
+  d.id = 'aviso-grade';
+  d.setAttribute('role', 'alert');
+  d.style.cssText = 'position:sticky;top:0;z-index:999;background:#FBEAE7;color:#1A1A1A;border-left:4px solid #C0392B;padding:12px 16px;font-size:13.5px;line-height:1.45;display:flex;gap:12px;align-items:center;flex-wrap:wrap';
+  d.innerHTML = '<span style="flex:1;min-width:220px">⚠ <b>Não consegui ler esta grade do servidor.</b> Para não apagar nada, as alterações nesta tela <b>não estão sendo salvas</b>.</span>'
+    + '<button type="button" onclick="location.reload()" style="border:1px solid #C0392B;background:#fff;color:#C0392B;border-radius:8px;padding:6px 12px;font:inherit;font-weight:600;cursor:pointer">Recarregar</button>';
+  document.body.prepend(d);
+}
+function limparAvisoGrade() { const d = document.getElementById('aviso-grade'); if (d) d.remove(); }
+
+// Aplica o documento lido ao estado local. Usado na leitura inicial e quando o
+// listener resgata uma leitura que tinha falhado. Devolve o contexto do ciclo.
+function aplicarDadosDoDoc(data) {
+  if (data.items) items = data.items;
+  if (data.estados) estados = data.estados;
+  if (data.observacoes) observacoes = data.observacoes;
+  if (data.gabiEdits) gabiEdits = data.gabiEdits;
+  if (data.nextId) nextId = data.nextId;
+  if (Array.isArray(data.pilaresCustom)) pilaresCustom = data.pilaresCustom;
+  if (Array.isArray(data.camadasCustom)) camadasCustom = data.camadasCustom;
+  pilares = PILARES_BASE.concat(pilaresCustom.filter(p => !PILARES_BASE.includes(p)));
+  camadas = CAMADAS_BASE.concat(camadasCustom.filter(c => !CAMADAS_BASE.includes(c)));
+  return data.contexto || {};
+}
+
 // ─── FIREBASE ─────────────────────────────────────────────────────────────────
 const DOC_REF = doc(db, "planejamentos", DOC_ID);
 
 async function carregarDoFirebase() {
   let _ctx = {};
-  try {
-    const snap = await getDoc(DOC_REF);
-    if (snap.exists()) {
-      const data = snap.data();
-      if (data.items) items = data.items;
-      if (data.estados) estados = data.estados;
-      if (data.observacoes) observacoes = data.observacoes;
-      if (data.gabiEdits) gabiEdits = data.gabiEdits;
-      if (data.nextId) nextId = data.nextId;
-      if (data.contexto) _ctx = data.contexto;
-      if (Array.isArray(data.pilaresCustom)) pilaresCustom = data.pilaresCustom;
-      if (Array.isArray(data.camadasCustom)) camadasCustom = data.camadasCustom;
-      pilares = PILARES_BASE.concat(pilaresCustom.filter(p => !PILARES_BASE.includes(p)));
-      camadas = CAMADAS_BASE.concat(camadasCustom.filter(c => !CAMADAS_BASE.includes(c)));
+  // Até 3 tentativas: uma rede instável não pode virar grade vazia na tela.
+  let snap = null;
+  for (let tentativa = 1; tentativa <= 3 && !snap; tentativa++) {
+    try { snap = await getDoc(DOC_REF); }
+    catch (e) {
+      console.warn(`Falha ao ler a grade (tentativa ${tentativa}/3)`, e);
+      if (tentativa < 3) await new Promise(r => setTimeout(r, 700 * tentativa));
     }
-  } catch(e) {
-    console.warn("Erro ao carregar Firebase:", e);
+  }
+  if (!snap && ultimoSnap) snap = ultimoSnap;   // o listener conseguiu antes
+  if (snap) {
+    baseCarregada = true;   // leu — inclusive "não existe", que é ciclo novo de verdade
+    leituraFalhou = false;
+    limparAvisoGrade();
+    if (snap.exists()) _ctx = aplicarDadosDoDoc(snap.data());
+  } else {
+    leituraFalhou = true;
+    avisarGradeNaoCarregada();
   }
   // Contexto do ciclo: usa o salvo; para ciclo novo, cai nos parâmetros da URL.
   if (!_ctx.periodo && _params.get('periodo')) _ctx.periodo = _params.get('periodo');
@@ -494,23 +530,52 @@ function agendarSalvamento() {
   saveTimeout = setTimeout(salvarNoFirebase, 1200);
 }
 
+// Devolve true só quando gravou de verdade.
 async function salvarNoFirebase() {
-  // A coleção `planejamentos` tem escrita pública (o planejador standalone salva sem
-  // login). Por isso, NUNCA gravar a partir de localhost — senão testes locais
-  // sobrescrevem a grade real em produção.
-  if (['localhost','127.0.0.1'].includes(location.hostname)) { showToast('🔧 Modo local — não salva em produção'); return; }
+  // Sem leitura bem-sucedida, gravar = apagar o ciclo (ver TRAVA DE GRAVAÇÃO).
+  if (!baseCarregada) {
+    clearTimeout(saveTimeout);
+    console.error('Gravação da grade bloqueada: o documento não foi lido com sucesso.');
+    avisarGradeNaoCarregada();
+    showToast('⚠ Não salvo — recarregue a página');
+    return false;
+  }
+  // As regras do Firestore exigem login (conferido em 20/10: leitura e escrita sem
+  // autenticação devolvem 403). Mesmo assim, NUNCA gravar a partir de localhost: uma
+  // sessão logada de teste local gravaria na grade real em produção.
+  if (['localhost','127.0.0.1'].includes(location.hostname)) { showToast('🔧 Modo local — não salva em produção'); return false; }
   try {
     const contexto = {};
     for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); contexto[k] = el ? el.value : ''; }
     await setDoc(DOC_REF, { items, estados, observacoes, gabiEdits, nextId, contexto, pilaresCustom, camadasCustom, updatedAt: new Date().toISOString() });
     showToast("✓ Salvo automaticamente");
+    return true;
   } catch(e) {
     showToast("⚠ Erro ao salvar — verifique a conexão");
+    return false;
   }
 }
 
 // Listener em tempo real
 onSnapshot(DOC_REF, (snap) => {
+  ultimoSnap = snap;
+  if (!baseCarregada) {
+    // A leitura inicial ainda está em curso: ela mesma aplica o documento.
+    if (!leituraFalhou) return;
+    // A leitura inicial falhou e o listener conseguiu: aplica o doc inteiro — inclusive
+    // o contexto, senão o próximo salvamento gravaria os campos de contexto em branco —
+    // e redesenha a tela que estiver aberta.
+    baseCarregada = true;
+    leituraFalhou = false;
+    limparAvisoGrade();
+    if (!snap.exists()) return;
+    const ctx = aplicarDadosDoDoc(snap.data());
+    for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); if (el) el.value = ctx[k] || ''; }
+    if (document.getElementById('screen-doc').classList.contains('active')) buildDoc();
+    else renderEditItems();
+    showToast('✓ Grade carregada — pode editar');
+    return;
+  }
   if (!snap.exists()) return;
   const data = snap.data();
   if (data.estados) estados = data.estados;
@@ -530,7 +595,7 @@ onSnapshot(DOC_REF, (snap) => {
       atualizarStats();
     }
   }
-});
+}, (e) => console.warn('Listener da grade parou:', e));
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
 function showToast(msg) {
@@ -706,6 +771,8 @@ function ordenarPorData(lista) {
     .map(x => x.it);
 }
 window.importarJSON = async function() {
+  // Sem a grade real carregada, mesclar seria mesclar com o vazio — e gravar apagaria o resto.
+  if (!baseCarregada) { avisarGradeNaoCarregada(); showToast('⚠ A grade não foi lida — recarregue antes de importar'); return; }
   let data;
   try { data = JSON.parse(document.getElementById('imp-text').value); }
   catch(e) { showToast('⚠ JSON inválido'); return; }
@@ -753,7 +820,7 @@ window.importarJSON = async function() {
   camadas = CAMADAS_BASE.concat(camadasCustom);
   if (data.contexto) { for (const k in CTX_FIELDS) { const el = document.getElementById(CTX_FIELDS[k]); if (el && data.contexto[k] != null) el.value = data.contexto[k]; } }
   renderEditItems();
-  await salvarNoFirebase();
+  if (!(await salvarNoFirebase())) return;   // não gravou: o modal fica aberto com o JSON
   fecharImport();
   showToast(substituir ? ('✓ Grade substituída: ' + items.length + ' conteúdos')
                        : ('✓ Importado — a grade agora tem ' + items.length + ' conteúdos'));
@@ -792,6 +859,7 @@ window.dupItem = function(id) {
 
 window.salvarEVisualizar = async function() {
   await salvarNoFirebase();
+  if (!baseCarregada) return;   // a grade não foi lida: fica na tela com o aviso
   buildDoc();
   document.getElementById('screen-edit').classList.remove('active');
   document.getElementById('screen-doc').classList.add('active');
@@ -1104,7 +1172,11 @@ window.exportarWhatsApp = function() {
 // Espera a sessão de login resolver (compartilhada com o HUB) antes de ler a grade,
 // para o Firestore autenticar a leitura. Carrega uma única vez.
 let _carregou = false;
-onAuthStateChanged(auth, () => { if (!_carregou) { _carregou = true; carregarDoFirebase(); } });
+onAuthStateChanged(auth, (user) => {
+  if (!_carregou) { _carregou = true; carregarDoFirebase(); }
+  // Leu antes de o login resolver e falhou: com a sessão pronta, tenta de novo.
+  else if (user && leituraFalhou) carregarDoFirebase();
+});
 // Rede de segurança: se o Auth demorar/não inicializar, carrega mesmo assim.
 setTimeout(() => { if (!_carregou) { _carregou = true; carregarDoFirebase(); } }, 3500);
 
