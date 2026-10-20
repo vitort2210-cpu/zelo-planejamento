@@ -661,6 +661,13 @@ mark.cmt:hover{background:#f6d9c4}
 .cmt-foot{display:flex;justify-content:space-between;align-items:center;margin-top:4px}
 .cmt-meta{font-size:10px;color:var(--z-text-sec)}
 .cmt-resolve{font-size:11px;color:var(--z-teal);background:none;border:none;cursor:pointer;font-family:inherit;padding:0;font-weight:600}
+.cmt-ir{cursor:pointer;border-radius:4px}
+.cmt-ir:focus-visible{outline:2px solid var(--z-teal);outline-offset:2px}
+.cmt-item:hover{box-shadow:0 1px 6px rgba(217,129,78,.25)}
+mark.cmt.cmt-flash{background:#F6C9A8;box-shadow:0 0 0 2px var(--z-terra)}
+.cmt-item.cmt-orfao{border-style:dashed;border-left-style:solid}
+.cmt-orfao .cmt-quote{opacity:.7}
+.cmt-mudou{font-size:10.5px;font-weight:600;color:var(--z-terra);margin:0 0 4px}
 /* popover */
 .cmt-pop{position:absolute;z-index:500;background:#fff;border:1px solid var(--z-border);border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.16);padding:10px;width:240px;display:none}
 .cmt-pop-t{font-size:11px;font-weight:800;color:var(--z-terra);margin-bottom:6px}
@@ -3297,9 +3304,11 @@ function rtHTML(id, c, texto, escopo, grifos){
   escopo = escopo || 'copy';
   const editavel = rtEsc(escopo).editavel();
   const txt = String(texto || '');
+  // Cada grifo é re-ancorado pela citação; o órfão não grifa nada.
   const marcas = (grifos || [])
-    .filter(g => g.start < g.end)
-    .map(g => ({ ini: Math.max(0, g.start|0), fim: Math.min(txt.length, g.end|0), cid: g.id }))
+    .map(g => { const a = ancoraDoComentario(txt, g);
+      return (a && a.start < a.end) ? { ini: a.start, fim: a.end, cid: g.id, dica: (g.autor || 'Gabi') + ': ' + (g.texto || '') } : null; })
+    .filter(Boolean)
     .sort((a, b) => a.ini - b.ini);
   let out = '';
   // escreve o texto de [a,b) aplicando os grifos que caem dentro do pedaço
@@ -3309,7 +3318,7 @@ function rtHTML(id, c, texto, escopo, grifos){
       const s = Math.max(pos, g.ini), e = Math.min(b, g.fim);
       if (e <= s) continue;
       if (s > pos) out += esc(txt.slice(pos, s));
-      out += `<mark class="cmt rt-cmt" data-cid="${esc(g.cid || '')}">${esc(txt.slice(s, e))}</mark>`;
+      out += `<mark class="cmt rt-cmt" data-cid="${esc(g.cid || '')}" title="${esc(g.dica)}">${esc(txt.slice(s, e))}</mark>`;
       pos = e;
     }
     if (pos < b) out += esc(txt.slice(pos, b));
@@ -3332,6 +3341,52 @@ function grifosDoBloco(c, block){
   return (c && Array.isArray(c.comentarios))
     ? c.comentarios.filter(x => x.block === block && !x.resolvido)
     : [];
+}
+
+// ── Âncora dos comentários ────────────────────────────────────────────────────
+// O comentário guarda a posição (start/end) e a citação literal (quote). A posição
+// envelhece a cada edição; a citação não. Então: confia na posição só se o texto ali
+// ainda for a citação; senão procura a citação de novo; e se ela não existe mais, o
+// comentário é órfão — não grifa nada, em vez de grifar um trecho errado.
+function acharCitacao(texto, cm) {
+  const q = cm.quote || '';
+  if (!q) return null;
+  const achados = [];
+  for (let i = texto.indexOf(q); i >= 0; i = texto.indexOf(q, i + 1)) achados.push(i);
+  if (!achados.length) return null;
+  // Mais de uma ocorrência: o contexto salvo em volta desempata; depois, a proximidade.
+  const ctx = (i) => (cm.antes && texto.slice(Math.max(0, i - cm.antes.length), i) === cm.antes ? 1 : 0)
+                   + (cm.depois && texto.slice(i + q.length, i + q.length + cm.depois.length) === cm.depois ? 1 : 0);
+  const perto = (i) => Math.abs(i - (cm.start | 0));
+  achados.sort((a, b) => (ctx(b) - ctx(a)) || (perto(a) - perto(b)));
+  return { start: achados[0], end: achados[0] + q.length };
+}
+// null = órfão (o trecho comentado não existe mais no texto)
+function ancoraDoComentario(texto, cm) {
+  const t = String(texto || ''), s = cm.start | 0, e = cm.end | 0;
+  if (!cm.quote) return (s < e && e <= t.length) ? { start: s, end: e } : null;   // antigo, sem citação
+  if (t.slice(s, e) === cm.quote) return { start: s, end: e };
+  return acharCitacao(t, cm);
+}
+// Uma edição (digitar, colar, apagar) troca um trecho contíguo do texto. O maior
+// prefixo e sufixo em comum dizem qual. O que está depois dele anda junto; o que
+// encosta nele é re-encontrado pela citação. Manter o start em dia é o que desempata
+// citações repetidas ("criança" aparece dez vezes num carrossel).
+function reancorarComentarios(c, block, antigo, novo) {
+  if (antigo === novo || !Array.isArray(c.comentarios)) return;
+  const cms = c.comentarios.filter(x => x.block === block && !x.resolvido);
+  if (!cms.length) return;
+  let p = 0; const max = Math.min(antigo.length, novo.length);
+  while (p < max && antigo[p] === novo[p]) p++;
+  let fa = antigo.length, fn = novo.length;
+  while (fa > p && fn > p && antigo[fa - 1] === novo[fn - 1]) { fa--; fn--; }
+  const delta = fn - fa;
+  for (const cm of cms) {
+    if ((cm.end | 0) <= p) continue;                                    // antes da edição
+    if ((cm.start | 0) >= fa) { cm.start = (cm.start | 0) + delta; cm.end = (cm.end | 0) + delta; continue; }
+    const a = acharCitacao(novo, cm);                                   // a edição encostou nele
+    if (a) { cm.start = a.start; cm.end = a.end; }
+  }
 }
 // HTML do editor → texto (com marcas).
 // O contenteditable monta a quebra de linha do jeito dele: às vezes <br>, às
@@ -3471,6 +3526,7 @@ function rtInserirMarca(id, block, marca, escopo){
 }
 function rtGravarTexto(id, block, txt){
   const c = ensureCopy(id);
+  reancorarComentarios(c, block, blockText(c, block), txt);   // antes de trocar o texto
   if(block === 'reels') c.reels = txt;
   else if(block === 'legenda') c.legenda = txt;
   else if(block === 'blog') c.blog = txt;
@@ -3666,20 +3722,33 @@ function cardValidacao(it, c) {
 }
 
 // ── Comentários (lista + marcação por palavra) ────────────────────────────────
+// Clicar no comentário leva ao trecho no texto (irParaTrecho). O órfão — trecho
+// reescrito desde o comentário — avisa em vez de levar a um lugar errado.
 function commentListHTML(id, c, block) {
   const cs = (c.comentarios||[]).filter(x => x.block === block && !x.resolvido);
   if (!cs.length) return '';
-  return `<div class="cmt-list">${cs.map(cm => `
-    <div class="cmt-item" id="cmt-${cm.id}">
-      <div class="cmt-quote">“${esc(cm.quote)}”</div>
-      <div class="cmt-texto">${esc(cm.texto)}</div>
+  const texto = blockText(c, block);
+  return `<div class="cmt-list">${cs.map(cm => {
+    const orfao = !ancoraDoComentario(texto, cm);
+    return `
+    <div class="cmt-item${orfao ? ' cmt-orfao' : ''}" id="cmt-${cm.id}">
+      <div class="cmt-ir" role="button" tabindex="0" title="${orfao ? 'Esse trecho foi reescrito desde o comentário' : 'Ir para o trecho no texto'}"
+           onclick="irParaTrecho('${cm.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();irParaTrecho('${cm.id}')}">
+        <div class="cmt-quote">“${esc(cm.quote)}”</div>
+        ${orfao ? '<div class="cmt-mudou">✎ Esse trecho mudou desde o comentário — compare com a citação.</div>' : ''}
+        <div class="cmt-texto">${esc(cm.texto)}</div>
+      </div>
       <div class="cmt-foot"><span class="cmt-meta">— ${esc(cm.autor||'Gabi')}</span>
         ${ehVisualizador() ? '' : `<button class="cmt-resolve" onclick="resolverComentario(${id},'${cm.id}')">✓ Resolver</button>`}</div>
-    </div>`).join('')}</div>`;
+    </div>`; }).join('')}</div>`;
 }
 function renderComentado(text, comments) {
   if (!text) return '<span class="vblock-empty">— sem texto —</span>';
-  const cs = comments.filter(c => c.start < c.end).slice().sort((a,b) => a.start - b.start);
+  // Re-ancora pela citação, como na edição; o órfão não grifa nada.
+  const cs = comments
+    .map(c => { const a = ancoraDoComentario(text, c); return (a && a.start < a.end) ? { id: c.id, start: a.start, end: a.end } : null; })
+    .filter(Boolean)
+    .sort((a,b) => a.start - b.start);
   let html = '', pos = 0;
   for (const c of cs) {
     const s = Math.max(pos, Math.min(c.start, text.length));
@@ -3800,6 +3869,14 @@ window.removeSlide = function(id, i) {
     if (!m) return;
     const n = +m[1];
     t.block = 'slide:' + (n === i ? Math.min(i, ultimo) : (n > i ? n - 1 : n));
+  });
+  // Os comentários também: os de baixo sobem uma casa junto com o slide deles. Os do
+  // slide removido vão para o vizinho e aparecem como órfãos (a citação não está lá).
+  (c.comentarios||[]).forEach(cm => {
+    const m = /^slide:(\d+)$/.exec(cm.block||'');
+    if (!m) return;
+    const n = +m[1];
+    cm.block = 'slide:' + (n === i ? Math.min(i, ultimo) : (n > i ? n - 1 : n));
   });
   agendarSaveCopy(); renderOneCard(id);
 };
@@ -4042,6 +4119,22 @@ window.focarComentario = function(cid) {
   const el = document.getElementById('cmt-' + cid);
   if (el) { el.scrollIntoView({behavior:'smooth', block:'center'}); el.classList.add('cmt-flash'); setTimeout(() => el.classList.remove('cmt-flash'), 1500); }
 };
+// O caminho de volta: do comentário ao trecho. Vale na edição e na validação, porque
+// os dois desenham o grifo com data-cid. Na edição, deixa o cursor no fim do trecho,
+// pronto para ajustar.
+window.irParaTrecho = function(cid) {
+  const m = document.querySelector(`mark[data-cid="${CSS.escape(cid)}"]`);
+  if (!m) { showToast('Esse trecho mudou desde o comentário — compare com a citação.'); return; }
+  m.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  m.classList.add('cmt-flash');
+  setTimeout(() => m.classList.remove('cmt-flash'), 1600);
+  const ed = m.closest('[contenteditable="true"]');
+  if (ed) {
+    const r = document.createRange(); r.setStartAfter(m); r.collapse(true);
+    const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+    ed.focus({ preventScroll: true });
+  }
+};
 window.cancelCmt = function() { hideCmtPopover(); window.getSelection().removeAllRanges(); pendingSel = null; };
 window.salvarCmt = function() {
   if (!pendingSel) { hideCmtPopover(); return; }
@@ -4054,6 +4147,9 @@ window.salvarCmt = function() {
     id: 'c' + Date.now() + Math.floor(Math.random()*1000),
     block: pendingSel.block, start: pendingSel.a, end: pendingSel.b,
     quote: canon.slice(pendingSel.a, pendingSel.b),
+    // o que vem em volta desempata quando a citação aparece mais de uma vez no texto
+    antes: canon.slice(Math.max(0, pendingSel.a - 24), pendingSel.a),
+    depois: canon.slice(pendingSel.b, pendingSel.b + 24),
     texto: txt, autor: 'Gabi', resolvido: false, ts: Date.now()
   });
   const id = pendingSel.itemId;
