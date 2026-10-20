@@ -379,7 +379,7 @@ select.gabi-select-fmt:focus{outline:none;border-color:var(--z-ocre-dark)}
 <!-- Firebase SDKs -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot, updateDoc, FieldPath } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -1118,7 +1118,22 @@ window.setStatus = function(id, status) {
   atualizarStats();
   const si = document.getElementById('si-'+id);
   if (si) { si.classList.add('show'); setTimeout(()=>si.classList.remove('show'),2000); }
-  agendarSalvamento();
+  gravarStatus(id);
+}
+
+// O status grava na hora e só o campo dele (estados.{id}). Antes esperava 1,2 s e
+// regravava o documento inteiro — ~16 KB para mudar uma palavra —, e era essa a
+// demora que se sentia ao marcar aprovado/ajuste/bloqueado.
+async function gravarStatus(id) {
+  if (!baseCarregada) { avisarGradeNaoCarregada(); showToast('⚠ Não salvo — recarregue a página'); return; }
+  if (['localhost','127.0.0.1'].includes(location.hostname)) { showToast('🔧 Modo local — não salva em produção'); return; }
+  try {
+    await updateDoc(DOC_REF, new FieldPath('estados', String(id)), estados[id] || '', 'updatedAt', new Date().toISOString());
+    showToast('✓ Salvo');
+  } catch (e) {
+    if (e && e.code === 'not-found') { agendarSalvamento(); return; }   // ciclo novo: o doc ainda não existe
+    showToast('⚠ Erro ao salvar — verifique a conexão');
+  }
 }
 
 window.saveObs = function(id) {
