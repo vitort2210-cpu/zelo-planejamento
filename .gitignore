@@ -1,1 +1,39 @@
+# ATENCAO: este repo e PUBLICO e o workflow de deploy empacota a raiz inteira
+# (path: '.'). Tudo que for commitado vira arquivo baixavel na URL do Pages.
+# Antes de adicionar qualquer coisa aqui, pergunte: pode ser publico?
+
+# --- credenciais (nunca commitar) ---
+*firebase-adminsdk*.json
+*serviceAccount*.json
+*service-account*.json
+*.pem
+*.key
+.env
+.env.*
+
+# --- ferramentas locais ---
 .claude/
+
+# --- notas de handoff: tem os e-mails dos tres papeis, nunca publico ---
+HANDOFF.md
+**/HANDOFF.md
+
+# --- material interno de cliente (nao e para o site publico) ---
+notas_contratos/
+base/
+set-out_26/
+
+# --- JSON solto na raiz (staging local, nao entrega) ---
+/*.json
+
+# --- documentos de trabalho (nao servem num site estatico publico) ---
+*.docx
+*.doc
+*.xlsx
+
+# --- staging de conteudo de cliente: vive no Firestore, nao no repo ---
+dados-para-subir/
+
+# --- pastas de trabalho por ciclo (material de cliente, nunca publico) ---
+*_26/
+*_27/
