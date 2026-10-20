@@ -585,6 +585,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .feed-tile.vazio .feed-ico{display:none}
 .feed-data{position:absolute;bottom:5px;left:6px;font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,.45);border-radius:4px;padding:1px 5px}
 .feed-tile.vazio .feed-data{background:var(--z-bg);color:var(--z-text-sec)}
+.cc-date-ed{font:inherit;font-size:inherit;font-weight:inherit;color:inherit;background:none;border:1px dashed transparent;border-radius:6px;padding:1px 5px;margin:-2px -6px 0;cursor:pointer;text-align:left}
+.cc-date-ed span{opacity:0;font-size:11px;transition:opacity .15s}
+.cc-date-ed:hover,.cc-date-ed:focus-visible{border-color:var(--z-teal);outline:none}
+.cc-date-ed:hover span,.cc-date-ed:focus-visible span{opacity:.7}
+.data-modal{position:fixed;inset:0;z-index:6000;background:rgba(26,26,26,.38);display:flex;align-items:center;justify-content:center;padding:16px}
+.data-box{background:#fff;border-radius:14px;padding:20px 20px 16px;width:100%;max-width:400px;box-shadow:0 12px 40px rgba(0,0,0,.22)}
+.data-box h3{margin:0 0 2px;font-size:16px;font-weight:800;color:var(--z-text)}
+.data-tit{margin:0 0 14px;font-size:12.5px;color:var(--z-text-sec);line-height:1.4}
+.data-lbl{display:block;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--z-text-sec);margin-bottom:5px}
+.data-linha{display:flex;gap:8px}
+.data-linha input,.data-linha select{flex:1;min-width:0;font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--z-border);border-radius:8px;background:#fff;color:var(--z-text)}
+.data-linha input{max-width:110px;font-variant-numeric:tabular-nums}
+.data-linha input:focus,.data-linha select:focus{outline:none;border-color:var(--z-teal)}
+.data-ok{font:inherit;font-size:13px;font-weight:700;padding:8px 14px;border-radius:8px;border:none;background:var(--z-teal);color:#fff;cursor:pointer;flex-shrink:0}
+.data-ok.sec{background:#fff;color:var(--z-teal);border:1px solid var(--z-teal)}
+.data-ou{font-size:11.5px;color:var(--z-text-sec);margin:16px 0 6px;text-align:center}
+.data-nota{font-size:11.5px;color:var(--z-text-sec);margin:14px 0 0}
+.data-fechar{display:block;margin:10px 0 0 auto;font:inherit;font-size:12.5px;background:none;border:none;color:var(--z-text-sec);cursor:pointer;text-decoration:underline}
 .pd-panel.calmo{border-color:var(--z-border)}
 .pd-panel.calmo .pd-head{background:var(--z-bg)}
 .pd-ico{font-size:15px}
@@ -1031,7 +1049,7 @@ mark.cmt.cmt-flash{background:#F6C9A8;box-shadow:0 0 0 2px var(--z-terra)}
 <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, updateDoc, deleteField, FieldPath } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, updateDoc, deleteField, FieldPath, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -3439,6 +3457,103 @@ function renderOneCard(id) {
 function ajustesAbertos(c) {
   return (c && Array.isArray(c.comentarios)) ? c.comentarios.filter(x => !x.resolvido).length : 0;
 }
+// ── Data do conteúdo, editável em Copy e em Conteúdos ─────────────────────────
+// A data mora num lugar só — `items` da grade do ciclo, em planejamentos/{docId} — e
+// todas as abas leem de lá: mudar aqui muda no planejamento, na copy, em conteúdos e
+// nas métricas. Grava por transação: lê a grade mais recente do banco, troca só a
+// data e grava de uma vez, para não engolir o que o planejador gravou noutra aba.
+function dataDoCardHTML(it){
+  if (ROLE !== 'editor') return `<div class="cc-date">📅 ${esc(it.data||'--')}</div>`;
+  return `<button type="button" class="cc-date cc-date-ed" title="Mudar a data (vale em todas as abas)"
+    onclick="event.stopPropagation();abrirData(${+it.id})">📅 ${esc(it.data||'--')} <span aria-hidden="true">✎</span></button>`;
+}
+function normData(s){
+  const m = String(s||'').trim().match(/^(\d{1,2})\s*[\/.-]\s*(\d{1,2})$/);
+  if (!m) return null;
+  const d = +m[1], mes = +m[2];
+  if (d < 1 || d > 31 || mes < 1 || mes > 12) return null;
+  return String(d).padStart(2, '0') + '/' + String(mes).padStart(2, '0');
+}
+// A mesma regra do planejador: mês, dia e, empatando, a ordem que já tinha.
+function ordenarGradePorData(items){
+  return items.map((it, i) => ({ it, i, m: String(it.data||'').match(/^(\d{1,2})\/(\d{1,2})/) }))
+    .sort((a, b) => {
+      if (!a.m && !b.m) return a.i - b.i;
+      if (!a.m) return 1;
+      if (!b.m) return -1;
+      return (+a.m[2] - +b.m[2]) || (+a.m[1] - +b.m[1]) || (a.i - b.i);
+    }).map(x => x.it);
+}
+async function mudarDatas(docId, mudancas){
+  if (bloqueiaGravacaoLocal()) { showToast('🔧 Modo local — a data não é gravada'); return null; }
+  const ref = doc(db, 'planejamentos', docId);
+  let novos = null;
+  await runTransaction(db, async (tx) => {
+    const s = await tx.get(ref);
+    if (!s.exists()) throw new Error('a grade deste ciclo não foi encontrada');
+    const items = (s.data().items || []).map(it => (String(it.id) in mudancas) ? { ...it, data: mudancas[it.id] } : it);
+    novos = ordenarGradePorData(items);
+    tx.update(ref, { items: novos, updatedAt: new Date().toISOString() });
+  });
+  return novos;
+}
+window.abrirData = function(id){
+  const it = (gradeItems || []).find(x => +x.id === +id); if (!it) return;
+  fecharData();
+  const outros = (gradeItems || []).filter(x => +x.id !== +id && x.data);
+  const m = document.createElement('div');
+  m.id = 'data-modal'; m.className = 'data-modal';
+  m.innerHTML = `<div class="data-box" role="dialog" aria-modal="true" aria-labelledby="data-h">
+      <h3 id="data-h">Mudar a data</h3>
+      <p class="data-tit">${esc(it.titulo || '(sem título)')}</p>
+      <label class="data-lbl" for="data-nova">Nova data</label>
+      <div class="data-linha">
+        <input id="data-nova" type="text" inputmode="numeric" value="${esc(it.data || '')}" placeholder="dd/mm" maxlength="5"
+               onkeydown="if(event.key==='Enter'){event.preventDefault();salvarData(${+id})}">
+        <button type="button" class="data-ok" onclick="salvarData(${+id})">Salvar</button>
+      </div>
+      ${outros.length ? `<div class="data-ou">ou troque de lugar com outro conteúdo</div>
+      <div class="data-linha">
+        <select id="data-troca" aria-label="Trocar a data com"><option value="">Escolha o conteúdo…</option>${outros.map(o =>
+          `<option value="${+o.id}">${esc(o.data)} · ${esc((o.titulo || '').slice(0, 52))}</option>`).join('')}</select>
+        <button type="button" class="data-ok sec" onclick="trocarDatas(${+id})">Trocar</button>
+      </div>` : ''}
+      <p class="data-nota">Vale em todas as abas: planejamento, copy, conteúdos e métricas.</p>
+      <button type="button" class="data-fechar" onclick="fecharData()">Cancelar</button>
+    </div>`;
+  m.addEventListener('mousedown', (e) => { if (e.target === m) fecharData(); });
+  m.addEventListener('keydown', (e) => { if (e.key === 'Escape') fecharData(); });
+  document.body.appendChild(m);
+  const inp = document.getElementById('data-nova'); inp.focus(); inp.select();
+};
+window.fecharData = function(){ const m = document.getElementById('data-modal'); if (m) m.remove(); };
+async function aplicarDatas(mudancas, msg){
+  try {
+    const novos = await mudarDatas(copyCiclo, mudancas);
+    if (!novos) return;
+    gradeItems = novos;
+    const c = (asstCache.cycles || []).find(x => x.docId === copyCiclo); if (c) c.items = novos;
+    fecharData();
+    if (tabAtivo === 'copy') buildCopyTab(); else if (tabAtivo === 'design') buildDesignTab();
+    showToast(msg);
+  } catch (e) { console.error(e); showToast('Não consegui mudar a data: ' + (e.message || 'verifique a conexão')); }
+}
+window.salvarData = function(id){
+  const v = normData(document.getElementById('data-nova').value);
+  if (!v) { showToast('Data no formato dia/mês — ex.: 23/11'); return; }
+  const it = (gradeItems || []).find(x => +x.id === +id); if (!it) return;
+  if (v === it.data) { fecharData(); return; }
+  aplicarDatas({ [id]: v }, `📅 ${it.data || '--'} → ${v}. Vale em todas as abas.`);
+};
+window.trocarDatas = function(id){
+  const outro = +document.getElementById('data-troca').value;
+  if (!outro) { showToast('Escolha com qual conteúdo trocar.'); return; }
+  const a = (gradeItems || []).find(x => +x.id === +id), b = (gradeItems || []).find(x => +x.id === outro);
+  if (!a || !b) return;
+  aplicarDatas({ [a.id]: b.data, [b.id]: a.data },
+    `⇄ Trocados: "${(a.titulo || '').slice(0, 28)}" vai para ${b.data} e "${(b.titulo || '').slice(0, 28)}" para ${a.data}.`);
+};
+
 function cardInnerHTML(it, c) {
   const body = (copyMode === 'edit' ? cardEdit(it, c) : cardValidacao(it, c));
   // Selo de ajuste no cabeçalho: com o card fechado dá para ver, de relance na
@@ -3449,7 +3564,7 @@ function cardInnerHTML(it, c) {
     : '';
   return `<div class="cc-head cc-toggle" onclick="toggleCopyCard(${it.id})" role="button" tabindex="0">
       <div class="cc-meta">
-        <div class="cc-date">📅 ${esc(it.data||'--')}</div>
+        ${dataDoCardHTML(it)}
         <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
         <div class="cc-tags">
           ${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}
@@ -4792,7 +4907,7 @@ window.toggleDesignCard = function(id){
 function designCardInner(it,d){
   const header=`<div class="cc-head cc-toggle" onclick="toggleDesignCard(${it.id})" role="button" tabindex="0">
       <div class="cc-meta">
-        <div class="cc-date">📅 ${esc(it.data||'--')}</div>
+        ${dataDoCardHTML(it)}
         <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
         <div class="cc-tags">${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}</div>
       </div>
