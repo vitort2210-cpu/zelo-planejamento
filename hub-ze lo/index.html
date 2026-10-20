@@ -625,6 +625,41 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .vcol-t{font-size:13px;font-weight:800;color:var(--z-text);overflow-wrap:anywhere}
 .vcol-s{font-size:11.5px;font-weight:600;color:var(--z-teal);overflow-wrap:anywhere}
 .vcol-a{font-size:11.5px;color:var(--z-text-sec);line-height:1.4;white-space:pre-wrap;overflow-wrap:anywhere}
+.sp-panel{background:#fff;border:1px solid var(--z-border);border-radius:12px;margin-bottom:1.1rem;overflow:hidden}
+.sp-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:11px 14px;cursor:pointer;background:var(--z-bg)}
+.sp-t{font-size:13px;font-weight:800;color:var(--z-text);flex:1;min-width:200px}
+.sp-mini{font-size:11.5px;color:var(--z-text-sec);font-variant-numeric:tabular-nums;white-space:nowrap}
+.sp-mini-atras{color:#B4472F;font-weight:700}
+.sp-faltam{font-size:11px;font-weight:700;color:var(--z-terra)}
+.sp-nota{font-size:12px;color:var(--z-text-sec);padding:10px 14px 0;line-height:1.45}
+.sp-trilha{display:flex;gap:4px;padding:12px 14px 4px;overflow-x:auto}
+.sp-sem{flex:1;min-width:48px;text-align:center;border-radius:8px;padding:6px 4px;background:var(--z-bg);border:1px solid transparent}
+.sp-sem b{display:block;font-size:12px;color:var(--z-text)}
+.sp-sem span{font-size:10px;color:var(--z-text-sec);font-variant-numeric:tabular-nums}
+.sp-sem.passou{opacity:.5}
+.sp-sem.agora{background:var(--z-teal-light);border-color:var(--z-teal)}
+.sp-sem.agora b{color:var(--z-teal)}
+.sp-sem.sp-chegada{background:var(--z-terra-light)}
+.sp-pistas{padding:8px 14px 4px;display:flex;flex-direction:column;gap:12px}
+.sp-pessoa{padding:10px 12px;border-radius:10px;border:1px solid var(--z-border)}
+.sp-pessoa.eu{border-color:var(--z-teal);box-shadow:inset 0 0 0 1px var(--z-teal)}
+.sp-p-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sp-p-head b{font-size:13.5px}
+.sp-voce{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#fff;background:var(--z-teal);border-radius:20px;padding:1px 6px;vertical-align:2px}
+.sp-papel{font-size:11px;color:var(--z-text-sec)}
+.sp-p-n{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--z-text);font-variant-numeric:tabular-nums}
+.sp-pista{position:relative;height:8px;border-radius:8px;background:var(--z-bg);margin:14px 11px 12px}
+.sp-feito{position:absolute;left:0;top:0;bottom:0;border-radius:8px;opacity:.35}
+.sp-corredor{position:absolute;top:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:#fff;border:2px solid;font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;color:var(--z-text)}
+.sp-tar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px;padding:5px 0;border-top:1px dashed var(--z-border)}
+.sp-pista + .sp-tar{border-top:none}
+.sp-tar-t{flex:1;min-width:150px;color:var(--z-text)}
+.sp-tar.ok .sp-tar-t{color:var(--z-text-sec)}
+.sp-tar-n{font-weight:700;font-variant-numeric:tabular-nums;color:var(--z-text-sec)}
+.sp-esp{font-size:10.5px;font-weight:700;color:#7A5F12;background:#FBF6E8;border-radius:20px;padding:2px 8px}
+.sp-esp.trav{color:#B4472F;background:#FBEAE7}
+.sp-atras{font-size:11.5px;color:#B4472F;margin-top:6px;line-height:1.4}
+.sp-rodape{font-size:11px;color:var(--z-text-sec);padding:10px 14px 12px;line-height:1.45}
 .pd-panel.calmo{border-color:var(--z-border)}
 .pd-panel.calmo .pd-head{background:var(--z-bg)}
 .pd-ico{font-size:15px}
@@ -1976,9 +2011,10 @@ function renderTabContent() {
   } else {
     if (ehVisualizador()) {
       subMode = 'vis'; // equipe de design só visualiza a Base de Dados
-      cont.innerHTML = `<div id="pend-wrap"></div><div id="ideias-wrap"></div><div id="atas-wrap"></div><div id="sub-content"></div>`;
+      cont.innerHTML = `<div id="sprint-wrap"></div><div id="pend-wrap"></div><div id="ideias-wrap"></div><div id="atas-wrap"></div><div id="sub-content"></div>`;
     } else {
       cont.innerHTML = `
+        <div id="sprint-wrap"></div>
         <div id="pend-wrap"></div>
         <div id="ideias-wrap"></div>
         <div id="atas-wrap"></div>
@@ -1988,6 +2024,7 @@ function renderTabContent() {
         </div>
         <div id="sub-content"></div>`;
     }
+    renderSprint();
     renderPendencias();
     renderSubContent();
     renderIdeias();
@@ -2376,6 +2413,142 @@ function renderPendencias(){
     </div>${faixa}${corpo}</div>`;
 }
 window.togglePend = function(){ pendAberto=!pendAberto; renderPendencias(); };
+
+// ── Sprint de produção ─────────────────────────────────────────────────────────
+// A corrida de cada um até a chegada (a saída da Gabi de férias). O plano — as
+// semanas e quem pega o quê — mora em hubs/"ze lo__sprints". O ANDAMENTO ninguém
+// marca: é contado no banco, nas etapas que já existem (copy finalizada → texto
+// aprovado pela Gabi → arte subida → arte aprovada). Se dependesse de alguém marcar,
+// apodreceria em duas semanas.
+const SPRINT_REF = doc(db, 'hubs', CLIENT_ID + '__sprints');
+let sprintPlano = null;
+let sprintAberto = false;
+const SPRINT_QUEM = {
+  Vitor:  { cor: 'var(--z-teal)',  papel: 'escreve',      artigo: 'o' },
+  Gabi:   { cor: 'var(--z-terra)', papel: 'valida',       artigo: 'a' },
+  Bonina: { cor: '#9A7A1F',        papel: 'cria a arte',  artigo: 'a' },
+};
+const SPRINT_ETAPA = { copy:'escrever', texto:'validar texto', arte:'criar arte', 'aprovar-arte':'aprovar arte', plano:'montar o planejamento', 'validar-plano':'validar o planejamento' };
+function dataIso(s){ const [a, m, d] = String(s||'').split('-').map(Number); return a ? new Date(a, m-1, d) : null; }
+function fmtDiaMes(s){ const d = dataIso(s); return d ? String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') : ''; }
+function mesDoItemNum(it){ const m = String(it.data||'').match(/^\d{1,2}\/(\d{1,2})/); return m ? +m[1] : 0; }
+// Os conteúdos de uma tarefa: por ids, ou por mês do ciclo dividido em lotes por data.
+// Por mês é o que aguenta mudança de data: o conteúdo que muda de mês sai do lote sozinho.
+function itensDaTarefa(t, c){
+  let its = ((c && c.items) || []).slice();
+  if (Array.isArray(t.ids) && t.ids.length) return its.filter(it => t.ids.includes(+it.id));
+  if (t.mes) its = its.filter(it => mesDoItemNum(it) === +t.mes);
+  its = ordenarGradePorData(its);
+  if (t.lote && t.de) { const tam = Math.ceil(its.length / t.de); its = its.slice((t.lote - 1) * tam, t.lote * tam); }
+  return its;
+}
+// Situação de um conteúdo numa etapa: 'feito', 'falta', 'travado', 'fora' (cancelado)
+// ou 'espera:<quem>' — esperando outra pessoa terminar a parte dela antes.
+function situacaoNaEtapa(etapa, c, it){
+  const cp = (c.copy || {})[it.id] || {}, dz = (c.design || {})[it.id] || {};
+  if (cp.statusGabi === 'cancelado') return 'fora';
+  const temArte = desMidias(dz).length > 0;
+  if (etapa === 'copy') return cp.statusCopy === 'finalizado' ? 'feito' : (cp.statusCopy === 'bloqueado' ? 'travado' : 'falta');
+  if (etapa === 'texto') {
+    if (cp.statusGabi === 'aprovado') return 'feito';
+    if (cp.statusGabi === 'revisao_necessaria' || cp.statusCopy !== 'finalizado') return 'espera:Vitor';
+    return 'falta';
+  }
+  if (etapa === 'arte') return temArte ? 'feito' : (cp.statusGabi !== 'aprovado' ? 'espera:Gabi' : 'falta');
+  if (etapa === 'aprovar-arte') {
+    if (dz.statusDesign === 'aprovado') return 'feito';
+    if (!temArte || dz.statusDesign === 'ajustes_necessarios') return 'espera:Bonina';
+    return 'falta';
+  }
+  return 'falta';
+}
+function contarTarefa(t){
+  const c = (asstCache.cycles || []).find(x => x.docId === t.ciclo);
+  const r = { feito: 0, total: 0, espera: {}, travado: 0, semGrade: !c || !(c.items || []).length };
+  if (t.etapa === 'plano') { r.total = 1; r.feito = r.semGrade ? 0 : 1; return r; }
+  if (t.etapa === 'validar-plano') {
+    r.total = 1;
+    if (r.semGrade) { r.espera.Vitor = 1; return r; }
+    r.feito = c.items.every(it => c.estados && c.estados[it.id] === 'aprovado') ? 1 : 0;
+    return r;
+  }
+  if (r.semGrade) return r;
+  itensDaTarefa(t, c).forEach(it => {
+    const s = situacaoNaEtapa(t.etapa, c, it);
+    if (s === 'fora') return;
+    r.total++;
+    if (s === 'feito') r.feito++;
+    else if (s === 'travado') r.travado++;
+    else if (s.startsWith('espera:')) { const q = s.slice(7); r.espera[q] = (r.espera[q] || 0) + 1; }
+  });
+  return r;
+}
+function semanaAtual(semanas){
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const i = semanas.findIndex(s => { const a = dataIso(s.inicio), b = dataIso(s.fim); return a && b && hoje >= a && hoje <= b; });
+  if (i >= 0) return i;
+  return hoje < dataIso((semanas[0] || {}).inicio) ? 0 : semanas.length - 1;
+}
+function renderSprint(){
+  const wrap = document.getElementById('sprint-wrap'); if (!wrap) return;
+  const sem = (sprintPlano && sprintPlano.semanas) || [];
+  if (!asstCache.carregado || !sem.length) { wrap.innerHTML = ''; return; }   // sem plano, sem painel
+  const ia = semanaAtual(sem), s = sem[ia];
+  const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+  const chegada = dataIso(sprintPlano.chegada);
+  const faltam = chegada ? Math.round((chegada - hoje) / 86400000) : null;
+  const pessoas = Object.keys(SPRINT_QUEM).map(quem => {
+    const desta = (s.tarefas || []).filter(t => t.quem === quem).map(t => ({ t, r: contarTarefa(t) }));
+    const atras = sem.slice(0, ia).flatMap(w => (w.tarefas || []).filter(t => t.quem === quem))
+      .map(t => ({ t, r: contarTarefa(t) })).filter(x => x.r.feito < x.r.total);
+    return { quem, desta, atras,
+      feito: desta.reduce((a, x) => a + x.r.feito, 0), total: desta.reduce((a, x) => a + x.r.total, 0),
+      pend: atras.reduce((a, x) => a + (x.r.total - x.r.feito), 0) };
+  });
+  const meu = ROLE === 'editor' ? 'Vitor' : (ehCliente() ? 'Gabi' : 'Bonina');
+  const titulo = `🏁 Sprint · ${esc(s.nome)} de ${sem.length} · ${fmtDiaMes(s.inicio)}–${fmtDiaMes(s.fim)}`;
+  const resumo = pessoas.map(p => `<span class="sp-mini"><b style="color:${SPRINT_QUEM[p.quem].cor}">${p.quem}</b> ${p.total ? `${p.feito}/${p.total}` : '—'}${p.pend ? ` <span class="sp-mini-atras">+${p.pend}</span>` : ''}</span>`).join('');
+  if (!sprintAberto) {
+    wrap.innerHTML = `<div class="sp-panel"><div class="sp-head" onclick="toggleSprint()" role="button" tabindex="0">
+      <span class="sp-t">${titulo}</span>${resumo}<span class="pd-chev">▸</span></div></div>`;
+    return;
+  }
+  const trilha = sem.map((w, i) => `<div class="sp-sem${i < ia ? ' passou' : ''}${i === ia ? ' agora' : ''}">
+      <b>${esc(w.nome)}</b><span>${fmtDiaMes(w.inicio)}</span></div>`).join('')
+    + `<div class="sp-sem sp-chegada"><b>🏁</b><span>${fmtDiaMes(sprintPlano.chegada)}</span></div>`;
+  const notas = (x) => {
+    if (x.r.semGrade && !['plano', 'validar-plano'].includes(x.t.etapa)) return `<span class="sp-esp">a grade ainda não existe</span>`;
+    return Object.entries(x.r.espera).map(([q, n]) => `<span class="sp-esp">⏸ ${n} esperando ${(SPRINT_QUEM[q] || {}).artigo || 'o'} ${q}</span>`).join('')
+      + (x.r.travado ? `<span class="sp-esp trav">🔒 ${x.r.travado} travado${x.r.travado > 1 ? 's' : ''}</span>` : '');
+  };
+  const tarefa = (x) => {
+    const ok = x.r.total && x.r.feito >= x.r.total;
+    return `<div class="sp-tar${ok ? ' ok' : ''}"><span class="sp-tar-t">${ok ? '✓ ' : ''}${esc(x.t.rotulo || SPRINT_ETAPA[x.t.etapa] || '')}</span>
+      <span class="sp-tar-n">${x.r.total ? `${x.r.feito} de ${x.r.total}` : '—'}</span>${notas(x)}</div>`;
+  };
+  const pistas = pessoas.map(p => {
+    const pct = p.total ? Math.round(100 * p.feito / p.total) : (p.desta.length ? 0 : 100);
+    const cor = SPRINT_QUEM[p.quem].cor;
+    return `<div class="sp-pessoa${p.quem === meu ? ' eu' : ''}">
+      <div class="sp-p-head"><b style="color:${cor}">${p.quem}${p.quem === meu ? ' <span class="sp-voce">você</span>' : ''}</b>
+        <span class="sp-papel">${SPRINT_QUEM[p.quem].papel}</span>
+        <span class="sp-p-n">${p.desta.length ? `${p.feito} de ${p.total} nesta semana` : 'livre nesta semana'}</span></div>
+      <div class="sp-pista" role="img" aria-label="${p.quem}: ${pct}% da semana"><div class="sp-feito" style="width:${pct}%;background:${cor}"></div>
+        <div class="sp-corredor" style="left:${pct}%;border-color:${cor}">${p.quem[0]}</div></div>
+      ${p.desta.length ? p.desta.map(tarefa).join('') : ''}
+      ${p.pend ? `<div class="sp-atras">↩ ${p.pend} ainda de semanas anteriores: ${p.atras.map(x => esc(x.t.rotulo || '')).join(' · ')}</div>` : ''}
+    </div>`;
+  }).join('');
+  wrap.innerHTML = `<div class="sp-panel aberto">
+    <div class="sp-head" onclick="toggleSprint()" role="button" tabindex="0"><span class="sp-t">${titulo}</span>
+      ${faltam != null ? `<span class="sp-faltam">${faltam > 0 ? `faltam ${faltam} dias para a chegada` : 'chegada'}</span>` : ''}<span class="pd-chev">▾</span></div>
+    ${sprintPlano.nota ? `<div class="sp-nota">${esc(sprintPlano.nota)}</div>` : ''}
+    <div class="sp-trilha">${trilha}</div>
+    <div class="sp-pistas">${pistas}</div>
+    <div class="sp-rodape">Ninguém marca nada aqui: o andamento é contado no HUB. Copy finalizada → texto aprovado pela Gabi → arte subida → arte aprovada.</div>
+  </div>`;
+}
+window.toggleSprint = function(){ sprintAberto = !sprintAberto; renderSprint(); };
 window.irPend = function(i){
   const l=(window.__pend||[])[i]; if(!l) return;
   const plist=estado.planejamentos||[];
@@ -5102,7 +5275,8 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
     return c.comentarios.length;
   };
   // Monta um cache de ciclos qualquer, para conferir a janela do painel.
-  window.__seedCiclos = (lista) => { asstCache = { carregado:true, cycles:lista }; renderPendencias(); return ciclosDoPainel().map(c=>c.periodo); };
+  window.__seedCiclos = (lista) => { asstCache = { carregado:true, cycles:lista }; renderPendencias(); renderSprint(); return ciclosDoPainel().map(c=>c.periodo); };
+  window.__seedSprint = (plano, aberto) => { sprintPlano = plano; if (aberto != null) sprintAberto = !!aberto; renderSprint(); };
   window.__serial = (el) => rtSerializar(el);
   // Chama a gravação por peça de verdade contra o Firestore. Sem login, a resposta
   // certa é permission-denied — prova que o SDK aceitou os argumentos e enviou.
@@ -5749,7 +5923,9 @@ async function carregarTudoAssistente(){
     cycles.push(c);
   }
   try{ const ms=await getDoc(metricasRef); if(ms.exists()&&Array.isArray(ms.data().snapshots)) metricasData={ snapshots:ms.data().snapshots }; }catch(e){}
+  try{ const sp=await getDoc(SPRINT_REF); sprintPlano = sp.exists() ? sp.data() : null; }catch(e){}
   asstCache={ carregado:true, cycles };
+  if (document.getElementById('sprint-wrap')) renderSprint();
   if(document.getElementById('za-menu')) zaRenderMenu();
 }
 
