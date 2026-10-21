@@ -660,6 +660,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .sp-esp.trav{color:#B4472F;background:#FBEAE7}
 .sp-atras{font-size:11.5px;color:#B4472F;margin-top:6px;line-height:1.4}
 .sp-rodape{font-size:11px;color:var(--z-text-sec);padding:10px 14px 12px;line-height:1.45}
+.cc-rodada{font-size:10.5px;font-weight:600;color:var(--z-text-sec);margin-top:4px}
+.cc-rodada.alem{color:#B4472F;font-weight:700}
 .pd-panel.calmo{border-color:var(--z-border)}
 .pd-panel.calmo .pd-head{background:var(--z-bg)}
 .pd-ico{font-size:15px}
@@ -1106,7 +1108,7 @@ mark.cmt.cmt-flash{background:#F6C9A8;box-shadow:0 0 0 2px var(--z-terra)}
 <script defer src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, updateDoc, deleteField, FieldPath, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, updateDoc, deleteField, FieldPath, runTransaction, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -3174,10 +3176,18 @@ function estavel(v) {   // JSON com chaves em ordem: mudar a ordem não conta co
   if (v && typeof v === 'object') return '{' + Object.keys(v).sort().map(k => JSON.stringify(k) + ':' + estavel(v[k])).join(',') + '}';
   return JSON.stringify(v === undefined ? null : v);
 }
-function retrato(itens) { const b = {}; for (const id in (itens || {})) b[id] = estavel(itens[id]); return b; }
+// Campos que só crescem e são gravados à parte, com arrayUnion (o histórico da peça).
+// O salvamento da peça não os compara nem os grava: duas pessoas acrescentando ao
+// mesmo tempo nunca se apagam. Na peça local, esses campos vêm sempre do banco.
+const CAMPOS_SO_ACRESCENTA = ['historico'];
+function semAcrescimos(it) {
+  if (!it || typeof it !== 'object') return it;
+  const o = { ...it }; CAMPOS_SO_ACRESCENTA.forEach(k => { delete o[k]; }); return o;
+}
+function retrato(itens) { const b = {}; for (const id in (itens || {})) b[id] = estavel(semAcrescimos(itens[id])); return b; }
 function pecasMudadas(itens, base) {
   const mud = [], del = [];
-  for (const id in (itens || {})) if (estavel(itens[id]) !== base[id]) mud.push(id);
+  for (const id in (itens || {})) if (estavel(semAcrescimos(itens[id])) !== base[id]) mud.push(id);
   for (const id in base) if (!(id in (itens || {}))) del.push(id);
   return { mud, del };
 }
@@ -3187,40 +3197,92 @@ function pecasMudadas(itens, base) {
 function mesclarDoBanco(locais, base, remotos) {
   const itens = {}, novaBase = {};
   for (const id in remotos) {
-    novaBase[id] = estavel(remotos[id]);
+    novaBase[id] = estavel(semAcrescimos(remotos[id]));
     const loc = locais[id];
-    if (loc === undefined || estavel(loc) === base[id]) { itens[id] = remotos[id]; continue; }
+    if (loc === undefined || estavel(semAcrescimos(loc)) === base[id]) { itens[id] = remotos[id]; continue; }
     const antes = base[id] ? JSON.parse(base[id]) : {};
     const m = { ...remotos[id] };
-    for (const k of new Set([...Object.keys(loc), ...Object.keys(antes)]))
+    for (const k of new Set([...Object.keys(loc), ...Object.keys(antes)])) {
+      if (CAMPOS_SO_ACRESCENTA.includes(k)) continue;   // o histórico vem sempre do banco
       if (estavel(loc[k]) !== estavel(antes[k])) { if (k in loc) m[k] = loc[k]; else delete m[k]; }
+    }
     itens[id] = m;
   }
   for (const id in locais) if (!(id in remotos) && !(id in base)) itens[id] = locais[id];   // criada aqui, ainda não gravada
   return { itens, base: novaBase };
 }
-// Grava só as peças que mudaram; `extras` são campos de topo que também mudaram. A
-// base recebe o que FOI gravado — não o estado atual, que pode ter ganhado mais
-// digitação durante a espera e ainda precisa ir no próximo salvamento.
+// Grava só o que mudou, e campo a campo (itens.{id}.{campo}) — nunca a peça inteira.
+// Assim a legenda que você edita e o status que a Gabi marca na mesma peça não se
+// cruzam nem no servidor, e o histórico (gravado à parte) nunca é sobrescrito.
+// `extras` são campos de topo que também mudaram. A base recebe o que FOI gravado —
+// não o estado atual, que pode ter ganhado mais digitação durante a espera.
 async function gravarPecas(ref, itens, base, extras) {
   const { mud, del } = pecasMudadas(itens, base);
   const ext = extras || {};
   if (!mud.length && !del.length && !Object.keys(ext).length) return;
   const agora = new Date().toISOString();
-  const gravado = {}; mud.forEach(id => { gravado[id] = estavel(itens[id]); });
-  const args = [];
-  mud.forEach(id => args.push(new FieldPath('itens', String(id)), itens[id]));
+  const gravado = {}, args = [];
+  mud.forEach(id => {
+    const novo = semAcrescimos(itens[id]) || {};
+    const antes = base[id] ? JSON.parse(base[id]) : {};
+    gravado[id] = estavel(novo);
+    for (const k of new Set([...Object.keys(novo), ...Object.keys(antes)])) {
+      if (estavel(novo[k]) === estavel(antes[k])) continue;
+      args.push(new FieldPath('itens', String(id), k), novo[k] !== undefined ? novo[k] : deleteField());
+    }
+  });
   del.forEach(id => args.push(new FieldPath('itens', String(id)), deleteField()));
   for (const k in ext) args.push(k, ext[k]);
   try {
     await updateDoc(ref, ...args, 'updatedAt', agora);
   } catch (e) {
     if (!e || e.code !== 'not-found') throw e;
-    const so = {}; mud.forEach(id => { so[id] = itens[id]; });   // ciclo novo: o doc ainda não existe
+    const so = {}; mud.forEach(id => { so[id] = semAcrescimos(itens[id]); });   // ciclo novo: o doc ainda não existe
     await setDoc(ref, { itens: so, ...ext, updatedAt: agora }, { merge: true });
   }
   for (const id in gravado) base[id] = gravado[id];
   del.forEach(id => { delete base[id]; });
+}
+
+// ── Linha do tempo por peça ────────────────────────────────────────────────────
+// Cada peça de copy e de arte guarda historico[] — { em, por, acao } —, só
+// acrescentando, com arrayUnion direto em itens.{id}.historico. É daqui que se mede
+// quanto a validação leva (antes não havia nenhuma medição possível) e que sai a
+// contagem de rodadas do contrato. Ações: liberada · alterada_apos_liberar ·
+// importada_do_time · gabi_aprovou · gabi_pediu_ajuste · arte_enviada ·
+// arte_aprovada · arte_ajuste.
+const RODADAS_INCLUSAS = 2;   // contrato atual: duas rodadas de ajuste por peça
+function registrarHistorico(onde, id, acao){
+  if (!copyCiclo || !acao) return;
+  const peca = onde === 'design' ? ensureDesign(id) : ensureCopy(id);
+  const ev = { em: new Date().toISOString(), por: USER_EMAIL || ROLE, acao };
+  if (!Array.isArray(peca.historico)) peca.historico = [];
+  peca.historico.push(ev);   // na tela já; o banco devolve o mesmo pelo listener
+  if ((onde === 'design' ? designFalhou : copyFalhou) || bloqueiaGravacaoLocal()) return;
+  const ref = onde === 'design' ? designRef(copyCiclo) : copyRef(copyCiclo);
+  updateDoc(ref, new FieldPath('itens', String(id), 'historico'), arrayUnion(ev))
+    .catch(e => console.warn('Não registrei no histórico:', acao, e && e.code));
+}
+function contarNoHistorico(peca, acao){ return ((peca && peca.historico) || []).filter(h => h.acao === acao).length; }
+// Rodada = pedido de ajuste DEPOIS de a peça mudar. Desmarcar e marcar de novo, sem a
+// peça ter mudado no meio, é a mesma rodada — senão um clique a mais virava cobrança.
+const RODADA_COPY   = { pedido: 'gabi_pediu_ajuste', mudancas: ['liberada', 'alterada_apos_liberar', 'importada_do_time'] };
+const RODADA_DESIGN = { pedido: 'arte_ajuste',       mudancas: ['arte_enviada'] };
+function contarRodadas(peca, regra){
+  let n = 0, mudou = true;
+  ((peca && peca.historico) || []).forEach(h => {
+    if (regra.mudancas.includes(h.acao)) mudou = true;
+    else if (h.acao === regra.pedido && mudou) { n++; mudou = false; }
+  });
+  return n;
+}
+// Linha discreta no card, só para o editor: em que rodada de ajuste a peça está.
+function rodadaHTML(peca, regra){
+  if (ROLE !== 'editor') return '';
+  const n = contarRodadas(peca, regra); if (!n) return '';
+  return n > RODADAS_INCLUSAS
+    ? `<div class="cc-rodada alem" title="Cada pedido de ajuste conta uma rodada">rodada ${n} — além das ${RODADAS_INCLUSAS} inclusas</div>`
+    : `<div class="cc-rodada" title="Cada pedido de ajuste conta uma rodada">rodada ${n} de ${RODADAS_INCLUSAS} inclusas</div>`;
 }
 // Leitura do ciclo que falhou: avisa e trava a gravação daquela parte.
 function avisarCicloNaoCarregado() {
@@ -3305,7 +3367,10 @@ window.importarCopyJSON = async function() {
     : `Importar ${n} conteúdo(s) de copy para este ciclo?`;
   if (!confirm(msg)) return;
   Object.values(itens).forEach(it => { if (it && typeof it === 'object') normalizeCopy(it); });
+  // O histórico não vem no JSON e não pode sumir: fica o que a peça já tinha.
+  Object.keys(itens).forEach(id => { const h = ((copyData.itens || {})[id] || {}).historico; if (h && itens[id]) itens[id].historico = h; });
   copyData = { itens: { ...(copyData.itens || {}), ...itens } };
+  Object.keys(itens).forEach(id => registrarHistorico('copy', id, 'importada_do_time'));
   await salvarCopy();
   renderCopyCards();
   fecharImportCopy();
@@ -3386,6 +3451,7 @@ window.avisarCopyCiclo = function() {
     if(temTexto && c.statusGabi!=='aprovado' && !c.notificadoEm){
       c.notificadoEm=new Date().toISOString();
       novos.push(`${it.data||''} — ${it.titulo||'(sem título)'}`);
+      registrarHistorico('copy', it.id, 'liberada');
     }
   });
   if(!novos.length){ showToast('Nenhum texto novo para avisar (tudo já avisado ou aprovado).'); return; }
@@ -3771,6 +3837,7 @@ function cardInnerHTML(it, c) {
           ${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}
           ${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}
         </div>
+        ${rodadaHTML(c, RODADA_COPY)}
       </div>
       <div class="cc-head-right">${selo}${miniStatus(c)}${openHint('Ler conteúdo completo')}</div>
     </div>
@@ -4104,11 +4171,23 @@ function rtInserirMarca(id, block, marca, escopo){
 }
 function rtGravarTexto(id, block, txt){
   const c = ensureCopy(id);
-  reancorarComentarios(c, block, blockText(c, block), txt);   // antes de trocar o texto
+  const antigo = blockText(c, block);
+  reancorarComentarios(c, block, antigo, txt);   // antes de trocar o texto
   if(block === 'reels') c.reels = txt;
   else if(block === 'legenda') c.legenda = txt;
   else if(block === 'blog') c.blog = txt;
   else if(block.startsWith('slide:')) { const i = +block.split(':')[1]; if(c.slides[i]) c.slides[i].texto = txt; }
+  if (antigo !== txt) marcarAlteradaAposLiberar(id, c);
+}
+// Texto mexido depois de a Gabi ter sido avisada: registra uma vez a cada liberação e
+// a cada pedido de ajuste dela — não a cada tecla. É o que abre a rodada seguinte.
+function marcarAlteradaAposLiberar(id, c){
+  if (ROLE !== 'editor') return;
+  const h = c.historico || [];
+  if (!h.some(e => e.acao === 'liberada')) return;   // rascunho nunca mostrado: não é rodada
+  let ult = -1; h.forEach((e, i) => { if (e.acao === 'liberada' || e.acao === 'gabi_pediu_ajuste') ult = i; });
+  if (h.slice(ult + 1).some(e => e.acao === 'alterada_apos_liberar')) return;
+  registrarHistorico('copy', id, 'alterada_apos_liberar');
 }
 window.rtInserirTabela = function(ev, id, block, escopo){
   ev.preventDefault();
@@ -4773,6 +4852,8 @@ window.setGabiStatus = function(id, val) {
   c.statusGabi = (c.statusGabi===val?'':val);
   // Aprovou = sinal verde para a producao. Entra na fila do aviso consolidado.
   if (c.statusGabi === 'aprovado') textoAprovadoParaProducao(id);
+  if (c.statusGabi === 'aprovado') registrarHistorico('copy', id, 'gabi_aprovou');
+  else if (c.statusGabi === 'revisao_necessaria') registrarHistorico('copy', id, 'gabi_pediu_ajuste');
   registrarAtividadeGabi('copy', id, c.statusGabi ? `marcou como “${gabiLabel(c.statusGabi)}”` : 'tirou a marcação de status');
   agendarSaveCopy(); renderOneCard(id);
 };
@@ -5201,6 +5282,7 @@ function designCardInner(it,d){
         ${dataDoCardHTML(it)}
         <div class="cc-title">${esc(it.titulo||'(sem título)')}</div>
         <div class="cc-tags">${it.pilar?`<span class="cc-tag">${esc(it.pilar)}</span>`:''}${it.formato?`<span class="cc-tag fmt">${esc(it.formato)}</span>`:''}</div>
+        ${rodadaHTML(d, RODADA_DESIGN)}
       </div>
       <div class="cc-head-right">${miniDesignStatus(d)}${openHint('Ver a arte')}</div>
     </div>`;
@@ -5264,6 +5346,7 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
   // Alterna edição/validação sem recarregar o ciclo (o Firestore local nega leitura)
   window.__setCopyMode = (m) => { copyMode = m; buildCopyTab(); return copyMode; };
   window.__copyTxt = (id, block) => blockText(getCopy(id), block);
+  window.__copyHist = (id) => (((copyData.itens || {})[id] || {}).historico || []).map(h => h.acao);
   // Simula um pedido de ajuste da Gabi, para conferir o grifo na edição e o
   // selo no card sem precisar selecionar texto na mão.
   window.__seedComentario = (id, block, start, end, texto) => {
@@ -5323,6 +5406,7 @@ window.onDesignFiles=async function(id,input){
   if(ok){
     showToast(`✓ ${ok} arquivo(s) enviado(s)`);
     registrarAtividadeBonina(id, `subiu ${ok} arquivo${ok>1?'s':''}`);
+    registrarHistorico('design', id, 'arte_enviada');   // um registro por envio, não por arquivo
   }
 };
 window.removeDesignMidia=function(id,i){ const d=ensureDesign(id); (d.midias||[]).splice(i,1); agendarSaveDesign(); renderDesignCard(id); };
@@ -5330,6 +5414,8 @@ window.moveDesignMidia=function(id,i,dir){ const d=ensureDesign(id); const m=d.m
 window.setDesignStatus=function(id,val){
   const d=ensureDesign(id); d.statusDesign=(d.statusDesign===val?'':val);
   registrarAtividadeGabi('design', id, d.statusDesign ? `marcou a arte como “${designLabel(d.statusDesign)}”` : 'tirou a marcação da arte');
+  if (d.statusDesign === 'aprovado') registrarHistorico('design', id, 'arte_aprovada');
+  else if (d.statusDesign === 'ajustes_necessarios') registrarHistorico('design', id, 'arte_ajuste');
   agendarSaveDesign(); renderDesignCard(id);
 };
 window.updateDesignComment=function(id,el){
