@@ -220,6 +220,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;b
 .mac-destaque-txt{flex:1;min-width:0}
 .mac-destaque-t{font-size:15px;font-weight:700}
 .mac-destaque-s{font-size:12px;opacity:.9;margin-top:2px}
+.camp-destaque{display:flex;align-items:center;gap:14px;padding:14px 18px;margin-bottom:14px;border-radius:12px;cursor:pointer;background:#fff;border:1px solid var(--z-terra);transition:box-shadow .15s}
+.camp-destaque:hover{box-shadow:0 6px 18px rgba(217,129,78,.22)}
+.camp-destaque .mac-destaque-t{color:var(--z-text)}
+.camp-destaque .mac-destaque-s{color:var(--z-text-sec);opacity:1}
+.camp-ico{font-size:24px;line-height:1}
+.camp-k{font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--z-terra)}
+.camp-cta{font-size:12.5px;font-weight:700;white-space:nowrap;color:var(--z-terra)}
+.camp-wrap{max-width:760px}
+.camp-h{font-size:20px;font-weight:800;color:var(--z-text);margin:2px 0 6px}
+.camp-obj{font-size:13px;color:var(--z-text-sec);line-height:1.5;margin:0 0 14px}
+.camp-arco{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin-bottom:16px}
+.camp-etapa{background:var(--z-terra-light);border-radius:9px;padding:9px 11px;display:flex;flex-direction:column;gap:1px}
+.camp-etapa b{font-size:13px;color:var(--z-text)}
+.camp-etapa span{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--z-terra)}
+.camp-etapa small{font-size:11.5px;color:var(--z-text-sec);line-height:1.35}
+.camp-lista{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+.camp-peca{display:flex;align-items:center;gap:12px;flex-wrap:wrap;width:100%;text-align:left;font-family:inherit;background:#fff;border:1px solid var(--z-border);border-radius:10px;padding:10px 12px;cursor:pointer}
+.camp-peca:hover{border-color:var(--z-teal)}
+.camp-data{display:flex;flex-direction:column;font-size:14px;font-weight:800;color:var(--z-teal);min-width:46px;font-variant-numeric:tabular-nums}
+.camp-data small{font-size:10px;font-weight:600;color:var(--z-text-sec)}
+.camp-info{flex:1;min-width:180px;display:flex;flex-direction:column;gap:2px}
+.camp-info b{font-size:13px;color:var(--z-text);font-weight:700;line-height:1.35}
+.camp-info small{font-size:11px;color:var(--z-text-sec)}
+.camp-sts{display:flex;gap:4px;flex-wrap:wrap}
+.camp-st{font-size:10.5px;font-weight:700;border-radius:20px;padding:2px 8px;background:var(--z-bg);color:var(--z-text-sec)}
+.camp-st.ok{background:#E6F2EC;color:#2E7D5B}
+.camp-st.aj{background:#FBEAE7;color:#B4472F}
 .mac-destaque-cta{font-size:13px;font-weight:600;white-space:nowrap;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:20px}
 .mac-wrap{max-width:840px;margin:0 auto;padding-bottom:20px}
 .mac-hero{background:linear-gradient(135deg,var(--z-teal),#0c5f68);color:#fff;border-radius:14px;padding:24px 22px;margin-bottom:20px}
@@ -1675,7 +1702,67 @@ function renderSecM() {
         </div>
       </div>`
     : `<button class="add-ciclo-btn" onclick="abrirAddCiclo()">+ Adicionar ciclo</button>`);
-  document.getElementById('bod-m').innerHTML = anoBarHTML() + destaque + cards + addBlock;
+  document.getElementById('bod-m').innerHTML = anoBarHTML() + destaque + campanhasHTML() + cards + addBlock;
+}
+
+// ── Campanhas ─────────────────────────────────────────────────────────────────
+// Uma campanha atravessa ciclos (a da nova consultoria vai de nov/2026 a fev/2027). As
+// peças continuam morando no ciclo do mês delas — copy, arte, validação e sprint
+// seguem iguais — e levam o campo `campanha`. O painel só as reúne numa linha do
+// tempo. A descrição da campanha mora em hubs/"ze lo__campanhas", não no código.
+const CAMPANHAS_REF = doc(db, 'hubs', CLIENT_ID + '__campanhas');
+let campanhasDoc = null;
+function pecasDaCampanha(id){
+  const out = [];
+  (asstCache.cycles || []).forEach(c => (c.items || []).forEach(it => { if (it.campanha === id) out.push({ c, it }); }));
+  const k = (x) => { const m = String(x.it.data || '').match(/^(\d{1,2})\/(\d{1,2})/); return m ? x.c.ano * 10000 + (+m[2]) * 100 + (+m[1]) : 99999999; };
+  return out.sort((a, b) => k(a) - k(b));
+}
+function campanhasHTML(){
+  const lista = ((campanhasDoc && campanhasDoc.campanhas) || []).filter(k => !k.anos || k.anos.includes(anoAtivo));
+  return lista.map(k => {
+    const n = asstCache.carregado ? pecasDaCampanha(k.id).length : null;
+    return `<div class="camp-destaque" onclick="abrirCampanha('${esc(k.id)}')" role="button" tabindex="0">
+      <div class="camp-ico">📣</div>
+      <div class="mac-destaque-txt"><div class="camp-k">Campanha</div><div class="mac-destaque-t">${esc(k.nome)}</div>
+        <div class="mac-destaque-s">${n != null ? `${n} peças entre os ciclos · ` : ''}${esc(k.objetivo || '')}</div></div>
+      <div class="camp-cta">Ver a campanha →</div>
+    </div>`;
+  }).join('');
+}
+window.abrirCampanha = function(id){ planView = 'campanha:' + id; renderTabContent(); navegou(); window.scrollTo(0, 0); };
+window.fecharCampanha = function(){ planView = null; renderTabContent(); navegou(); window.scrollTo(0, 0); };
+window.campanhaAbrirPeca = function(docId, id){
+  const c = (asstCache.cycles || []).find(x => x.docId === docId);
+  zaSincAno(c);
+  setTab('copy'); abrirCicloCopy(docId, ROLE === 'cliente' ? 'valida' : 'edit');
+  setTimeout(() => zaDestacar('copy-card-' + id), 950);
+};
+function renderCampanha(id){
+  const cont = document.getElementById('tab-content'); if (!cont) return;
+  const k = ((campanhasDoc && campanhasDoc.campanhas) || []).find(x => x.id === id);
+  const barra = `<div class="cycle-open-bar"><button class="back-ciclos" onclick="fecharCampanha()">← Voltar aos ciclos</button>
+    <div class="cycle-open-info"><span class="cycle-open-modo">📣 Campanha</span></div></div>`;
+  if (!k || !asstCache.carregado) { cont.innerHTML = barra + `<p class="feed-legenda">${k ? 'Carregando as peças…' : 'Campanha não encontrada.'}</p>`; return; }
+  const chip = (ok, txt, cls) => `<span class="camp-st ${ok ? 'ok' : (cls || '')}">${txt}</span>`;
+  const linhas = pecasDaCampanha(id).map(({ c, it }) => {
+    const cp = (c.copy || {})[it.id] || {}, dz = (c.design || {})[it.id] || {};
+    const temArte = desMidias(dz).length > 0;
+    const gabi = cp.statusGabi === 'aprovado' ? chip(true, 'Gabi ✓') : (cp.statusGabi === 'revisao_necessaria' ? chip(false, 'Gabi: ajuste', 'aj') : chip(false, 'Gabi'));
+    return `<button type="button" class="camp-peca" onclick="campanhaAbrirPeca('${esc(c.docId)}', ${+it.id})">
+      <span class="camp-data">${esc(it.data || '--')}<small>${c.ano}</small></span>
+      <span class="camp-info"><b>${esc(it.titulo || '(sem título)')}</b><small>${esc(it.formato || '')} · ${esc(c.periodo || '')}</small></span>
+      <span class="camp-sts">${chip(cp.statusCopy === 'finalizado', cp.statusCopy === 'bloqueado' ? 'Copy 🔒' : 'Copy', cp.statusCopy === 'bloqueado' ? 'aj' : '')}${gabi}${chip(temArte, dz.statusDesign === 'aprovado' ? 'Arte ✓' : 'Arte')}</span>
+    </button>`;
+  }).join('');
+  const arco = (k.arco || []).map(a => `<div class="camp-etapa"><b>${esc(a.nome)}</b><span>${esc(a.quando)}</span><small>${esc(a.texto)}</small></div>`).join('');
+  cont.innerHTML = barra + `<div class="camp-wrap">
+    <div class="camp-k">Campanha</div><h2 class="camp-h">${esc(k.nome)}</h2>
+    <p class="camp-obj">${esc(k.objetivo || '')}</p>
+    ${arco ? `<div class="camp-arco">${arco}</div>` : ''}
+    <div class="camp-lista">${linhas || '<p class="feed-legenda">Nenhuma peça com esta campanha ainda.</p>'}</div>
+    <p class="feed-legenda">As peças moram no ciclo do mês delas. Toque numa para abrir a copy.</p>
+  </div>`;
 }
 
 // Abre a página do bimestre num iframe dentro do hub (mantém tudo no hub)
@@ -1986,6 +2073,7 @@ function renderTabContent() {
   if (!cont) return;
   if (tabAtivo === 'plan') {
     if (planView === 'macro') { renderMacroView(); return; }
+    if (planView && planView.startsWith('campanha:')) { renderCampanha(planView.slice(9)); return; }
     if (planOpen) { renderPlanIframe(); return; }
     cont.innerHTML = `<div id="bod-m"></div>`;
     renderSecM();
@@ -2467,7 +2555,9 @@ function situacaoNaEtapa(etapa, c, it){
 function contarTarefa(t){
   const c = (asstCache.cycles || []).find(x => x.docId === t.ciclo);
   const r = { feito: 0, total: 0, espera: {}, travado: 0, semGrade: !c || !(c.items || []).length };
-  if (t.etapa === 'plano') { r.total = 1; r.feito = r.semGrade ? 0 : 1; return r; }
+  // Planejamento pronto = a grade tem conteúdo além das peças de campanha (essas podem
+  // nascer antes, como as da nova consultoria em jan/fev de 2027).
+  if (t.etapa === 'plano') { r.total = 1; r.feito = (c && (c.items || []).some(it => !it.campanha)) ? 1 : 0; return r; }
   if (t.etapa === 'validar-plano') {
     r.total = 1;
     if (r.semGrade) { r.espera.Vitor = 1; return r; }
@@ -5359,6 +5449,7 @@ if (['localhost','127.0.0.1'].includes(location.hostname)) {
   };
   // Monta um cache de ciclos qualquer, para conferir a janela do painel.
   window.__seedCiclos = (lista) => { asstCache = { carregado:true, cycles:lista }; renderPendencias(); renderSprint(); return ciclosDoPainel().map(c=>c.periodo); };
+  window.__seedCampanhas = (d) => { campanhasDoc = d; renderTabContent(); };
   window.__seedSprint = (plano, aberto) => { sprintPlano = plano; if (aberto != null) sprintAberto = !!aberto; renderSprint(); };
   window.__serial = (el) => rtSerializar(el);
   // Chama a gravação por peça de verdade contra o Firestore. Sem login, a resposta
@@ -6010,8 +6101,10 @@ async function carregarTudoAssistente(){
   }
   try{ const ms=await getDoc(metricasRef); if(ms.exists()&&Array.isArray(ms.data().snapshots)) metricasData={ snapshots:ms.data().snapshots }; }catch(e){}
   try{ const sp=await getDoc(SPRINT_REF); sprintPlano = sp.exists() ? sp.data() : null; }catch(e){}
+  try{ const cd=await getDoc(CAMPANHAS_REF); campanhasDoc = cd.exists() ? cd.data() : null; }catch(e){}
   asstCache={ carregado:true, cycles };
   if (document.getElementById('sprint-wrap')) renderSprint();
+  if (tabAtivo === 'plan' && !planOpen && (!planView || planView.startsWith('campanha:'))) renderTabContent();
   if(document.getElementById('za-menu')) zaRenderMenu();
 }
 
